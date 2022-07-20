@@ -1,0 +1,13 @@
+@startuml Conversation
+mainframe sd **conversation**
+participant Alice
+entity StreamA
+entity AppInstanceA as aiA
+participant ChatInstance
+participant ChatServer
+entity AppInstanceB as aiB
+entity StreamB
+participant Bob
+
+aiA ->
+@enduml

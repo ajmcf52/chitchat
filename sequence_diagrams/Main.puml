@@ -1,0 +1,47 @@
+@startuml Main
+mainframe sd **main**
+participant Alice
+entity AppInstance1 as ai1
+participant ChatInstance
+
+Alice ->> ai1: **start app**
+ai1 -->> Alice: "welcome, username?"
+Alice ->> ai1 : sendUName('alice')
+entity ChatServer as cs
+ai1 -> cs : addUser('alice')
+cs -> cs : initUser('alice')
+cs ->> ai1 : providePort()
+entity AppInstance2 as ai2
+participant Bob
+Bob ->> ai2: **start app**
+ai2 -->> Bob: "welcome, username?"
+note left of Alice
+both users start their own AppInstances.
+Here, Alice will start a ChatSession,
+which Bob will attempt to join.
+endnote
+Bob ->> ai2: sendUName('bob')
+ai2 -> cs: addUser('Bob')
+cs -> cs: initUser('Bob')
+cs ->> ai2: providePort()
+...
+ai1 ->> Alice: 'start session or join existing?'
+Alice ->> ai1: 'start session!'
+
+ai1 ->> ChatInstance: initChat()
+ChatInstance -->> ai1: OK
+activate ChatInstance
+ai1 -->> Alice : **opens chat window**
+
+ai2 ->> Bob: 'start session or join existing?'
+Bob ->> ai2: 'join existing!'
+ai2 -> cs: getActiveSessions()
+cs -->> ai2: activeSessionList
+ai2 ->> Bob: 'please select a session.'
+Bob ->> ai2: 'i'll join the one with alice.'
+ai2 ->> Bob: 'OK. One moment please.'
+
+ai2 -> cs: requestToJoin('alice',12345)
+
+
+@enduml

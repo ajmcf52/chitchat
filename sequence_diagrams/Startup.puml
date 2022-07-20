@@ -1,0 +1,7 @@
+@startuml AppStartup
+actor User as user 
+entity ChatService as cs
+user -> user : starts application
+cs -> user : greet and ask for name
+user -> cs : type name & press Enter
+@enduml
