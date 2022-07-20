@@ -52,3 +52,15 @@ That's it for now!
 Title says it all. Finished the task breakdown, including a satisfying amount of detail, in about 2 hours! Going through this forced me to think about and walk through the interactions that will require implementation. I noticed especially a few instances where I uncovered important steps and details that I hadn't previously considered, so this is good. Less surprises down the road. It will also provide a really nice roadmap for development, taking a lot of the guesswork out of "what to build next" sort of thing as the project progresses in logical chunks.
 
 I'll be taking a quick break to hit the gym, then I'll be back for a bit more work before I retire for the evening. I should be able to knock out the final sequence diagram tonight, and I'll see what else I can do with the time remaining before I get ready for bed. :)
+
+---
+
+## Github minutiae
+
+### Tuesday, July 19th 2022 7:23PM PST
+
+Github setup is done with SSH key authentication taken care of. Took me about 40 minutes. Bit of a pain, but I'm glad I got it done.
+
+Upcoming task will be to re-familiarize myself with test-driven development and related styles, in an effort to develop a general approach for myself in building out this project in a successful, time-efficient manner.
+
+---
