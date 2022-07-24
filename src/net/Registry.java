@@ -79,7 +79,7 @@ public class Registry {
                      * here, we are servicing a NewUserRequest. To fulfill this request at a basic level,
                      * all we have to do is send back a fresh UID for the user, incrementing userCount after doing so.
                      */
-                    case (Constants.NewUserRequestString): {
+                    case (Constants.NEW_USER_REQ): {
                         int uidNum = -1;
 
                         // get a hold of userCount (synchronized access)

@@ -7,6 +7,8 @@ import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
 import javax.swing.*;
 
+import net.ChatUser;
+import main.Constants;
 /*
  * First panel that is seen upon executing the Chatter app via ChatterApp.java
  */
@@ -19,12 +21,18 @@ public class LoginPanel extends JPanel {
     private JLabel badAliasWarning;
 
     /**
+     * to be instantiated by another Thread-based worker (from within the key event handler) 
+     * that will communicate with the Registry.
+     */
+    private ChatUser userRef;
+
+    /**
      * Constructor. Basic stuff.
      */
     public LoginPanel() {
         welcomeLabel = new JLabel();
-        welcomeLabel.setText("Welcome to Chatter.");
-        welcomeLabel.setFont(new Font("Serif", Font.PLAIN, 60));
+        welcomeLabel.setText("Welcome to Chatter!");
+        welcomeLabel.setFont(new Font("Serif", Font.PLAIN, 40));
         welcomeLabel.setVisible(true);
         welcomeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
@@ -76,14 +84,26 @@ public class LoginPanel extends JPanel {
             public void keyTyped(KeyEvent e) {}
 
             /*
-             * event handler for 
+             * event handler for keyReleased. this will be the handler that will be used to process
+             * the passing of the typed user alias to a Thread in setting up the ChatUser.
              */
             public void keyReleased(KeyEvent e) {
+
+                /**
+                 * We only want to process KeyEvents originated via the "Return" key.
+                 */
+                if (e.getKeyCode() != Constants.KC_RETURN) {
+                    return;
+                }
+                
                 // 1. retrieve text String from inside the text field.
+                JTextField src = ((JTextField) e.getSource()); // should be aliasField, but we attain this way to satisfy OCD.
+                String chatUserAlias = src.getText();
+                
+                // TODO 2. verify the input (2 <= String.length() <= 16 && each char must be one of [a-z][A-Z][0-9])
+                
 
-                // 2. verify the input (2 <= String.length() <= 16 && each char must be one of [a-z][A-Z][0-9])
-
-                // 3a. if input doesn't pass, trigger a Runnable that sets the visibility of 'badAliasWarning' to true,
+                // 3a. if input doesn't pass, trigger a Timer and/or Runnable that sets the visibility of 'badAliasWarning' to true,
                 // waits 4 seconds, then sets visibility to false again.
 
                 // 3b. if input is good, pass the input to a Runnable that does the following:
@@ -96,4 +116,18 @@ public class LoginPanel extends JPanel {
                  */
             }
         });
+    }
+
+    /**
+     * This class is responsible for setting up the ChatUser with its properties, namely its alias and UID.
+     */
+    public class UserSetupThread extends Thread {
+        
+        /**
+         * the UserSetupThread's main course of action.
+         */
+        public void run() {
+            Socket socket = new Socket()
+        }
+    }
 }
