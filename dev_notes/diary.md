@@ -104,4 +104,9 @@ I was pretty excited when I figured this out for myself. Walking around Walmart 
 
 -   Reflecting on my time yesterday, I probably spent, in each of my two development bursts, a solid 30 minutes of non-development time. I was either responding to messages, fuming over Amazon's delivery service, or pondering over other tasks unrelated to code development. **Moving forward**, I must come up with a stronger sense of focus, perhaps bolstered by a strategy or system, that really encourages **Pure Focus**, as doing so fully envelops the brain into pure bliss of _the Flow State_, where things come together naturally and beautifully.
 
+**To Do Next!!**
+
+-   Finish the Registry side of the things for the first ChatUser-Registry interaction, the purpose of which is assigning a new ChatUser their UID. This part is practically done.
+-   Create the **ChatUser.java** class and articulate it's connecting to and communicating with the Registry.
+
 ---
