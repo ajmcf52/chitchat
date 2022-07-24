@@ -64,3 +64,44 @@ Github setup is done with SSH key authentication taken care of. Took me about 40
 Upcoming task will be to re-familiarize myself with test-driven development and related styles, in an effort to develop a general approach for myself in building out this project in a successful, time-efficient manner.
 
 ---
+
+## Yesterday's Progress
+
+### Sunday, July 24th 12:50PM PST
+
+Yesterday was a productive day! It was also our first day of writing code working on Chatter. Fun stuff.
+
+I spent the first 2ish hours developing the starting Window and Panel for the Chatter app GUI, simultaneously re-learning bits and pieces of GUI programming as I went along. Javanotes by David Eck has been a godsend during this, as well as StackOverflow (both of these will be godsends throughout the context of this entire project, let's be honest here).
+
+**Status**:
+
+Elements of WelcomePanel and MainWindow are more or less all included and laid out in a satisfactory way via BoxLayout.
+
+**To Do Next Here**:
+
+-   Input checking of the text that is passed through the alias submission TextField.
+-   Passing of the alias text off to another Thread-based entity that has yet to be determined. This entity is likely to be the newly instantiated _ChatUser_; we will see if can fit this within the context of clean design without making things to difficult for ourselves.
+
+I took a quick break to read a book, eat, go for a walk, then I was back at it for another hour and a half.
+
+During the 2nd burst, I started working on the Registry and its associated RequestHandler. After getting a base of network setup code done, I came across _my first significant conundrum_ so far. I will describe the problem here.
+
+The Registry class emulates that of a singleton. There is only one Registry. It contains static fields, such as _userCount_.
+
+**Registry.java** is a server program, thus it has defined within it a **main()** subroutine. In **main()**, it loops while accepting connections; upon accepting, the resultant socket is passed off to a _RequestHandler_, a class that extends _java.lang.Thread_; my conundrum was to figure out how to define the RequestHandler & Registry classes with respect to one another while keeping the compiler happy:
+
+-   If RH is defined within the Registry class (similar to how event handlers are often defined in their related containing class contexts), I would receive an error when trying to instantiate a new RequestHandler: \*\*"No enclosing instance of type Registry is accessible. Must qualify the allocation with an enclosing instance of type Registry."
+-   If RH is defined in a separate file, I end up with circular imports, which is typically indicative of poor code design.
+
+Given that circular imports are undesirable (which they are), then I figured that there must be a slight flaw in my approach to defining either the Registry or the RH classes.
+
+**Solution:**
+Define **RequestHandler.java** to be _static_. In doing so, the static nested class can be conveniently packaged along with outer class, resulting in great readability. In this case, only the outer class's static variables (which will be practically all of them) will be accessible to the inner static class. This approach also prioritizes encapsulation and eliminates the need to allocate heap or stack memory for instances of the RequestHandler class. [Reference Material here.](https://www.baeldung.com/java-static)
+
+I was pretty excited when I figured this out for myself. Walking around Walmart later after the fact, I realized that it is little wins like these (i.e., jumps in understanding) that really have been the fuel to my fire for programming in the past, a fire that I reluctantly admit has been dimmed for quite some time. No more though. That flame has been reignited, and it will continue to pick up flame and momentum as I move forward in developing Chatter and further projects! :D
+
+**Learning Moments**:
+
+-   Reflecting on my time yesterday, I probably spent, in each of my two development bursts, a solid 30 minutes of non-development time. I was either responding to messages, fuming over Amazon's delivery service, or pondering over other tasks unrelated to code development. **Moving forward**, I must come up with a stronger sense of focus, perhaps bolstered by a strategy or system, that really encourages **Pure Focus**, as doing so fully envelops the brain into pure bliss of _the Flow State_, where things come together naturally and beautifully.
+
+---
