@@ -3,9 +3,13 @@ package ui;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
-
+import java.awt.event.KeyListener;
+import java.awt.event.KeyEvent;
 import javax.swing.*;
 
+/*
+ * First panel that is seen upon executing the Chatter app via ChatterApp.java
+ */
 public class LoginPanel extends JPanel {
     private JLabel welcomeLabel;
     private JLabel aliasPrompt;
@@ -13,8 +17,10 @@ public class LoginPanel extends JPanel {
     private JTextField aliasField;
     private JLabel hitReturnNotice;
     private JLabel badAliasWarning;
-    private BoxLayout boxLayout;
 
+    /**
+     * Constructor. Basic stuff.
+     */
     public LoginPanel() {
         welcomeLabel = new JLabel();
         welcomeLabel.setText("Welcome to Chatter.");
@@ -38,9 +44,8 @@ public class LoginPanel extends JPanel {
         aliasField.setVisible(true);
         aliasField.setAlignmentX(Component.CENTER_ALIGNMENT);
         aliasField.setFont(new Font("Serif", Font.PLAIN, 18));
-        aliasField.setMaximumSize(aliasField.getPreferredSize());
+        aliasField.setMaximumSize(aliasField.getPreferredSize()); // stops text field from needlessly expanding in BoxLayout
         
-
         hitReturnNotice = new JLabel();
         hitReturnNotice.setText("Press \"Return\" when done.");
         hitReturnNotice.setFont(new Font("Serif", Font.PLAIN, 14));
@@ -63,5 +68,32 @@ public class LoginPanel extends JPanel {
         this.add(hitReturnNotice);
         this.add(badAliasWarning);
 
-    }
+        // setting up event listener for when users press "Return".
+
+        aliasField.addKeyListener(new KeyListener(){
+            // keyPressed + keyTyped are both included simply to satisfy the compiler.
+            public void keyPressed(KeyEvent e) {}
+            public void keyTyped(KeyEvent e) {}
+
+            /*
+             * event handler for 
+             */
+            public void keyReleased(KeyEvent e) {
+                // 1. retrieve text String from inside the text field.
+
+                // 2. verify the input (2 <= String.length() <= 16 && each char must be one of [a-z][A-Z][0-9])
+
+                // 3a. if input doesn't pass, trigger a Runnable that sets the visibility of 'badAliasWarning' to true,
+                // waits 4 seconds, then sets visibility to false again.
+
+                // 3b. if input is good, pass the input to a Runnable that does the following:
+                /**
+                 * I) messages the Registry socket, requesting a UID.
+                 * II) receive said UID from the registry, and use that along with the alias to instantiate a ChatUser.
+                 * It is likely that this Runnable will be instantiated as a custom class implementing the Runnable interface;
+                 * an instance of this class will be created within the scope of ChatterApp.java, though it will not be started
+                 * until it is required to perform the critical task.
+                 */
+            }
+        });
 }
