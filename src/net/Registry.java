@@ -18,7 +18,8 @@ import main.Constants;
  * I) store user count, providing fresh user ID numbers (UIDs) for new users.
  */
 public class Registry {
-    private static int userCount = 0;
+    private static volatile int userCount = 0;
+    private static Object userCountLock;
     private static final int serverPort = 8000;
     private static boolean running = false;
 
@@ -74,8 +75,25 @@ public class Registry {
                 String requestString = in.readLine();
 
                 switch (requestString) {
+                    /*
+                     * here, we are servicing a NewUserRequest. To fulfill this request at a basic level,
+                     * all we have to do is send back a fresh UID for the user, incrementing userCount after doing so.
+                     */
                     case (Constants.NewUserRequestString): {
+                        int uidNum = -1;
 
+                        // get a hold of userCount (synchronized access)
+                        synchronized (userCountLock) {
+                            // increment userCount, copy value into a placeholder, and exit sync block
+                            userCount++;
+                            uidNum = userCount;
+                        }
+
+                        String uid = Constants.UID_PREFIX + String.valueOf(uidNum); // generate UID string
+
+                        // whisk the UID back over the socket.
+                        out.write(uid);
+                        out.flush();
                     }
                     default: {
                         System.out.println("RequestHandler -> default case.");
