@@ -105,7 +105,18 @@ public class LoginPanel extends JPanel {
                 JTextField src = ((JTextField) e.getSource()); // should be aliasField, but we attain this way to satisfy OCD.
                 String chatUserAlias = src.getText();
                 
-                // TODO 2. verify the input (2 <= String.length() <= 16 && each char must be one of [a-z][A-Z][0-9])
+                // verify alias input with two separate checks: one for length and one for alphanumerics.
+                int strLen = chatUserAlias.length();
+                if (strLen < 2 || strLen > 16) {
+                    triggerErrorMessage(badAliasWarning);
+                }
+                for (int i = 0; i < strLen; i++) {
+                    if ((chatUserAlias.charAt(i) < 'A' && chatUserAlias.charAt(i) > '9') ||
+                    (chatUserAlias.charAt(i) < 'a' && chatUserAlias.charAt(i) > 'Z') || 
+                    chatUserAlias.charAt(i) > 'z' || chatUserAlias.charAt(i) < '0' ) {
+                        triggerErrorMessage(badAliasWarning);
+                    }
+                }
                 
 
                 // 3a. if input doesn't pass, trigger a Timer and/or Runnable that sets the visibility of 'badAliasWarning' to true,
@@ -123,6 +134,21 @@ public class LoginPanel extends JPanel {
                 ustWorker.start();
             }
         });
+    }
+
+    /**
+     * this method is called when a bad alias is entered into the alias field textbox for a new User.
+     * Warning appears for 5 seconds.
+     * @param badAliasWarning JLabel containing the warning text.
+     */
+    public void triggerErrorMessage(JLabel badAliasWarning) {
+        System.out.println("farts");
+        badAliasWarning.setVisible(true);
+        Timer timer = new Timer(5000, event -> {
+            badAliasWarning.setVisible(false);
+        });
+        timer.setRepeats(false);
+        timer.start();
     }
 
 }
