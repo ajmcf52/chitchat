@@ -1,12 +1,16 @@
 package main;
 
+import javax.swing.JPanel;
+
 import ui.MainWindow;
 import ui.LoginPanel;
+import ui.ChoicePanel;
 import net.ChatUser;
 /**
  * main entry point for the chatter application.
  */
 public class ChatterApp {
+
     public static void main(String[] args) {
         System.out.println("Hello World!");
 
@@ -33,20 +37,31 @@ public class ChatterApp {
         ChatUser user = new ChatUser();
         Object chatUserLock = new Object();
 
-        // create a window and panel object, fire them up, and let the music play.
-        LoginPanel lPanel = new LoginPanel(user, chatUserLock);
-        MainWindow mw = new MainWindow(lPanel);
-        System.out.println("hey hi ho");
+        // create all of our application panels.
+        LoginPanel loginPanel = new LoginPanel(user, chatUserLock);
+        ChoicePanel choicePanel = new ChoicePanel();
+        int numPanels = 2;
+        JPanel[] appPanels = new JPanel[numPanels];
+        appPanels[0] = loginPanel;
+        appPanels[1] = choicePanel;
+
+        // create the window
+        MainWindow mainWindow = new MainWindow(appPanels);
         try {
-            System.out.println("before wait");
             synchronized (chatUserLock) {
                 chatUserLock.wait();
             }
-            System.out.println("after wait");
         }
         catch (InterruptedException e) {
             System.out.println("ChatterApp error! --> " + e.getMessage());
         }
         System.out.println("ChatUser alias -->" + user.getAlias());
+        try {
+            Thread.sleep(2500);
+        }
+        catch (InterruptedException e) {
+            System.out.println("ChatterApp thread snooze interrupted between LP and CP");
+        }
+        mainWindow.showChoicePanel();
     }
 }

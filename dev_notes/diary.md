@@ -161,3 +161,30 @@ I'll describe the interaction here:
 -   ChatterApp's thread wakes up and is able to successfully declare ChatUser's alias, which was received over "the network" and initialized by a separate worker thread!!
 
 Pretty pumped about this. It is now bed time. Early wake up as per usual.
+
+---
+
+## Another Great Day: Part A of Chatter is done.
+
+### Wednesday July 27th, 4:02PM PST
+
+---
+
+Another solid day of code development. Today was more of a focus on UI stuff.
+
+Here's what got done:
+
+-   user alias validation. Includes a descriptive warning message popup that appears, disappearing after 4 seconds.
+-   re-worked _MainWindow_'s content layout design & implementation. It now features a JPanel _cardStack_ as its content pane, which is laid out using CardLayout. Taking this approach will allow us to easily flip between panels as we move through the app.
+-   implemented **ChoicePanel.java** and aligned the two featured buttons in an appropriate fashion using invisible _javax.swing.Box_ rigid areas to space them out nicely.
+-   added the transition code for **MainWindow.java** to switch from **LoginPanel.java** to **ChoicePanel.java**, following the successful initialization of _ChatUser_ as well as a 2.5 second delay; if we have time at the end of this project's development, we could add in a "Loading" animation panel between the two as a less abrupt transition.
+
+At this point in our development, _we have officially finished **Stage A** in our 4-stage development Storyline!_ This is exciting news. We are now onto **Stage B**.
+
+**To Do Next**:
+
+-   add functionality to the "Create a Room" button in **ChoicePanel.java**. This will require us to implement the _SessionThread_ class, as well as some kind of popup UI window that will be our chat room window.
+
+Once we have finished with successfully creating and joining the room as a User, we will then move to implementing "Join Room", which will require us to test the application with **two users**. Things just got a little spicier.
+
+Today's development session was just over two hours.

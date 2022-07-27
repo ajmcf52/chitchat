@@ -1,18 +1,42 @@
 package ui;
 
-import javax.swing.*;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
 
-public class MainWindow {
+import main.PanelNames;
+
+import java.awt.CardLayout;
+
+public class MainWindow extends JFrame {
     
-    private JFrame frame;
+    private JPanel cardStack;
+    private CardLayout layout;
 
-    public MainWindow(JPanel panel) {
-        frame = new JFrame("Chatter");
-        frame.setContentPane(panel);
-        frame.setSize(500,300);
-        frame.setLocationRelativeTo(null); // centers the component
-        frame.setVisible(true);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    public MainWindow(JPanel... panels) {
+        this.setTitle("Chatter");
+        this.setSize(500,300);
+        this.setLocationRelativeTo(null); // centers the component
+        
+        cardStack = new JPanel();
+        layout = new CardLayout();
+        cardStack.setLayout(layout);
+
+        int numPanels = panels.length;
+        for (int i = 0; i < numPanels; i++) {
+            cardStack.add(panels[i], panels[i].getName());
+        }
+
+        this.setContentPane(cardStack);
+        this.setVisible(true);
+        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    }
+
+    /**
+     * this method is called to flip to the 2nd card in
+     * the content pane's CardLayout, ChoicePanel.
+     */
+    public void showChoicePanel() {
+        layout.show(cardStack, PanelNames.CHOICE_PANEL_NAME);
     }
 
     /*

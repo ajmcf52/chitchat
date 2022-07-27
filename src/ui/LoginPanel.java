@@ -9,7 +9,9 @@ import javax.swing.*;
 
 import net.ChatUser;
 import main.Constants;
+import main.PanelNames;
 import worker.UserSetupThread;
+
 /*
  * First panel that is seen upon executing the Chatter app via ChatterApp.java
  */
@@ -80,6 +82,7 @@ public class LoginPanel extends JPanel {
         this.add(aliasField);
         this.add(hitReturnNotice);
         this.add(badAliasWarning);
+        this.setName(PanelNames.LOGIN_PANEL_NAME);
 
         // setting up event listener for when users press "Return".
 
@@ -104,19 +107,27 @@ public class LoginPanel extends JPanel {
                 // 1. retrieve text String from inside the text field.
                 JTextField src = ((JTextField) e.getSource()); // should be aliasField, but we attain this way to satisfy OCD.
                 String chatUserAlias = src.getText();
-                
-                // verify alias input with two separate checks: one for length and one for alphanumerics.
+
+   
+                    // verify alias input with two separate checks: one for length and one for alphanumerics.
                 int strLen = chatUserAlias.length();
                 if (strLen < 2 || strLen > 16) {
                     triggerErrorMessage(badAliasWarning);
+                    return;
                 }
                 for (int i = 0; i < strLen; i++) {
                     if ((chatUserAlias.charAt(i) < 'A' && chatUserAlias.charAt(i) > '9') ||
                     (chatUserAlias.charAt(i) < 'a' && chatUserAlias.charAt(i) > 'Z') || 
                     chatUserAlias.charAt(i) > 'z' || chatUserAlias.charAt(i) < '0' ) {
                         triggerErrorMessage(badAliasWarning);
+                        return;
                     }
                 }
+                
+                
+
+                // TODO add an alias Hashmap lookup with the registry
+                // to make sure it's not taken.
                 
 
                 // 3a. if input doesn't pass, trigger a Timer and/or Runnable that sets the visibility of 'badAliasWarning' to true,
@@ -132,6 +143,7 @@ public class LoginPanel extends JPanel {
                  */
                 UserSetupThread ustWorker = new UserSetupThread(chatUserAlias, userRef, chatUserLock);
                 ustWorker.start();
+                
             }
         });
     }
