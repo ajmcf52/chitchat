@@ -5,9 +5,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.OutputStreamWriter;
 
 import main.Constants;
 
@@ -19,16 +17,16 @@ import main.Constants;
  */
 public class Registry {
     private static volatile int userCount = 0;
-    private static Object userCountLock;
-    private static final int serverPort = 8000;
+    private static Object userCountLock = new Object();
     private static boolean running = false;
 
     public static void main(String[] args) {
         try {
+            System.out.println("UCL --> " + userCountLock.toString());
             Socket socket; // socket variable for accepted connections.
-            ServerSocket serverSocket = new ServerSocket(serverPort); // the server socket; accepts connections.
+            ServerSocket serverSocket = new ServerSocket(Constants.REGISTRY_PORT); // the server socket; accepts connections.
 
-            System.out.println("Server Registry listening on port" + serverPort);
+            System.out.println("Server Registry listening on port" + Constants.REGISTRY_PORT);
             running = true;
             while (running) {
                 socket = serverSocket.accept();
@@ -80,6 +78,7 @@ public class Registry {
                      * all we have to do is send back a fresh UID for the user, incrementing userCount after doing so.
                      */
                     case (Constants.NEW_USER_REQ): {
+                        String alias = in.readLine(); // ChatUser's alias. This can be saved in a HashMap at a later date.
                         int uidNum = -1;
 
                         // get a hold of userCount (synchronized access)
@@ -93,7 +92,10 @@ public class Registry {
 
                         // whisk the UID back over the socket.
                         out.write(uid);
+                        // Work done! Prepare for exit.
                         out.flush();
+                        out.close();
+                        break;
                     }
                     default: {
                         System.out.println("RequestHandler -> default case.");

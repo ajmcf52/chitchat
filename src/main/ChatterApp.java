@@ -28,11 +28,25 @@ public class ChatterApp {
          */
 
         // variables!!
-        ChatUser user = null;
+        // Passing in a null ChatUser. 
+        // This will eventually be initialized by UserSetupThread via LoginPanel's EvtHandler.
+        ChatUser user = new ChatUser();
+        Object chatUserLock = new Object();
 
-
-        LoginPanel lPanel = new LoginPanel();
-        MainWindow mw = new MainWindow(lPanel);
         // create a window and panel object, fire them up, and let the music play.
+        LoginPanel lPanel = new LoginPanel(user, chatUserLock);
+        MainWindow mw = new MainWindow(lPanel);
+        System.out.println("hey hi ho");
+        try {
+            System.out.println("before wait");
+            synchronized (chatUserLock) {
+                chatUserLock.wait();
+            }
+            System.out.println("after wait");
+        }
+        catch (InterruptedException e) {
+            System.out.println("ChatterApp error! --> " + e.getMessage());
+        }
+        System.out.println("ChatUser alias -->" + user.getAlias());
     }
 }

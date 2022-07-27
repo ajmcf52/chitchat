@@ -141,3 +141,23 @@ Determining what we do here will be our task upon returning to work after the gy
 Roughly 2.5 hours of development time have been logged so far today.
 
 ---
+
+## ChatUser "log in" successful!
+
+### Tuesday, July 26th 8:14PM PST
+
+---
+
+Very excited. After some troubleshooting in a few separate places, I **successfully managed** to initialize the ChatUser's UID & alias via multi-threaded networking. As basic as the interaction is that I have concocted, making it come together and work in a matter of two hours is a huge accomplishment, _especially_ considering how long it's been since I have made **any** attempt at networked or threaded code, let alone both of them together in unison!!
+
+I'll describe the interaction here:
+
+-   Registry socket is started on port 8000, waiting for connections.
+-   UserChat object is instantiated (but not yet initialized) within the _ChatterApp_ thread of execution. A user chat lock is also constructed and waited on.
+-   These two objects are passed to the UserSetupThread via LoginPanel's KeyEventHandler, where the UST worker is constructed and fired up.
+-   UST socket connects to the Registry, which fires up a RequestHandler to deal with UST's request.
+-   UST passes along the UserSetup protocol message (outlined in **Constants.Java**) along with ChatUser's desired alias; Registry's RequestHandler notes the alias and sends back the appropriate UID for said user.
+-   UST initializes the ChatUser reference, after which it closes both input/output streams as well as its socket to the Registry. Finally, it notifies on the user chat lock, declaring ChatUser initialization.
+-   ChatterApp's thread wakes up and is able to successfully declare ChatUser's alias, which was received over "the network" and initialized by a separate worker thread!!
+
+Pretty pumped about this. It is now bed time. Early wake up as per usual.

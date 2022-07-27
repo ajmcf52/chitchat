@@ -9,6 +9,7 @@ import javax.swing.*;
 
 import net.ChatUser;
 import main.Constants;
+import worker.UserSetupThread;
 /*
  * First panel that is seen upon executing the Chatter app via ChatterApp.java
  */
@@ -25,11 +26,15 @@ public class LoginPanel extends JPanel {
      * that will communicate with the Registry.
      */
     private ChatUser userRef;
+    private Object chatUserLock;
 
     /**
      * Constructor. Basic stuff.
      */
-    public LoginPanel() {
+    public LoginPanel(ChatUser ref, Object cuLock) {
+        userRef = ref; // we pass a ChatUser reference in so it can be passed along to UserSetupThread's ctor.
+        chatUserLock = cuLock; // this will be passed on to UserSetupThread, so it can notify once ChatUser has been instantiated.
+
         welcomeLabel = new JLabel();
         welcomeLabel.setText("Welcome to Chatter!");
         welcomeLabel.setFont(new Font("Serif", Font.PLAIN, 40));
@@ -114,20 +119,10 @@ public class LoginPanel extends JPanel {
                  * an instance of this class will be created within the scope of ChatterApp.java, though it will not be started
                  * until it is required to perform the critical task.
                  */
+                UserSetupThread ustWorker = new UserSetupThread(chatUserAlias, userRef, chatUserLock);
+                ustWorker.start();
             }
         });
     }
 
-    /**
-     * This class is responsible for setting up the ChatUser with its properties, namely its alias and UID.
-     */
-    public class UserSetupThread extends Thread {
-        
-        /**
-         * the UserSetupThread's main course of action.
-         */
-        public void run() {
-            Socket socket = new Socket()
-        }
-    }
 }

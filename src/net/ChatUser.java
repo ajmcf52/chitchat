@@ -27,6 +27,12 @@ public class ChatUser extends Thread {
         alias = a;
     }
 
+    public void init(String uid, String a) {
+        System.out.println("Initializing ChatUser " + userID + "...");
+        userID = uid;
+        alias = a;
+    }
+
     /**
      * the ChatUser's main course of action.
      */
