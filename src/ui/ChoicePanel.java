@@ -9,6 +9,8 @@ import java.awt.Font;
 import java.awt.Dimension;
 
 import main.PanelNames;
+import net.ChatUser;
+import main.Constants;
 
 /**
  * this class represents the panel after the alias selection screen,
@@ -20,6 +22,9 @@ public class ChoicePanel extends JPanel {
     private JButton joinRoomButton;
     private JButton createRoomButton;
     private final Font buttonFont = new Font("Serif", Font.BOLD, 24);
+
+    // used to send reference user info being sent to the registry.
+    private ChatUser userRef;
 
     public ChoicePanel() {
         joinRoomButton = new JButton();
@@ -44,6 +49,11 @@ public class ChoicePanel extends JPanel {
         this.add(createRoomButton);
         this.add(Box.createRigidArea(new Dimension(0, 75)));
         this.setName(PanelNames.CHOICE_PANEL_NAME);
+
+        createRoomButton.addActionListener(e -> {
+            // connect to the registry and send a NewRoomRequest
+            String userAlias = userRef.getAlias();
+        });
 
     }
 }

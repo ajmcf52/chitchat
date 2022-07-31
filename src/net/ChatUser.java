@@ -7,7 +7,8 @@ import java.lang.Thread;
  */
 public class ChatUser extends Thread {
     private String userID; //uniquely identifies this user.
-    private String alias;
+    private String alias; // this chat user's screen name.
+    private String sessionInetAddress; // inet address of a chat session's server socket.
 
     /**
      * default constructor.
@@ -15,6 +16,7 @@ public class ChatUser extends Thread {
     public ChatUser() {
         userID = "";
         alias = "";
+        sessionInetAddress = "";
     }
 
     /**
@@ -25,6 +27,7 @@ public class ChatUser extends Thread {
     public ChatUser(String uid, String a) {
         userID = uid;
         alias = a;
+        sessionInetAddress = "";
     }
 
     public void init(String uid, String a) {
@@ -62,5 +65,13 @@ public class ChatUser extends Thread {
      */
     public String getAlias() { return alias; }
 
-
+    /**
+     * this method is used to setup the socket information that
+     * will be used to connect with a session thread for the sake
+     * of entering and participating in a chat session.
+     * @param seshInetAddr inet address of the SessionThread we must connect to participate in a given ChatSession.
+     */
+    public void initializeSessionAddress(String seshInetAddr) {
+        sessionInetAddress = seshInetAddr;
+    }
 }
