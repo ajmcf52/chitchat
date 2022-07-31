@@ -10,7 +10,7 @@ import javax.swing.*;
 import net.ChatUser;
 import main.Constants;
 import main.PanelNames;
-import worker.UserSetupThread;
+import worker.UserSetupWorker;
 
 /*
  * First panel that is seen upon executing the Chatter app via ChatterApp.java
@@ -141,7 +141,7 @@ public class LoginPanel extends JPanel {
                  * an instance of this class will be created within the scope of ChatterApp.java, though it will not be started
                  * until it is required to perform the critical task.
                  */
-                UserSetupThread ustWorker = new UserSetupThread(chatUserAlias, userRef, chatUserLock);
+                UserSetupWorker ustWorker = new UserSetupWorker(chatUserAlias, userRef, chatUserLock);
                 ustWorker.start();
                 
             }

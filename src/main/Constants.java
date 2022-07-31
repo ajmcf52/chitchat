@@ -10,6 +10,7 @@ public final class Constants {
     private Constants() {}
     public static final String CLIENT_IP = "localhost";
     public static final String REGISTRY_IP = "localhost";
+    public static final int MSG_QUEUE_LENGTH = 10; // length of any given message queue in the application.
     public static final int CLIENT_PORT = 9006;
     public static final int REGISTRY_PORT = 8000;
     public static final int KC_RETURN = 10;

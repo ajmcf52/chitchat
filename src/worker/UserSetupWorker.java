@@ -14,13 +14,13 @@ import net.ChatUser;
      * The alias is passed in through the LoginPanel's KeyEventHandler.
      * UST fetches the UID from the registry.
      */
-    public class UserSetupThread extends Thread {
+    public class UserSetupWorker extends Thread {
         
         private String alias;
         private ChatUser userRef;
         private Object chatUserLock;
 
-        public UserSetupThread(String ali, ChatUser cu, Object cuLock) {
+        public UserSetupWorker(String ali, ChatUser cu, Object cuLock) {
             alias = ali;
             userRef = cu;
             chatUserLock = cuLock;

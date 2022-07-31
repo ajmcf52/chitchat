@@ -97,6 +97,14 @@ public class Registry {
                         out.close();
                         break;
                     }
+                    /**
+                     * here we are servicing a new room request. To fulfill this request, we must spawn
+                     * a SessionCoordinator and pass along the desired ChatUser host information to the SC.
+                     * From there, the SC should be able to handle the rest.
+                     */
+                    case (Constants.NEW_ROOM_REQ): {
+
+                    }
                     default: {
                         System.out.println("RequestHandler -> default case.");
                     }
