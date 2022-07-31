@@ -90,7 +90,9 @@ public class InputWorker extends Thread {
      * this method is used to signal the thread that it is time to exit.
      */
     public void switchOff() {
-
+        synchronized (runLock) {
+            isRunning = false;
+        }
     }
 
 }
