@@ -188,3 +188,37 @@ At this point in our development, _we have officially finished **Stage A** in ou
 Once we have finished with successfully creating and joining the room as a User, we will then move to implementing "Join Room", which will require us to test the application with **two users**. Things just got a little spicier.
 
 Today's development session was just over two hours.
+
+---
+
+## Two Steps Forward, One Step Back...
+
+### Sunday July 31st, 2:54PM PST
+
+---
+
+#### **Vulnerability ahead...**
+
+This weekend has been a weird one for me, particularly yesterday.
+
+I suppose as someone who is always aspiring toward the tendency of productivity, it comes as a bit of a hit to the mental state when things simply aren't clicking as well as they could or should be. Yesterday was one of those days.
+
+I came in with the idea that I would smash through a bunch of progress with Chatter, only to sit down and barely be able to keep my eyes open, even feeling dizzy and overall just terribly out-of-place.
+
+While there is something to be said about "pushing through adversity" and to get going when the going gets tough, it is quite difficult to even do this when the mind decides to momentarily stop working.
+
+Part of this likely could have been due to the fact that I didn't go in with a clear idea of what I was going to work on, and so when I went to take a look at the pseudocode I had laid out for myself during the week for this weekend's development, I was instantly overwhelmed and became tired even just thinking about what I had to do next.
+
+This is a good lesson for me. In the realm of coding, it is very easy to get overwhelmed when looking at the big picture too long. One should look at the big picture just long enough to get an idea of the full scope of things. Look too long, and become overwhelmed.
+
+Rather, after getting a good idea of said big picture, it then makes sense to zoom in to the "next steps" of where we are headed. That is what we will do now.
+
+**Next Step(s)!**
+
+-   Add functionality to the _Create A Room_ button in **ChoicePanel.java**. This will likely take several development sessions, as the actions being performed are numerous.
+-   The first thing to do is program the conversation between a _RoomSetupThread_ and the Registry. This will be straightforward. Programming the Registry's response to this, however, will be non-trivial. The Registry will need to spawn a _SessionThread_.
+-   The function of this SessionThread will be to coordinate the communication between all parties in a given chat session. To get this to work fluidly, we will need to have a _ReaderThread_ and a _WriterThread_ for **every single participant** in a given chat session!!
+-   As overwhelming as this can be to think about, it makes sense. Articulating this notion in code will be the focus today. How far we get today is really a matter of focus, sheer will and some chance.
+-   _ALSO_: Bear in mind that I will be aiming to design and implement the _ReaderThread_ and _WriterThread_ classes in such a way that they can be used on the side of _ChatUsers_ as well. Lots of stuff to think about, easy to get overwhelmed. However, I will remain calm and focused.
+
+I will check in later today before signing off with a progress report. Ciao.
