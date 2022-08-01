@@ -222,3 +222,28 @@ Rather, after getting a good idea of said big picture, it then makes sense to zo
 -   _ALSO_: Bear in mind that I will be aiming to design and implement the _ReaderThread_ and _WriterThread_ classes in such a way that they can be used on the side of _ChatUsers_ as well. Lots of stuff to think about, easy to get overwhelmed. However, I will remain calm and focused.
 
 I will check in later today before signing off with a progress report. Ciao.
+
+---
+
+## Today's Progress.
+
+### Sunday July 31st, 5:04PM PST
+
+---
+
+We got in a solid 2 hours of focused programming today. I hope to get a larger sum of hours put in tomorrow, as I have the day off of work. 4+ hours would be ideal.
+
+**What got done**:
+
+-   Implemented _UserSetupWorker.java_, a class dedicated to initializing the chat session setup for a given user when "Create A Room" is clicked in _ChoicePanel.java_.
+-   Designated a space in _Registry.java_ for chat room setup code to be placed, but have yet to implement this yet.
+-   Implemented _OutputWorker.java_ and _InputWorker.java_, the reader/writer thread-based worker classes that will end up playing a **major** role in bringing the functionality of Chatter together.
+
+**To Do Next!**
+
+-   Now that we have _OutputWorker_ and _InputWorker_ done, we are in the position to start building _SessionCoordinator.java_. Before we get into this next time, however, we will want to put in a bit of time thinking about how we would like to articulate the setup of _OutputWorkers_ and _InputWorkers_ for each given chat user that is added to a chat session. This shouldn't be hard, though to rush through the planning of this without putting any thought into it would be silly.
+-   Put code in place for _RoomSetupWorker_ to be fired off when "Create a Room" is clicked in _ChoicePanel_.
+-   Implement _SessionCoordinator_ setup code in _Registry_ response for a chat room creation request.
+-   Set up the start of the conversation between the intended _ChatUser_ host and the _SessionCoordinator_.
+
+That's it for now. The rest of today will be spent at the gym, and depending on how I feel tonight, I will either relax and watch a movie, or I may finish writing my blog post that I started yesterday.
