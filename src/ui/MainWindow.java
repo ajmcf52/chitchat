@@ -3,7 +3,7 @@ package ui;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-import main.PanelNames;
+import misc.PanelNames;
 
 import java.awt.CardLayout;
 

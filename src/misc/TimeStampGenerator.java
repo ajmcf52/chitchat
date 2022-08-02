@@ -19,7 +19,7 @@ public class TimeStampGenerator {
      * method used to generate timestamps on demand for any given app entity.
      * @return timestamp in 24-hr clock format (00:00 to 23:59)
      */
-    public String now() {
+    public static String now() {
         String time = LocalTime.now(timezone).format(dtf);
         return time;
     }

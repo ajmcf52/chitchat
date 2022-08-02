@@ -3,10 +3,11 @@ package worker;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.concurrent.ArrayBlockingQueue;
+
+import misc.Constants;
+
 import java.net.Socket;
 import java.util.LinkedList;
-
-import main.Constants;
 
 /**
  * this class is responsible for reading messages from a given Socket
@@ -27,18 +28,15 @@ public class InputWorker extends Thread {
 
     /**
      * constructor of the InputWorker.
-     * @param sock Socket by which our buffered reader will be constructed.
+     * @param input what will be used to read incoming messages; initialized by SessionCoordinator.
+     * @param msgQueue where incoming messages will be placed; initialized by SessionCoordinator.
      */
-    public InputWorker(Socket sock) {
+    public InputWorker(BufferedReader input, ArrayBlockingQueue<String> msgQueue) {
         runLock = new Object();
         newMessageNotifier = new Object();
         isRunning = false;
-        messageQueue = new ArrayBlockingQueue<String>(Constants.MSG_QUEUE_LENGTH,true);
-        try {
-            in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-        } catch (Exception e) {
-            System.out.println("InputWorker Constructor Error!! -->" + e.getMessage());
-        }
+        messageQueue = msgQueue;
+        in = input;
     }
 
     /**

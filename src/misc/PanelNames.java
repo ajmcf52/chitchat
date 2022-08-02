@@ -1,4 +1,4 @@
-package main;
+package misc;
 
 /**
  * class containing all the panel names of the Chatter application.

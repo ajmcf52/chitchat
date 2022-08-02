@@ -8,8 +8,8 @@ import java.awt.event.KeyEvent;
 import javax.swing.*;
 
 import net.ChatUser;
-import main.Constants;
-import main.PanelNames;
+import misc.Constants;
+import misc.PanelNames;
 import worker.UserSetupWorker;
 
 /*

@@ -8,9 +8,9 @@ import java.awt.Component;
 import java.awt.Font;
 import java.awt.Dimension;
 
-import main.PanelNames;
+import misc.Constants;
+import misc.PanelNames;
 import net.ChatUser;
-import main.Constants;
 
 /**
  * this class represents the panel after the alias selection screen,

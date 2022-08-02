@@ -3,11 +3,12 @@ package net;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+
+import misc.Constants;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-
-import main.Constants;
 
 /**
  * This class is responsible for performing many of the miscellaneous tasks required for the Chatter application to work.
@@ -19,6 +20,7 @@ public class Registry {
     private static volatile int userCount = 0;
     private static Object userCountLock = new Object();
     private static boolean running = false;
+    private static int sessionCount = 0; // no one should ever need to access this besides the registry itself.
 
     public static void main(String[] args) {
         try {
@@ -95,14 +97,28 @@ public class Registry {
                         // Work done! Prepare for exit.
                         out.flush();
                         out.close();
+                        in.close();
                         break;
                     }
                     /**
                      * here we are servicing a new room request. To fulfill this request, we must spawn
-                     * a SessionCoordinator and pass along the desired ChatUser host information to the SC.
-                     * From there, the SC should be able to handle the rest.
+                     * a SessionCoordinator and pass along a ServerSocket to which the host ChatUser will connect to.
                      */
                     case (Constants.NEW_ROOM_REQ): {
+                        String alias = in.readLine();
+                        int scPort = Constants.SESSION_PORT_PREFIX + sessionCount;
+                        sessionCount++;
+                        ServerSocket serverSocket = new ServerSocket(scPort);
+                        SessionCoordinator sc = new SessionCoordinator(serverSocket, alias);
+
+                        // write back the inet address of the SC's server socket for Chat host to connect to
+                        String inetAddressStr = serverSocket.getInetAddress().toString();
+                        out.write(inetAddressStr + '\n');
+                        // work done, prepare for exit.
+                        out.flush();
+                        out.close();
+                        in.close();
+                        break;
 
                     }
                     default: {

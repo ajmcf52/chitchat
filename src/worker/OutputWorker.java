@@ -1,11 +1,12 @@
 package worker;
 
 import java.util.concurrent.ArrayBlockingQueue;
+
+import misc.Constants;
+
 import java.net.Socket;
 import java.util.LinkedList;
 import java.io.PrintWriter;
-
-import main.Constants;
 
 /**
  * this class is responsible for writing outgoing messages through a particular Socket
@@ -24,17 +25,14 @@ public class OutputWorker extends Thread {
    
     /**
      * constructor of the OutputWorker.
-     * @param sock socket by which our PrintWriter will be initialized.
+     * @param output PrintWriter to be used for writing outgoing messages; initialized by SessionCoordinator
+     * @param msgQueue initialized by SessionCoordinator, where this thread will retrieve outgoing messages to be sent.
      */
-    public OutputWorker(Socket sock) {
+    public OutputWorker(PrintWriter output, ArrayBlockingQueue<String> msgQueue) {
         runLock = new Object();
         isRunning = false;
-        messageQueue = new ArrayBlockingQueue<String>(Constants.MSG_QUEUE_LENGTH);
-        try {
-            out = new PrintWriter(sock.getOutputStream());
-        } catch (Exception e) {
-            System.out.println("OutputWorker Constructor Error! --> " + e.getMessage());
-        }
+        messageQueue = msgQueue;
+        out = output;
     }
 
     /**

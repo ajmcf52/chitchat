@@ -247,3 +247,30 @@ We got in a solid 2 hours of focused programming today. I hope to get a larger s
 -   Set up the start of the conversation between the intended _ChatUser_ host and the _SessionCoordinator_.
 
 That's it for now. The rest of today will be spent at the gym, and depending on how I feel tonight, I will either relax and watch a movie, or I may finish writing my blog post that I started yesterday.
+
+---
+
+## Another Difficult Day
+
+### Monday August 1st, 8:40PM PST
+
+---
+
+Everyone loves to talk about the good days, but what about the bad ones?
+
+I had a bunch of things I wanted to get done today. I had intentions of being superbly productive. I suppose my brain had other plans. I sat down earlier to get some coding done and was absolutely dreading it. So instead, I watched some YouTube scammer payback videos for a hour or so while eating some food and then I went to the gym.
+
+It can be easy to pretend that we are perfect and never miss the mark, when indeed this couldn't be further from the truth. We all have our off-days and off-moments.
+
+When I came back from a torturous leg session (I ensured it was torturous as I was a little upset with myself, and so I used the workout as a bit of a punishment), I was feeling a heck of a lot better about myself. I had a cold shower, ate some food, folded my laundry while listening to David Goggins, and I knew at that point in time that there would be no way I would possibly go to bed without getting at least 90 minutes of coding done in a Pure Focus state. So that is precisely what I did, and I'm extremely proud of myself because of it. The days where we don't want to work, but still find a way to push ourselves to get some amount of work done are truly the most rewarding, even if the production for that day isn't quite as high as we would have liked it to be. Just being able to show up on the rough days and still put in a concerted effort is often times more than enough.
+
+**What Got Done**:
+
+-   **TimeStampGenerator.java** is complete and probably won't require modification.
+-   Substantial progress made on **SessionCoordinator.java**.
+-   Modified code in _InputWorker_, _OutputWorker_, and _Registry_ to fit what seems to be the most reasonable layout of the _SessionCoordinator_ implementation scheme, for now at least.
+
+**To Do Next**:
+
+-   Add code to support the connecting of _ChatUser_ to the _SessionCoordinator_.
+-   Look to implement next the functionality of the "Join Room" in **ChoicePanel.java**. This will take a little bit of careful thought and planning, but with "Create a Room" mostly out of the way, this one should be relatively simpler.

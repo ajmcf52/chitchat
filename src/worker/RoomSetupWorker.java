@@ -1,12 +1,14 @@
 package worker;
 
 import java.net.Socket;
+
+import misc.Constants;
+
 import java.io.PrintWriter;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
 import net.ChatUser;
-import main.Constants;
 
 /**
  * This thread-based class is responsible for communicating with the
