@@ -34,12 +34,13 @@ public class ChatterApp {
         // variables!!
         // Passing in a null ChatUser. 
         // This will eventually be initialized by UserSetupThread via LoginPanel's EvtHandler.
+        ApplicationState appState = new ApplicationState();
         ChatUser user = new ChatUser();
         Object chatUserLock = new Object();
 
         // create all of our application panels.
         LoginPanel loginPanel = new LoginPanel(user, chatUserLock);
-        ChoicePanel choicePanel = new ChoicePanel();
+        ChoicePanel choicePanel = new ChoicePanel(user, chatUserLock);
         int numPanels = 2;
         JPanel[] appPanels = new JPanel[numPanels];
         appPanels[0] = loginPanel;
@@ -47,21 +48,44 @@ public class ChatterApp {
 
         // create the window
         MainWindow mainWindow = new MainWindow(appPanels);
-        try {
-            synchronized (chatUserLock) {
-                chatUserLock.wait();
+        boolean isRunning = true;
+        while (isRunning) {
+            if (appState.getAppState() == AppStateValue.LOGIN_PANEL) {
+                try {
+                    /*
+                     * user will progress past this wait() after
+                     * their alias has been entered and set up on
+                     * the back-end with the registry.
+                     */
+                    synchronized (chatUserLock) {
+                        chatUserLock.wait();
+                    }
+                }
+                catch (InterruptedException e) {
+                    System.out.println("ChatterApp error! --> " + e.getMessage());
+                }
+                System.out.println("ChatUser alias -->" + user.getAlias());
+                try {
+                    Thread.sleep(2500);
+                }
+                catch (InterruptedException e) {
+                    System.out.println("ChatterApp thread snooze interrupted between LP and CP");
+                }
             }
         }
-        catch (InterruptedException e) {
-            System.out.println("ChatterApp error! --> " + e.getMessage());
-        }
-        System.out.println("ChatUser alias -->" + user.getAlias());
-        try {
-            Thread.sleep(2500);
-        }
-        catch (InterruptedException e) {
-            System.out.println("ChatterApp thread snooze interrupted between LP and CP");
-        }
+
+        
+        /**
+         * TODO add a "Back" button on the choice screen,
+         * which allows a person to go back and choose a new
+         * screen name. 
+         * 
+         * To do this, we will need an architectural shift in our code here.
+         * Can certainly be accomplished by way of using a while loop that
+         * also monitors and operates,
+         * based on application state (current panel + applied user action)
+         */
         mainWindow.showChoicePanel();
+
     }
 }

@@ -7,10 +7,13 @@ import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
 import javax.swing.*;
 
+import com.apple.eawt.Application;
+
 import net.ChatUser;
 import misc.Constants;
 import misc.PanelNames;
 import worker.UserSetupWorker;
+import main.ApplicationState;
 
 /*
  * First panel that is seen upon executing the Chatter app via ChatterApp.java
@@ -29,13 +32,15 @@ public class LoginPanel extends JPanel {
      */
     private ChatUser userRef;
     private Object chatUserLock;
+    private ApplicationState appState;
 
     /**
      * Constructor. Basic stuff.
      */
-    public LoginPanel(ChatUser ref, Object cuLock) {
+    public LoginPanel(ChatUser ref, Object cuLock, ApplicationState state) {
         userRef = ref; // we pass a ChatUser reference in so it can be passed along to UserSetupThread's ctor.
         chatUserLock = cuLock; // this will be passed on to UserSetupThread, so it can notify once ChatUser has been instantiated.
+        appState = state;
 
         welcomeLabel = new JLabel();
         welcomeLabel.setText("Welcome to Chatter!");
@@ -141,7 +146,7 @@ public class LoginPanel extends JPanel {
                  * an instance of this class will be created within the scope of ChatterApp.java, though it will not be started
                  * until it is required to perform the critical task.
                  */
-                UserSetupWorker ustWorker = new UserSetupWorker(chatUserAlias, userRef, chatUserLock);
+                UserSetupWorker ustWorker = new UserSetupWorker(chatUserAlias, userRef, chatUserLock, appState);
                 ustWorker.start();
                 
             }
