@@ -274,3 +274,30 @@ When I came back from a torturous leg session (I ensured it was torturous as I w
 
 -   Add code to support the connecting of _ChatUser_ to the _SessionCoordinator_.
 -   Look to implement next the functionality of the "Join Room" in **ChoicePanel.java**. This will take a little bit of careful thought and planning, but with "Create a Room" mostly out of the way, this one should be relatively simpler.
+
+---
+
+## Decent Progress Today.
+
+### Tuesday, August 2nd, 4:11PM PST
+
+---
+
+Title says it all. I allotted myself 90 minutes of development time and I made use of every minute. Only ever looked at my phone to change the song playlist or skip the song. Started off with some basic techno geek coding music, then transitioned to the Halo 3 soundtrack (much better imo).
+
+Music banter aside, I'm happy with what got done today. The progress won't really show for much until the next couple of days, as we are in a bit of a delayed gratification / awkward phase of development where a bunch of work must be done behind the scenes to make ends meet on the application side of things. I also noticed a pretty major design flaw in the way my code was laid out in main(); essentially my code was being executed sequentially, not within a loop. When I considered the option of adding a "Back" button to **ChoicePanel.java**, my design flaw came to light. I addressed this flaw by adding in the enum-based _ApplicationState_ that is used within the context of a while loop. Other than this, we essentially spent all the rest of the time laying the groundwork for ChatUser to be able to start working on its own within its threaded context to communicate directly with the SessionCoordinator.
+
+**What Got Done**:
+
+-   Altered main() execution architecture to switch from strictly sequential-based to a loop + state-based execution style.
+-   Added code to various classes to allow for AppState to work congruently across the application.
+-   Ironed out kinks across _Registry_, _RoomSetupWorker_, _ChatterApp_, and possibly others that I'm forgetting with the objective of setting up the communication channel between _ChatUser_ and _SessionCoordinator_.
+
+**To Do Next**:
+
+-   Flesh out **ChatWindow.java**. This will likely require a thread-based worker that receives message updates and pushes them onto the screen. More on this later.
+-   Implement the thread-based execution of _ChatUser_ in its interaction with _SessionCoordinator_.
+
+Good day.
+
+-

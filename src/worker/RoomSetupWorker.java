@@ -11,6 +11,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
 import net.ChatUser;
+import main.AppStateValue;
 import main.ApplicationState;
 
 /**
@@ -57,15 +58,23 @@ public class RoomSetupWorker extends Thread {
             which the ChatUser will connect to. Once connected to the SessionThread, this will open
             its channel of communication with that chat session.
             */
-            String seshThreadInetAddress = in.readLine();
-            chatUser.initializeSessionAddress(seshThreadInetAddress);
+            String seshConnectionInfo = in.readLine();
+            String[] IpAndPort = seshConnectionInfo.split(":");
+            String seshIp = IpAndPort[0];
+            int seshPortNum = -1;
+            try {
+                seshPortNum = Integer.valueOf(IpAndPort[1]);
+            } catch (Exception e) {
+                System.out.println("Error in RSW retrieving port number from Registry --> " + e.getMessage());
+            }
+            
+            chatUser.initializeSessionInfo(seshIp, seshPortNum);
 
             // work is done! prepare for exit, and modify app state accordingly.
             in.close();
             out.close();
             socket.close();
-            
-            // TODO add in code here to work with the application state.
+            appState.setAppState(AppStateValue.CHATTING);
             
             // notify ChatUser that the work has been done.
             synchronized (chatUserLock) {

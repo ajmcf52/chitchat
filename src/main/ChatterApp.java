@@ -39,8 +39,8 @@ public class ChatterApp {
         Object chatUserLock = new Object();
 
         // create all of our application panels.
-        LoginPanel loginPanel = new LoginPanel(user, chatUserLock);
-        ChoicePanel choicePanel = new ChoicePanel(user, chatUserLock);
+        LoginPanel loginPanel = new LoginPanel(user, chatUserLock, appState);
+        ChoicePanel choicePanel = new ChoicePanel(user, chatUserLock, appState);
         int numPanels = 2;
         JPanel[] appPanels = new JPanel[numPanels];
         appPanels[0] = loginPanel;
@@ -50,6 +50,9 @@ public class ChatterApp {
         MainWindow mainWindow = new MainWindow(appPanels);
         boolean isRunning = true;
         while (isRunning) {
+            /**
+             * enter here if we are at the login panel.
+             */
             if (appState.getAppState() == AppStateValue.LOGIN_PANEL) {
                 try {
                     /*
@@ -72,20 +75,42 @@ public class ChatterApp {
                     System.out.println("ChatterApp thread snooze interrupted between LP and CP");
                 }
             }
+            /**
+             * enter here if we are at the choice panel.
+             */
+            else if (appState.getAppState() == AppStateValue.CHOICE_PANEL) {
+                /**
+                 * TODO add a "Back" button on the choice screen,
+                 * which allows a person to go back and choose a new
+                 * screen name. 
+                 */
+                mainWindow.showChoicePanel();
+                try {
+                    /*
+                     * user will progress past this wait() after
+                     * a button has been pressed on the ChoicePanel.
+                     */
+                    synchronized (chatUserLock) {
+                        chatUserLock.wait();
+                    }
+                }
+                catch (InterruptedException e) {
+                    System.out.println("ChatterApp error! --> " + e.getMessage());
+                }
+                try {
+                    Thread.sleep(1250);
+                }
+                catch (InterruptedException e) {
+                    System.out.println("ChatterApp thread snooze interrupted during ChoicePanel");
+                }
+            }
+            /**
+             * enter here if we have opened a chat window.
+             */
+            else if (appState.getAppState() == AppStateValue.CHATTING) {
+                // connect to the SeshCoordinator, set up the communication pathways, and begin chatting.
+            }
         }
-
-        
-        /**
-         * TODO add a "Back" button on the choice screen,
-         * which allows a person to go back and choose a new
-         * screen name. 
-         * 
-         * To do this, we will need an architectural shift in our code here.
-         * Can certainly be accomplished by way of using a while loop that
-         * also monitors and operates,
-         * based on application state (current panel + applied user action)
-         */
-        mainWindow.showChoicePanel();
 
     }
 }

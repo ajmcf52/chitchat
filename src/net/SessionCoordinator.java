@@ -35,13 +35,15 @@ public class SessionCoordinator {
 
     private ServerSocket connectionReceiver; // socket used to receive new connections to the chat session.
     private int participantCount; // number of users in the chat room.
+    private String sessionID; // id of the session this coordinator is in charge of.
 
     /**
      * constructor for the SessionCoordinator
      * @param serverSocket server socket that will be used to accept incoming user connections to the chat room
      * @param hostAlias alias of the intended chat room host
+     * @param sid session ID
      */
-    public SessionCoordinator(ServerSocket serverSocket, String hostAlias) {
+    public SessionCoordinator(ServerSocket serverSocket, String hostAlias, String sid) {
         incomingMessageQueues = new ArrayList<ArrayBlockingQueue<String>>();
         outgoingMessageQueues = new ArrayList<ArrayBlockingQueue<String>>();
         chatRoomUserSockets = new ArrayList<Socket>();
@@ -49,6 +51,7 @@ public class SessionCoordinator {
         outputWorkers = new ArrayList<OutputWorker>();
         connectionReceiver = serverSocket;
         participantCount = 0;
+        sessionID = sid;
 
         initializeHost(hostAlias);
     }
@@ -66,6 +69,7 @@ public class SessionCoordinator {
             String timestampString = "[" + TimeStampGenerator.now() + "]";
             String welcoming = "Welcome, " + hostAlias + ". You are the host of this room.";
             String completeWelcomeMessage = Constants.SC_TAG + timestampString + welcoming + '\n';
+            String sidMsg = sessionID + '\n';
             
             // initialize streams
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -88,8 +92,9 @@ public class SessionCoordinator {
             inputWorkers.get(Constants.HOST_INDEX).start();
             outputWorkers.get(Constants.HOST_INDEX).start();
 
-            // send the welcome message
+            // send the welcome message, followed by the session ID string.
             out.write(completeWelcomeMessage);
+            out.write(sidMsg);
             out.flush();
 
 

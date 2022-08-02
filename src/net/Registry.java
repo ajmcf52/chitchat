@@ -20,8 +20,8 @@ public class Registry {
     private static volatile int userCount = 0;
     private static Object userCountLock = new Object();
     private static boolean running = false;
-    private static int sessionCount = 0; // no one should ever need to access this besides the registry itself.
-
+    private static int sessionCount = 0;
+    private static Object sessionCountLock = new Object();
     public static void main(String[] args) {
         try {
             System.out.println("UCL --> " + userCountLock.toString());
@@ -107,13 +107,21 @@ public class Registry {
                     case (Constants.NEW_ROOM_REQ): {
                         String alias = in.readLine();
                         int scPort = Constants.SESSION_PORT_PREFIX + sessionCount;
-                        sessionCount++;
-                        ServerSocket serverSocket = new ServerSocket(scPort);
-                        SessionCoordinator sc = new SessionCoordinator(serverSocket, alias);
 
-                        // write back the inet address of the SC's server socket for Chat host to connect to
+                        int sidNum = -1;
+                        synchronized (sessionCountLock) {
+                            sessionCount++;
+                            sidNum = sessionCount;
+                        }
+                        String sid = Constants.SID_PREFIX + String.valueOf(sessionCount);
+
+                        ServerSocket serverSocket = new ServerSocket(scPort);
+                        SessionCoordinator sc = new SessionCoordinator(serverSocket, alias, sid);
+
+                        // write back the inet address + port of the SC's server socket for Chat host to connect to
                         String inetAddressStr = serverSocket.getInetAddress().toString();
-                        out.write(inetAddressStr + '\n');
+                        String portStr = String.valueOf(serverSocket.getLocalPort());
+                        out.write(inetAddressStr + ":" + portStr + '\n');
                         // work done, prepare for exit.
                         out.flush();
                         out.close();

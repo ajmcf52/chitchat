@@ -6,8 +6,6 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.Socket;
 
-import com.apple.eawt.Application;
-
 import misc.Constants;
 import net.ChatUser;
 import main.AppStateValue;

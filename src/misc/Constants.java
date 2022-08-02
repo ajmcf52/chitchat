@@ -18,6 +18,7 @@ public final class Constants {
     public static final int SESSION_PORT_PREFIX = 9000; 
     public static final int KC_RETURN = 10;
     public static final String UID_PREFIX = "U0";
+    public static final String SID_PREFIX = "S0";
     public static final String NEW_USER_REQ = "NEW_USER_REQUEST"; // signifies a new user request.
     public static final String NEW_ROOM_REQ = "NEW_ROOM_REQUEST"; // signifies a request for a new chat room.
 }

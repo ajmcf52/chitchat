@@ -1,6 +1,7 @@
 package net;
 
 import java.lang.Thread;
+import java.net.Socket;
 
 /**
  * this class represents a thread-based ChatUser within the Chatter application.
@@ -9,7 +10,7 @@ public class ChatUser extends Thread {
     private String userID; //uniquely identifies this user.
     private String alias; // this chat user's screen name.
     private String sessionInetAddress; // inet address of a chat session's server socket.
-
+    private int sessionPort; // port of the chat session's server socket.
     /**
      * default constructor.
      */
@@ -17,6 +18,7 @@ public class ChatUser extends Thread {
         userID = "";
         alias = "";
         sessionInetAddress = "";
+        sessionPort = -1;
     }
 
     /**
@@ -28,6 +30,7 @@ public class ChatUser extends Thread {
         userID = uid;
         alias = a;
         sessionInetAddress = "";
+        sessionPort = -1;
     }
 
     public void init(String uid, String a) {
@@ -40,7 +43,17 @@ public class ChatUser extends Thread {
      * the ChatUser's main course of action.
      */
     public void run() {
-
+        if (sessionInetAddress == "") {
+            System.out.println("ChatUser cannot proceed, no session address to connect to!");
+            return;
+        }
+        Socket socket = null;
+        
+        try {
+            socket = new Socket(sessionInetAddress, sessionPort);
+        } catch (Exception e) {
+            System.out.println("Error in ChatUser I/O! --> " + e.getMessage());
+        }
     }
 
     /**
@@ -69,9 +82,11 @@ public class ChatUser extends Thread {
      * this method is used to setup the socket information that
      * will be used to connect with a session thread for the sake
      * of entering and participating in a chat session.
-     * @param seshInetAddr inet address of the SessionThread we must connect to participate in a given ChatSession.
+     * @param seshInetAddr inet address of the SessionCoordinator we must connect to participate in a given ChatSession.
+     * @param seshPort port of the SessionCoordinator we are connecting to.
      */
-    public void initializeSessionAddress(String seshInetAddr) {
+    public void initializeSessionInfo(String seshInetAddr, int seshPort) {
         sessionInetAddress = seshInetAddr;
+        sessionPort = seshPort;
     }
 }
