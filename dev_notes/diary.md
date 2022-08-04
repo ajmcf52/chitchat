@@ -309,3 +309,16 @@ Good day.
 ---
 
 Not wasting any time. Current task is to get a minimalist ChatWindow up and running with all the necessary components: a chat feed, a place to type messages, and a participants list. So long as we get the alignment and formatting relatively correct, we will move back to getting _TextUpdateWorker_ built, as well as the putting the infrastructure in place for text updates to be able to be displayed as they come in from the ChatUser's _InputWorker_. Let's get to work.
+
+**What Got Done**:
+
+-   Learned the basics of GridBagLayout.
+-   Applied (somewhat unsuccessfully) to apply the principles of said layout manager.
+
+Components are laid out relatively properly. The issue now is to get the components to take up the correct amount of space. The weights, in particular, are somewhat mystical and difficult to deal with. In this sense, the component layout of _ChatWindow_ will take a little more time, hopefully not too much. I will see if I can put in some more work tonight after finishing my cooking for the next week, as well as some gym time, which I probably will. I may end up considerably chopping my sleep tonight just to make progress on this layout manager, as it has truly proven to be an annoyance in the brief 90 minutes that I have been working on it today.
+
+I firmly dislike UI coding, so whenever it presents issues, I like to get them out of the way as fast as possible so more important code can be attended to. That is the plan going forward.
+
+**To Do Next**:
+
+-   Continue working with _GridBagLayout_ for the components within **ChatWindow.java**.

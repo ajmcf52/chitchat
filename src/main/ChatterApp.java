@@ -6,6 +6,7 @@ import ui.MainWindow;
 import ui.LoginPanel;
 import ui.ChoicePanel;
 import net.ChatUser;
+import ui.ChatWindow;
 /**
  * main entry point for the chatter application.
  */
@@ -13,6 +14,10 @@ public class ChatterApp {
 
     public static void main(String[] args) {
         System.out.println("Hello World!");
+
+        ChatWindow chatWindow = new ChatWindow("S01");
+
+        System.out.println("farts!");
 
         /**
          * TODO come up with a system that allows a user to input a port number into the program

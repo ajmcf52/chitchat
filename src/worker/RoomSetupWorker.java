@@ -2,8 +2,6 @@ package worker;
 
 import java.net.Socket;
 
-import com.apple.eawt.Application;
-
 import misc.Constants;
 
 import java.io.PrintWriter;

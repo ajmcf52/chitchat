@@ -7,8 +7,6 @@ import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
 import javax.swing.*;
 
-import com.apple.eawt.Application;
-
 import net.ChatUser;
 import misc.Constants;
 import misc.PanelNames;
