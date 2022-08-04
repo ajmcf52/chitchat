@@ -279,7 +279,7 @@ When I came back from a torturous leg session (I ensured it was torturous as I w
 
 ## Decent Progress Today.
 
-### Tuesday, August 2nd, 4:11PM PST
+### Tuesday, August 2nd 4:11PM PST
 
 ---
 
@@ -300,4 +300,12 @@ Music banter aside, I'm happy with what got done today. The progress won't reall
 
 Good day.
 
--
+-   ***
+
+## Getting Right Into It.
+
+### Thursday, August 4th 2:58PM PST
+
+---
+
+Not wasting any time. Current task is to get a minimalist ChatWindow up and running with all the necessary components: a chat feed, a place to type messages, and a participants list. So long as we get the alignment and formatting relatively correct, we will move back to getting _TextUpdateWorker_ built, as well as the putting the infrastructure in place for text updates to be able to be displayed as they come in from the ChatUser's _InputWorker_. Let's get to work.
