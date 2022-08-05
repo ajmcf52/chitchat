@@ -1,11 +1,19 @@
 package ui;
 
 import java.awt.GridBagLayout;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.GridBagConstraints;
+import java.awt.Insets;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.JLabel;
+import javax.swing.BorderFactory;
+import javax.swing.border.*;
 
 /**
  * this class represents the popup chat window that is used for one ChatUser
@@ -18,6 +26,10 @@ public class ChatWindow extends JFrame {
     private static final int CHAT_FEED_WIDTH = 80; // number of columns
     private static final int PARTICIPANT_LIST_WIDTH = 20; // ibid, your honor!
     private static final int PARTCIPANT_LIST_HEIGHT = 200; // number of rows
+    private static final Font CHAT_PLACEHOLDER_FONT = new Font("Serif", Font.ITALIC, 14);
+    private static final Font PARTICIPANT_LIST_LABEL_FONT = new Font("MONOSPACED", Font.BOLD | Font.ITALIC, 14);
+    private static final int CHAT_TEXTBOX_HEIGHT = 14;
+    private static final String CHAT_PLACEHOLDER_STR = "Enter message here...";
 
     private String sessionID; // id unique to this session.
     private JPanel chatPanel; // panel of the chat window.
@@ -28,7 +40,7 @@ public class ChatWindow extends JFrame {
     private JTextArea chatFeed; // current state of the chat.
     private JTextField chatTextField; // where outgoing messages can be entered.
     private JTextArea participantList; // where participants are shown.
-
+    private JLabel participantListLabel; // simple participant list label.
 
 
     /**
@@ -45,14 +57,16 @@ public class ChatWindow extends JFrame {
         chatPanel = new JPanel();
         // leftSidePanel = new JPanel();
         // rightSidePanel = new JPanel();
-        chatFeed = new JTextArea(CHAT_FEED_HEIGHT, CHAT_FEED_WIDTH);
+        chatFeed = new JTextArea(CHAT_FEED_HEIGHT, CHAT_TEXTBOX_HEIGHT);
         chatTextField = new JTextField("", CHAT_FEED_WIDTH);
         participantList = new JTextArea(PARTCIPANT_LIST_HEIGHT, PARTICIPANT_LIST_WIDTH);
+        participantListLabel = new JLabel("Participants");
 
         chatPanel.setLayout(new GridBagLayout());
         GridBagConstraints chatFeedConstraints = new GridBagConstraints();
         GridBagConstraints textFieldConstraints = new GridBagConstraints();
         GridBagConstraints participantListConstraints = new GridBagConstraints();
+        GridBagConstraints participantLabelConstraints = new GridBagConstraints();
 
         /**
          * shield your eyes from the magic constants!!! Ahhhhhh!!!!!
@@ -78,26 +92,85 @@ public class ChatWindow extends JFrame {
         chatFeedConstraints.fill = GridBagConstraints.BOTH;
         chatFeedConstraints.weightx = 0.8;
         chatFeedConstraints.weighty = 0.85;
+        chatFeedConstraints.insets = new Insets(20, 10, 0, 0);
 
-        textFieldConstraints.gridx = 17;
-        textFieldConstraints.gridy = 0;
+        textFieldConstraints.gridx = 0;
+        textFieldConstraints.gridy = 17;
         textFieldConstraints.gridheight = 3;
         textFieldConstraints.gridwidth = 16;
-        textFieldConstraints.fill = GridBagConstraints.BOTH;
+        textFieldConstraints.fill = GridBagConstraints.HORIZONTAL;
         textFieldConstraints.weightx = 0.8;
         textFieldConstraints.weighty = 0.15;
+        textFieldConstraints.insets = new Insets(0, 5, 0, 5);
 
-        participantListConstraints.gridx = 0;
-        participantListConstraints.gridy = 16;
-        participantListConstraints.gridheight = 20;
+        participantListConstraints.gridx = 16;
+        participantListConstraints.gridy = 2;
+        participantListConstraints.gridheight = 18;
         participantListConstraints.gridwidth = 4;
         participantListConstraints.fill = GridBagConstraints.BOTH;
         participantListConstraints.weightx = 0.2;
         participantListConstraints.weighty = 0.0;
+        participantListConstraints.insets = new Insets(20,10,5,5);
+        participantListConstraints.anchor = GridBagConstraints.LAST_LINE_END;
 
+        participantLabelConstraints.gridx = 16;
+        participantLabelConstraints.gridy = 0;
+        participantLabelConstraints.gridheight = 2;
+        participantLabelConstraints.gridwidth = 4;
+        participantLabelConstraints.insets = new Insets(5, 5,0,5);
+
+        /**
+         * miscellaneous editing of object properties...
+         */
+
+        chatFeed.setEditable(false);
+        Border lineBorder = BorderFactory.createLineBorder(Color.BLACK);
+        TitledBorder titledBorder = BorderFactory.createTitledBorder(lineBorder,"Chat Feed");
+        titledBorder.setTitleJustification(TitledBorder.ABOVE_TOP);
+        chatFeed.setBorder(titledBorder);
+        
+
+        participantListLabel.setForeground(Color.DARK_GRAY);
+        participantListLabel.setFont(PARTICIPANT_LIST_LABEL_FONT);
+
+        chatTextField.setText(CHAT_PLACEHOLDER_STR);
+        chatTextField.setForeground(Color.LIGHT_GRAY);
+        chatTextField.setFont(CHAT_PLACEHOLDER_FONT);
+        chatTextField.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.RAISED));
+
+        participantList.setEditable(false);
+        Border raisedBevel, loweredBevel, compound;
+        raisedBevel = BorderFactory.createRaisedBevelBorder();
+        loweredBevel = BorderFactory.createLoweredBevelBorder();
+        compound = BorderFactory.createCompoundBorder(raisedBevel, loweredBevel);
+        participantList.setBorder(compound);
+
+        /**
+         * This focus listener ensures we have 
+         * nicely formatted placeholder text :)
+         */
+        chatTextField.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (chatTextField.getText().equals(CHAT_PLACEHOLDER_STR)) {
+                    chatTextField.setText("");
+                chatTextField.setForeground(Color.BLACK);
+                }
+
+            }
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (chatTextField.getText().isEmpty()) {
+                    chatTextField.setText(CHAT_PLACEHOLDER_STR);
+                    chatTextField.setForeground(Color.LIGHT_GRAY);
+                }
+            }
+        });
+        
         chatPanel.add(chatFeed, chatFeedConstraints);
         chatPanel.add(chatTextField, textFieldConstraints);
         chatPanel.add(participantList, participantListConstraints);
+        chatPanel.add(participantListLabel, participantLabelConstraints);
 
         this.setContentPane(chatPanel);
         this.setVisible(true);
