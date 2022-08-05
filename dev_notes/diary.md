@@ -322,3 +322,13 @@ I firmly dislike UI coding, so whenever it presents issues, I like to get them o
 **To Do Next**:
 
 -   Continue working with _GridBagLayout_ for the components within **ChatWindow.java**.
+
+---
+
+## More GUI Stuff
+
+### Friday, August 5th 4:49PM PST
+
+---
+
+Made good progress on _ChatWindow_ GUI formatting. Almost done here. 90 minutes worth of work done today. Might do more tonight.
