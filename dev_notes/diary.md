@@ -332,3 +332,26 @@ I firmly dislike UI coding, so whenever it presents issues, I like to get them o
 ---
 
 Made good progress on _ChatWindow_ GUI formatting. Almost done here. 90 minutes worth of work done today. Might do more tonight.
+
+---
+
+## Today's Agenda
+
+### Saturday, August 6th 1:52 PM PST
+
+---
+
+A good day. **ChatWindow.java** is mostly done. Now, the past AJ would have mindlessly fiddled with it even more to get it absolutely _perfect_, whereas the current AJ is already a touch frustrated that I spent two straight development days working on GUI code. What a world of a difference. It is in this world that I currently reside that I am now transitioning my focus back into the context of threaded workers and ABQs.
+
+So... Now that _ChatWindow_ is more or less done in terms of presentation code, we now have to write code that will link said GUI code into the main functionality of the program _MEANING_... We must write code that will push text typed into the messaging interface by the user, so that when "Enter" is pressed, said text is pushed into every chat user's text feed. Getting the participant list to function is another thing, but should be relatively trivial once the chat feed - text messaging interface is nailed down nicely.
+
+Before we get there, however, we must loop back and spend a brief amount of time on _more GUI code_. Sigh... The reason I say this is because in order for Bob to join Alice's chat room, Bob must click on "Join Room", which should then bring Bob to a screen that shows all the available rooms for Bob to join in a simple listwise fashion. We could call this panel **RoomSelectPanel.java**. This will be the **last** panel that will need to be created for Chatter (thank the Lord!!), and for further consolation, the required layout of the GUI elements will be extremely simple: A list of chat rooms, followed by two buttons at the bottom, "Back" and "Join". The "Join" button should rightfully be greyed out and unpressable _unless_ a room listing is selected, which can be signified by a simple clicking of the listing.
+
+After finishing this final bit of GUI code, our next task will be to iron out the "Create A Room" process for Alice, which if I remember correctly, should be mostly done, at least in terms of the fundamental networking base code that links up a _ChatUser_ with the _SessionCoordinator_. We will look at this in more depth when the time comes. In fact, we will do this first to give ourselves a bit of a break from GUI code, one of the things I am slightly less fond of in the world of programming.
+
+So without further ado, let us get on with development.
+
+**To Do Today**:
+
+-   Dive back in to the development of connecting _ChatUser_ with _SessionCoordinator_.
+-   Upon clicking "Create a Room", have a _ChatWindow_ pop up with the correct admin message showing at the top of the chat feed.
