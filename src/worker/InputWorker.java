@@ -33,7 +33,7 @@ public abstract class InputWorker extends Thread {
     }
 
     /**
-     * used to signify that this thread worker has been turned on.
+     * used to switch on this thread worker.
      */
     public void switchOn() {
         synchronized (runLock) {
@@ -42,7 +42,7 @@ public abstract class InputWorker extends Thread {
     }
 
     /**
-     * this method is used to signal the thread that it is time to exit.
+     * used to switch off this thread worker.
      */
     public void switchOff() {
         synchronized (runLock) {

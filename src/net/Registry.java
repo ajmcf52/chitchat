@@ -106,22 +106,24 @@ public class Registry {
                      */
                     case (Constants.NEW_ROOM_REQ): {
                         String alias = in.readLine();
-                        int scPort = Constants.SESSION_PORT_PREFIX + sessionCount;
+                        System.out.println("here");
 
-                        int sidNum = -1;
+                        int sidNum = 0;
                         synchronized (sessionCountLock) {
                             sessionCount++;
                             sidNum = sessionCount;
                         }
                         String sid = Constants.SID_PREFIX + String.valueOf(sessionCount);
-
+                        int scPort = Constants.SESSION_PORT_PREFIX + sessionCount;
                         ServerSocket serverSocket = new ServerSocket(scPort);
-                        SessionCoordinator sc = new SessionCoordinator(serverSocket, alias, sid);
+                        SessionCoordinator sc = new SessionCoordinator(scPort, alias, sid);
 
                         // write back the inet address + port of the SC's server socket for Chat host to connect to
                         String inetAddressStr = serverSocket.getInetAddress().toString();
                         String portStr = String.valueOf(serverSocket.getLocalPort());
-                        out.write(inetAddressStr + ":" + portStr + '\n');
+                        System.out.println();
+                        String connectionInfoMsg = inetAddressStr + ":" + portStr;
+                        out.write(connectionInfoMsg + '\n');
                         // work done, prepare for exit.
                         out.flush();
                         out.close();

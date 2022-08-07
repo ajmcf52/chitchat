@@ -41,13 +41,16 @@ public class ChatWindow extends JFrame {
     private JTextField chatTextField; // where outgoing messages can be entered.
     private JTextArea participantList; // where participants are shown.
     private JLabel participantListLabel; // simple participant list label.
-
+    private String chatFeedString; // text displayed in the chat feed. (messages separated by '\n')
+    private String participantListString; //participant list string. (participants separated by '\n')
 
     /**
      * constructor for the chat window.
      * @param sid session id
      */
     public ChatWindow(String sid) {
+        chatFeedString = "";
+        participantListString = "";
         sessionID = sid;
         this.setTitle("CHAT SESSION - " + sessionID);
         this.setSize(400, 400);
@@ -128,7 +131,7 @@ public class ChatWindow extends JFrame {
         TitledBorder titledBorder = BorderFactory.createTitledBorder(lineBorder,"Chat Feed");
         titledBorder.setTitleJustification(TitledBorder.ABOVE_TOP);
         chatFeed.setBorder(titledBorder);
-        
+        chatFeed.setText(chatFeedString);
 
         participantListLabel.setForeground(Color.DARK_GRAY);
         participantListLabel.setFont(PARTICIPANT_LIST_LABEL_FONT);
@@ -144,6 +147,7 @@ public class ChatWindow extends JFrame {
         loweredBevel = BorderFactory.createLoweredBevelBorder();
         compound = BorderFactory.createCompoundBorder(raisedBevel, loweredBevel);
         participantList.setBorder(compound);
+        participantList.setText(participantListString);
 
         /**
          * This focus listener ensures we have 
@@ -175,5 +179,23 @@ public class ChatWindow extends JFrame {
         this.setContentPane(chatPanel);
         this.setVisible(true);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    }
+
+    /**
+     * method used to add a line of text to the chat feed.
+     * @param line text to be added.
+     */
+    public void addLineToFeed(String line) {
+        chatFeedString += line + '\n';
+        this.revalidate();
+    }
+
+    /**
+     * used to add a name to the list of participants in the chat.
+     * @param name alias of the user to be added.
+     */
+    public void addParticipantName(String name) {
+        participantListString += name + '\n';
+        this.revalidate();
     }
 }

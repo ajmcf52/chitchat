@@ -54,12 +54,12 @@ import main.ApplicationState;
                 String response = in.readLine(); // should be a UID string for the user
                 System.out.println(response);
                 // initialize the ChatUser's fields.
-                userRef.init(response, alias);
+                userRef.initializeID(response, alias);
                 // work is done! Prepare for exit, and modify app state accordingly.
                 in.close();
                 out.close();
                 socket.close();
-                appState.setAppState(AppStateValue.LOGIN_PANEL);
+                appState.setAppState(AppStateValue.CHOICE_PANEL);
 
                 //notify ChatterApp's thread of execution that ChatUser's initialization is done.
                 synchronized (chatUserLock) {

@@ -21,4 +21,5 @@ public final class Constants {
     public static final String SID_PREFIX = "S0";
     public static final String NEW_USER_REQ = "NEW_USER_REQUEST"; // signifies a new user request.
     public static final String NEW_ROOM_REQ = "NEW_ROOM_REQUEST"; // signifies a request for a new chat room.
+    public static final String DELIM = Character.toString((char)0x1E); // [RecordSeparator] special ASCII character, impossible to type. Great delimiter.
 }

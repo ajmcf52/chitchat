@@ -355,3 +355,9 @@ So without further ado, let us get on with development.
 
 -   Dive back in to the development of connecting _ChatUser_ with _SessionCoordinator_.
 -   Upon clicking "Create a Room", have a _ChatWindow_ pop up with the correct admin message showing at the top of the chat feed.
+
+### 6:58 PST
+
+Well... I am pretty flippin tired. I want to keep working, but I also know I should go to the gym. I am stuck at a bug that I will explore more probably tomorrow, not tonight. In short, I am getting an UnknownHostException when trying to connect _ChatUser_ to _SessionCoordinator_, even after I have bound SC's ServerSocket to localhost. For whatever reason, it wants to have its IP as 0.0.0.0/0.0.0.0, which seems a little strange, though I believe Registry's ServerSocket is also bound to 0.0.0.0 and didn't have any problems. I have some digging to do, though right now, I am absolutely beat.
+
+Roughly 4 hours of work put in today.

@@ -48,8 +48,10 @@ public class RoomSetupWorker extends Thread {
 
             // write the RoomSetupRequest to the Registry!
             // New room request signifier first, followed immediately by the intended chat user host alias.
-            String roomSetupMsg = Constants.NEW_ROOM_REQ + '\n' + chatUser.getAlias() + '\n';
+            String roomSetupMsg = Constants.NEW_ROOM_REQ + '\n';
             out.write(roomSetupMsg);
+            String aliasMsg = chatUser.getAlias() + '\n';
+            out.write(aliasMsg);
             out.flush();
 
             /* Registry should respond with the inet address of the SessionThread's server socket,
@@ -57,11 +59,12 @@ public class RoomSetupWorker extends Thread {
             its channel of communication with that chat session.
             */
             String seshConnectionInfo = in.readLine();
-            String[] IpAndPort = seshConnectionInfo.split(":");
-            String seshIp = IpAndPort[0];
+            System.out.println("here!!");
+            String[] ipAndPort = seshConnectionInfo.split(":");
+            String seshIp = ipAndPort[0];
             int seshPortNum = -1;
             try {
-                seshPortNum = Integer.valueOf(IpAndPort[1]);
+                seshPortNum = Integer.valueOf(ipAndPort[1]);
             } catch (Exception e) {
                 System.out.println("Error in RSW retrieving port number from Registry --> " + e.getMessage());
             }

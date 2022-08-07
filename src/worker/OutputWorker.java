@@ -1,16 +1,15 @@
 package worker;
 
 import java.util.concurrent.ArrayBlockingQueue;
-
-import misc.Constants;
-
-import java.net.Socket;
-import java.util.LinkedList;
 import java.io.PrintWriter;
 
 /**
  * this class is responsible for writing outgoing messages through a particular Socket
  * to a given ChatUser. Outgoing messages are retrieved from a message-oriented ABQ.
+ * 
+ * NOTE this class is slightly DIFFERENT from its counterpart, InputWorker, in that
+ * its defined functionality in its capacity of server ChatUser and SeshCoordinator are
+ * EXACTLY the same. Thus, there is zero need to subclass OutputWorker with SOW and COW.
  */
 public class OutputWorker extends Thread {
     

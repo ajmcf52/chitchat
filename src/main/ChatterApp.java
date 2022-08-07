@@ -15,10 +15,6 @@ public class ChatterApp {
     public static void main(String[] args) {
         System.out.println("Hello World!");
 
-        ChatWindow chatWindow = new ChatWindow("S01");
-
-        System.out.println("farts!");
-
         /**
          * TODO come up with a system that allows a user to input a port number into the program
          * that will be used for the ChatUser.
@@ -40,12 +36,14 @@ public class ChatterApp {
         // Passing in a null ChatUser. 
         // This will eventually be initialized by UserSetupThread via LoginPanel's EvtHandler.
         ApplicationState appState = new ApplicationState();
-        ChatUser user = new ChatUser();
+        ChatUser chatUser = new ChatUser();
         Object chatUserLock = new Object();
+        Object chatLeaveNotifier = new Object();
+        ChatWindow chatWindow = null;
 
         // create all of our application panels.
-        LoginPanel loginPanel = new LoginPanel(user, chatUserLock, appState);
-        ChoicePanel choicePanel = new ChoicePanel(user, chatUserLock, appState);
+        LoginPanel loginPanel = new LoginPanel(chatUser, chatUserLock, appState);
+        ChoicePanel choicePanel = new ChoicePanel(chatUser, chatUserLock, appState);
         int numPanels = 2;
         JPanel[] appPanels = new JPanel[numPanels];
         appPanels[0] = loginPanel;
@@ -72,7 +70,7 @@ public class ChatterApp {
                 catch (InterruptedException e) {
                     System.out.println("ChatterApp error! --> " + e.getMessage());
                 }
-                System.out.println("ChatUser alias -->" + user.getAlias());
+                System.out.println("ChatUser alias -->" + chatUser.getAlias());
                 try {
                     Thread.sleep(2500);
                 }
@@ -114,6 +112,19 @@ public class ChatterApp {
              */
             else if (appState.getAppState() == AppStateValue.CHATTING) {
                 // connect to the SeshCoordinator, set up the communication pathways, and begin chatting.
+                System.out.println("Chatting");
+                chatWindow = new ChatWindow("Unassigned Chat");
+                chatWindow.addLineToFeed("Connecting to SessionCoordinator...");
+                chatUser.initializeChatRoomRef(chatWindow);
+                chatUser.start();
+
+                try {
+                    synchronized (chatLeaveNotifier) {
+                        chatLeaveNotifier.wait();
+                    }
+                } catch (Exception e) {
+                    System.out.println("ChatterApp Error!--> " + e.getMessage());
+                }
             }
         }
 

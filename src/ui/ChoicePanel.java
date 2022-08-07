@@ -64,7 +64,7 @@ public class ChoicePanel extends JPanel {
         createRoomButton.addActionListener(e -> {
             // connect to the registry and send a NewRoomRequest
             // ^^this is done by the RoomSetupWorker....
-
+            System.out.println("create room clicked");
             RoomSetupWorker worker = new RoomSetupWorker(userRef, chatUserLock, appState);
             worker.start();
 
