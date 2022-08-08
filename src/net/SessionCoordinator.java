@@ -87,8 +87,9 @@ public class SessionCoordinator extends Thread {
             // build and format the welcome message
             String timestampString = "[" + TimeStampGenerator.now() + "]";
             String welcoming = "Welcome, " + hostAlias + ". You are the host of this room.";
-            String completeWelcomeMessage = Constants.SC_TAG + Constants.DELIM + timestampString + Constants.DELIM + welcoming + '\n';
-            String sidMsg = sessionID + '\n';
+            String sidString = "--" + sessionID + "--";
+            String completeWelcomeMessage = Constants.WELCOME_TAG + Constants.DELIM + timestampString + Constants.DELIM + welcoming + 
+            Constants.DELIM + sidString + '\n';
             
             // initialize streams
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -113,7 +114,6 @@ public class SessionCoordinator extends Thread {
 
             // send the welcome message, followed by the session ID string.
             out.write(completeWelcomeMessage);
-            out.write(sidMsg);
             out.flush();
 
 

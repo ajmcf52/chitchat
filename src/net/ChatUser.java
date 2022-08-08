@@ -65,6 +65,9 @@ public class ChatUser extends Thread {
             System.out.println("ChatUser cannot proceed, no session address to connect to!");
             return;
         }
+        if (sessionInetAddress.startsWith("0.0.0.0")) {
+            sessionInetAddress = "localhost";
+        }
         Socket socket = null;
         BufferedReader in = null;
         PrintWriter out = null;
@@ -76,12 +79,14 @@ public class ChatUser extends Thread {
 
         } catch (Exception e) {
             System.out.println("Error in ChatUser I/O! --> " + e.getMessage());
+            e.printStackTrace();
         }
         ArrayBlockingQueue<String> msgQueue = new ArrayBlockingQueue<String>(Constants.MSG_QUEUE_LENGTH, true);
         inputHandler = new UserInputHandler(chatWindowRef, msgQueue);
         inputWorker = new UserInputWorker(in, msgQueue);
-        inputHandler.start();
         inputWorker.start();
+        inputHandler.start();
+        
 
         // TODO work on this next time!!!
         //outputWorker = new OutputWorker(out, msgQueue)

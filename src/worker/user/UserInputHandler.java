@@ -89,8 +89,11 @@ public class UserInputHandler extends Thread {
     public void handleMessage(String msg) {
 
         String[] components = msg.split(Constants.DELIM);
-        if (msg.startsWith(Constants.SC_TAG)) {
-            // if we enter in here, we have a control message (i.e., not from another User)
+        if (components[0].equals(Constants.WELCOME_TAG)) {
+            // if we enter in here, we have a welcome message.
+            // welcome messages hold, after the last delimiter, the Session ID.
+            // we will use this SID to set the title of the window accordingly.
+            chatWindowRef.setTitle("ChatSession " + components[components.length - 1]);
             msg.replace(Constants.DELIM," ");
             chatWindowRef.addLineToFeed(msg);
         }

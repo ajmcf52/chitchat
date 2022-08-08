@@ -9,11 +9,13 @@ import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.JTextArea;
+import javax.swing.JList;
 import javax.swing.JTextField;
 import javax.swing.JLabel;
 import javax.swing.BorderFactory;
 import javax.swing.border.*;
+
+import ui.MyListModel;
 
 /**
  * this class represents the popup chat window that is used for one ChatUser
@@ -22,12 +24,12 @@ import javax.swing.border.*;
 public class ChatWindow extends JFrame {
 
 
-    private static final int CHAT_FEED_HEIGHT = 90; // number of rows
-    private static final int CHAT_FEED_WIDTH = 80; // number of columns
+    private static final int CHAT_CELL_HEIGHT = 15; // number of rows
     private static final int PARTICIPANT_LIST_WIDTH = 20; // ibid, your honor!
     private static final int PARTCIPANT_LIST_HEIGHT = 200; // number of rows
     private static final Font CHAT_PLACEHOLDER_FONT = new Font("Serif", Font.ITALIC, 14);
     private static final Font PARTICIPANT_LIST_LABEL_FONT = new Font("MONOSPACED", Font.BOLD | Font.ITALIC, 14);
+    private static final int CHAT_TEXTBOX_WIDTH = 100; // width of chat textbox
     private static final int CHAT_TEXTBOX_HEIGHT = 14;
     private static final String CHAT_PLACEHOLDER_STR = "Enter message here...";
 
@@ -37,12 +39,18 @@ public class ChatWindow extends JFrame {
     // private JPanel rightSidePanel; // contains solely the participant list.
 
     // Variables with dynamic data below...
-    private JTextArea chatFeed; // current state of the chat.
+    private JList<String> chatFeed; // current state of the chat.
     private JTextField chatTextField; // where outgoing messages can be entered.
-    private JTextArea participantList; // where participants are shown.
+    private JList<String> participantList; // where participants are shown.
     private JLabel participantListLabel; // simple participant list label.
     private String chatFeedString; // text displayed in the chat feed. (messages separated by '\n')
     private String participantListString; //participant list string. (participants separated by '\n')
+
+    /**
+     * JList models for displaying lines of read-only text
+     */
+    private MyListModel participanListModel;
+    private MyListModel chatFeedModel;
 
     /**
      * constructor for the chat window.
@@ -57,12 +65,12 @@ public class ChatWindow extends JFrame {
         this.setLocationRelativeTo(null);
 
         // instantiating objects
+        participanListModel = new MyListModel();
+        chatFeedModel = new MyListModel();
         chatPanel = new JPanel();
-        // leftSidePanel = new JPanel();
-        // rightSidePanel = new JPanel();
-        chatFeed = new JTextArea(CHAT_FEED_HEIGHT, CHAT_TEXTBOX_HEIGHT);
-        chatTextField = new JTextField("", CHAT_FEED_WIDTH);
-        participantList = new JTextArea(PARTCIPANT_LIST_HEIGHT, PARTICIPANT_LIST_WIDTH);
+        chatFeed = new JList<String>(chatFeedModel);
+        chatTextField = new JTextField("", CHAT_TEXTBOX_WIDTH);
+        participantList = new JList<String>(participanListModel);
         participantListLabel = new JLabel("Participants");
 
         chatPanel.setLayout(new GridBagLayout());
@@ -126,28 +134,39 @@ public class ChatWindow extends JFrame {
          * miscellaneous editing of object properties...
          */
 
-        chatFeed.setEditable(false);
+        chatFeed.setFixedCellHeight(CHAT_CELL_HEIGHT);
         Border lineBorder = BorderFactory.createLineBorder(Color.BLACK);
         TitledBorder titledBorder = BorderFactory.createTitledBorder(lineBorder,"Chat Feed");
         titledBorder.setTitleJustification(TitledBorder.ABOVE_TOP);
         chatFeed.setBorder(titledBorder);
-        chatFeed.setText(chatFeedString);
-
-        participantListLabel.setForeground(Color.DARK_GRAY);
-        participantListLabel.setFont(PARTICIPANT_LIST_LABEL_FONT);
+        
+        // add the initial messages (if there are any)
+        MyListModel model = (MyListModel) chatFeed.getModel();
+        String[] messages = chatFeedString.split("\n");
+        for (int i = 0; i < messages.length; i++) {
+            model.addElement(messages[i]);
+        }
 
         chatTextField.setText(CHAT_PLACEHOLDER_STR);
         chatTextField.setForeground(Color.LIGHT_GRAY);
         chatTextField.setFont(CHAT_PLACEHOLDER_FONT);
         chatTextField.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.RAISED));
 
-        participantList.setEditable(false);
+        participantListLabel.setForeground(Color.DARK_GRAY);
+        participantListLabel.setFont(PARTICIPANT_LIST_LABEL_FONT);
+
+        participantList.setFixedCellHeight(CHAT_CELL_HEIGHT);
         Border raisedBevel, loweredBevel, compound;
         raisedBevel = BorderFactory.createRaisedBevelBorder();
         loweredBevel = BorderFactory.createLoweredBevelBorder();
         compound = BorderFactory.createCompoundBorder(raisedBevel, loweredBevel);
         participantList.setBorder(compound);
-        participantList.setText(participantListString);
+        
+        model = (MyListModel) participantList.getModel();
+        messages = participantListString.split("\n");
+        for (int i = 0; i < messages.length; i++) {
+            model.addElement(messages[i]);
+        }
 
         /**
          * This focus listener ensures we have 
@@ -186,8 +205,7 @@ public class ChatWindow extends JFrame {
      * @param line text to be added.
      */
     public void addLineToFeed(String line) {
-        chatFeedString += line + '\n';
-        this.revalidate();
+        chatFeedModel.addElement(line);
     }
 
     /**
@@ -195,7 +213,6 @@ public class ChatWindow extends JFrame {
      * @param name alias of the user to be added.
      */
     public void addParticipantName(String name) {
-        participantListString += name + '\n';
-        this.revalidate();
+        participanListModel.addElement(name);
     }
 }

@@ -8,11 +8,12 @@ public final class Constants {
      * unused constructor.
      */
     private Constants() {}
-    public static final String TIMEZONE = "PST";
-    public static final String SC_TAG = "(SC)";
+    public static final String TIMEZONE = "Canada/Pacific";
+    public static final String WELCOME_TAG = "(WELCOME)";
     public static final int HOST_INDEX = 0;
     public static final String CLIENT_IP = "localhost";
     public static final String REGISTRY_IP = "localhost";
+    public static final String COORDINATOR_IP = "localhost";
     public static final int MSG_QUEUE_LENGTH = 10; // length of any given message queue in the application.
     public static final int REGISTRY_PORT = 8000;
     public static final int SESSION_PORT_PREFIX = 9000; 

@@ -361,3 +361,41 @@ So without further ado, let us get on with development.
 Well... I am pretty flippin tired. I want to keep working, but I also know I should go to the gym. I am stuck at a bug that I will explore more probably tomorrow, not tonight. In short, I am getting an UnknownHostException when trying to connect _ChatUser_ to _SessionCoordinator_, even after I have bound SC's ServerSocket to localhost. For whatever reason, it wants to have its IP as 0.0.0.0/0.0.0.0, which seems a little strange, though I believe Registry's ServerSocket is also bound to 0.0.0.0 and didn't have any problems. I have some digging to do, though right now, I am absolutely beat.
 
 Roughly 4 hours of work put in today.
+
+---
+
+## Enormous Progress in a Short Span
+
+### Sunday, August 7th 7:07PM PST
+
+---
+
+So in just a 90-minute session of Pure Focus (i.e., no checking my phone AT ALL), I hammered through and made a ton of progress:
+
+-   Fixed an UnknownHostException bug that had me stuck at the end of yesterday when I was feeling tired and defeated.
+-   Fixed a timezone bug (super simple change from "PST" to "Canada/Pacific")
+-   And finally, I got myself to the point of _ChatWindow_ displaying the welcome message from _SessionCoordinator_, which is absolutely huge. This means that all the background work I put in to building out **InputWorker.java**, **OutputWorker.java**, and their subclasses is now paying off, as they all seem to get their jobs done quite well, at least for now.
+-   Implemented **MyListModel.java**, which extends Java's _DefaultListModel_, which allows me to add text to read-only things like _ChatWindow's_ participant list and chat feed without having to call any refresh or validate functions.
+-   Altered _ChatWindow_ to use _JList_ instead of _JTextArea_ for the chat feed and participant list.
+-   Writing & fixing other miscellaneous chunks of code along the way.
+
+**All in 90 minutes**. Love to see it.
+
+**To Do Next**:
+
+#### Minor Fixes (easy to do, we'll knock these out right away next time)
+
+-   Perform minor _ChatWindow_ modifications (i.e., make the window taller + wider).
+-   Add code to have the host participant's name added to the participant list.
+
+#### Less Minor Stuff
+
+-   Build out **RoomSelectionPanel.java** that will eventually allow Bob to join Alice's room.
+-   Ensure Alice's room is being displayed properly within the aforementioned panel's list of rooms.
+-   Add functionality to allow Bob to join Alice's room.
+
+We are getting closer and closer to this project seeing its completion. Once Bob and Alice are in the same room, we practically already have all the pieces in place for getting them to successfully send messages to one another. That is, **UserInputWorker.java**, **OutputWorker.java**, and **UserInputHandler.java**. Things are wrapping up, and it makes me excited to think about that, **ESPECIALLY** considering that I have stuck relatively well to my initial timeline.
+
+Speaking of which... The project phases I had initially mapped out for the development of Chatter were a tad misaligned. Phase B really contains most of the work. Phase A was no joke, though Phases C and D are both code cleanup phases more or less. So once we are able to have Bob and Alice successfully sending messages to one another, the project will be about 75% complete. We will then be in the position of adding functionality such as leaving one room to join another, going back to the main menu to change one's alias, and things of that nature. Compared to what I have done thus far, however, these finishing touches should be comparably simple. Exciting stuff knowing that I am coming close to finishing, **not** so I can sit idly to appreciate what I've done, but so I can shift my focus toward other things that demand my attention in the realm of personal branding.
+
+That's it for now. :)

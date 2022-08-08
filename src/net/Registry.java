@@ -121,7 +121,6 @@ public class Registry {
                         // write back the inet address + port of the SC's server socket for Chat host to connect to
                         String inetAddressStr = serverSocket.getInetAddress().toString();
                         String portStr = String.valueOf(serverSocket.getLocalPort());
-                        System.out.println();
                         String connectionInfoMsg = inetAddressStr + ":" + portStr;
                         out.write(connectionInfoMsg + '\n');
                         // work done, prepare for exit.
