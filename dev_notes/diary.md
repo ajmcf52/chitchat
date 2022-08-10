@@ -399,3 +399,13 @@ We are getting closer and closer to this project seeing its completion. Once Bob
 Speaking of which... The project phases I had initially mapped out for the development of Chatter were a tad misaligned. Phase B really contains most of the work. Phase A was no joke, though Phases C and D are both code cleanup phases more or less. So once we are able to have Bob and Alice successfully sending messages to one another, the project will be about 75% complete. We will then be in the position of adding functionality such as leaving one room to join another, going back to the main menu to change one's alias, and things of that nature. Compared to what I have done thus far, however, these finishing touches should be comparably simple. Exciting stuff knowing that I am coming close to finishing, **not** so I can sit idly to appreciate what I've done, but so I can shift my focus toward other things that demand my attention in the realm of personal branding.
 
 That's it for now. :)
+
+---
+
+## Some Minor Progress
+
+### Tuesday, August 9th 7:58PM PST
+
+---
+
+Didn't get too much done today. Got some work done on **RoomSelectPanel.java**. Brainstormed the layout and started building it out, including the implementation of **RoomSelectTable.java**, a custom _JTable_ class that will be used to display the room info. Only got an hour in tonight. Life preoccupations, though not ideal. I wanted 90 minutes and got 60. Going for a walk with my mother, getting some reading in, and bed by 9ish for a 3am work. 'Tis is life. I will be more disciplined with my time at the gym tomorrow... Got a little carried away talking to people today. It's hard sometimes not having a social life. Oh well, part of the grind. Until next time.
