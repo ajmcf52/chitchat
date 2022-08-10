@@ -412,8 +412,18 @@ Didn't get too much done today. Got some work done on **RoomSelectPanel.java**. 
 
 ---
 
-##
+## Design on the Fly
 
-###
+### Wednesday, August 10th 3:13PM PST
 
 ---
+
+The mission today was to flesh out **RoomListPanel.java**. As I started to pick back up where I had left off, my scrambled
+brain jumped around perhaps a little too much, as I started to think about the process of getting the room list data from _Registry_ and jumping to that instead of finishing the task at hand. I let my attention slip today in that regard. In hindsight looking back on today, I should have _certainly_ finished working on **RoomListPanel.java** before jumping over to building out
+_RoomsListHander_, the thread-based worker class that I came up with on-the-fly that will be responsible for handling requests pertaining to room lists and room list refreshes.
+
+I am happy, however, that I am able to realize this directly after the fact. In any case, the fact that my brain is slipping in this regard is likely indicative of a need for me to catch up on a sleep _a little_ and maybe shift gears a tad bit. With that said, it may be wise use tomorrow and the next day to take a step back, look at the big picture, and revisit the design side of things while getting a tidbit more shut-eye for the sake of performance.
+
+With that being my intent over the next few days, this will put me in the position to charge into the weekend, full-steam ahead with a more focused idea of what tasks need to be completed and in what order I shall choose to complete them.
+
+Until next time.

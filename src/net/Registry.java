@@ -3,6 +3,7 @@ package net;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 
 import misc.Constants;
 
@@ -22,7 +23,25 @@ public class Registry {
     private static boolean running = false;
     private static int sessionCount = 0;
     private static Object sessionCountLock = new Object();
+
+    /**
+     * List of data array objects representing all the current
+     * chat rooms that are open and available to be joined.
+     */
+    private static ArrayList<String[]> roomListArrays;
+    /**
+     * Same as above, but in single-string CSV format.
+     * This makes it way easier to send across the network.
+     */
+    private static ArrayList<String> roomListCsvObjs; 
+    // good for the sake of combatting race conditions.
+    private static Object roomListDataLock = new Object(); 
+
+
     public static void main(String[] args) {
+        // initialize room data list
+        roomListArrays = new ArrayList<String[]>();
+
         try {
             System.out.println("UCL --> " + userCountLock.toString());
             Socket socket; // socket variable for accepted connections.
@@ -106,7 +125,7 @@ public class Registry {
                      */
                     case (Constants.NEW_ROOM_REQ): {
                         String alias = in.readLine();
-                        System.out.println("here");
+                        String participantCountStr = "1";
 
                         int sidNum = 0;
                         synchronized (sessionCountLock) {
@@ -123,10 +142,19 @@ public class Registry {
                         String portStr = String.valueOf(serverSocket.getLocalPort());
                         String connectionInfoMsg = inetAddressStr + ":" + portStr;
                         out.write(connectionInfoMsg + '\n');
-                        // work done, prepare for exit.
+                        // stream work done. still need to update local static fields.
                         out.flush();
                         out.close();
                         in.close();
+                        // update local static fields.
+                        String[] roomListValues = {sid, alias, participantCountStr, connectionInfoMsg};  // using SID for room name (For now)
+                        String roomListCsv = sid + "," + alias + "," + participantCountStr + "," + connectionInfoMsg;
+                        // plan is to add room naming capability once other functionalities are fleshed out.
+                        synchronized (roomListDataLock) {
+                            roomListArrays.add(roomListValues);
+                            roomListCsvObjs.add(roomListCsv);
+                        }
+                        // work done, time to exit.
                         break;
 
                     }
@@ -138,6 +166,90 @@ public class Registry {
 
             } catch (IOException e) {
                 System.out.println("RequestHandler IO Error! -->" + e.getMessage());
+            }
+        }
+    }
+
+    /**
+    * this class represents a persisent thread-based worker
+    * that is spawned by the Registry to handle really two
+    * types of requests: Room Listing requests, and 
+    * Room Listing Refresh requests.
+
+    * The difference in the second case is that, before sending
+    * the list across the wire to the user, the RLH compares what
+    * it sent last to what it's about to send, and it uses a simple,
+    * mutually understood messaging protocol to effectively communicate
+    * any additions or removals to the list that was last sent.
+
+    The cool thing here, is that due to the nature of these two requests,
+    we don't need a separate Reader/Writer workers. The handling will be the
+    virtually the same in all cases:
+        1. send over the rooms list
+        2. sit and wait for a refresh request, and upon receiving one,
+        respond accordingly
+        3. repeat step 2 until "DONE" is received, or socket is closed. Easy peasy.
+    */
+    private static class RoomsListHandler extends Thread {
+        private Socket socket;
+
+        /**
+         * constructor for RLH
+         * @param sock socket to be used
+         */
+        public RoomsListHandler(Socket sock) {
+            socket = sock;
+        }
+
+        /**
+         * this thread's main line of execution.
+         */
+        public void run() {
+            // first things first... Create the stream objects
+            BufferedReader in;
+            PrintWriter out;
+
+            /**
+                 * There is a non-trival performance trade-off here.
+                 * 
+                 * Option 1: Grab the lock, send the list over, release.
+                 * 
+                 * Option 2: Grab the lock, copy the list of rooms, 
+                 * release, and send the list over.
+                 * 
+                 * 
+                 * Option 2 avoids a copy operation and will work better
+                 * at a smaller scale. Option 1 will be more preferable
+                 * for a larger user base.
+                 * 
+                 * Even then, however, will a larger user base, copying the
+                 * list over every time becomes unrealistic. 
+                 * 
+                 * In a higher-scale situation with thousands or millions of users,
+                 * it might make sense to have two lists, one of which is updated
+                 * as rooms are created and deleted, the second being slightly behind,
+                 * thus less accurate by a small margin of time, but more accessible.
+                 * Some thread would be charged with the task of updating the 2nd list
+                 * when it can, but for all intents and purposes, read operations could
+                 * continue without the need for locking on the 2nd list (unless it was
+                 * being updated). This would be a super cool problem to dig into further,
+                 * as it seems it would be a relevant issue after simple contemplation.
+                 */
+            try {
+                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                out = new PrintWriter(socket.getOutputStream());
+                // working with Option 1 for now (from block comment above)
+
+                out.write("BEGIN\n");
+                synchronized (roomListDataLock) {
+                    for (int i = 0; i < roomListArrays.size(); i++) {
+
+                        //out.write();
+                    }
+                }
+
+            } catch (Exception e) {
+                System.out.println("RLH Error! --> " + e.getMessage());
             }
         }
     }
