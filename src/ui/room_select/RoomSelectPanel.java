@@ -45,7 +45,16 @@ public class RoomSelectPanel extends JPanel {
 
         constraints.gridx = 0;
         constraints.gridy = 1;
+        constraints.gridwidth = 1;
+        constraints.gridheight = 1;
         constraints.insets = new Insets(0, 12, 12, 0);
-        constraints.
+        this.add(backButton, constraints);
+
+        constraints.gridx = 1;
+        constraints.gridy = 1;
+        constraints.gridwidth = 1;
+        constraints.gridheight = 1;
+        this.add(joinButton, constraints);
+
     }
 }

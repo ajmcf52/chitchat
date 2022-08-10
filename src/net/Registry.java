@@ -130,6 +130,7 @@ public class Registry {
                         break;
 
                     }
+                    
                     default: {
                         System.out.println("RequestHandler -> default case.");
                     }

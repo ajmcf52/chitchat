@@ -8,9 +8,9 @@ import java.awt.event.KeyEvent;
 import javax.swing.*;
 
 import net.ChatUser;
+import requests.UserSetupWorker;
 import misc.Constants;
 import misc.PanelNames;
-import worker.UserSetupWorker;
 import main.ApplicationState;
 
 /*

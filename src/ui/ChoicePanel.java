@@ -10,7 +10,7 @@ import java.awt.Dimension;
 
 import misc.PanelNames;
 import net.ChatUser;
-import worker.RoomSetupWorker;
+import requests.RoomSetupWorker;
 import main.ApplicationState;
 
 /**

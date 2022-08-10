@@ -7,10 +7,10 @@ import java.lang.Thread;
 import java.net.Socket;
 import java.util.concurrent.ArrayBlockingQueue;
 
+import io.OutputWorker;
+import io.user.*;
 import misc.Constants;
 import ui.ChatWindow;
-import worker.user.*;
-import worker.OutputWorker;
 
 /**
  * this class represents a thread-based ChatUser within the Chatter application.

@@ -409,3 +409,11 @@ That's it for now. :)
 ---
 
 Didn't get too much done today. Got some work done on **RoomSelectPanel.java**. Brainstormed the layout and started building it out, including the implementation of **RoomSelectTable.java**, a custom _JTable_ class that will be used to display the room info. Only got an hour in tonight. Life preoccupations, though not ideal. I wanted 90 minutes and got 60. Going for a walk with my mother, getting some reading in, and bed by 9ish for a 3am work. 'Tis is life. I will be more disciplined with my time at the gym tomorrow... Got a little carried away talking to people today. It's hard sometimes not having a social life. Oh well, part of the grind. Until next time.
+
+---
+
+##
+
+###
+
+---
