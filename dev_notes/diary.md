@@ -427,3 +427,34 @@ I am happy, however, that I am able to realize this directly after the fact. In 
 With that being my intent over the next few days, this will put me in the position to charge into the weekend, full-steam ahead with a more focused idea of what tasks need to be completed and in what order I shall choose to complete them.
 
 Until next time.
+
+---
+
+## Room Select Panel Looking Clean...
+
+### Thursday, August 11th 4:36PM PST
+
+---
+
+Title says it all. Feeling pretty dead. Was hammering pretty good today to get **RoomSelectPanel.java** looking tight. Very happy with how it looks.
+
+_Features/Notes_:
+
+-   Completed the _GridBagLayout_ to a satisfactory degree. Format, layout and spacing are all looking really nice.
+-   Row selection and deselection enabled & synchronized with "Join" button (button enables when row is selected and vice versa)
+-   Model is verified to be showing data.
+
+Today involved a lot of Googling and solving of a bunch of small tiny issues. It was definitely frustrating at times, particularly in trying to pinpoint the correct words to feed into the search engine that would give me the results I was looking for with all the particular issues I was solving, such as:
+
+-   enabling row selection while disabling cell selection and cell editability
+-   getting the table data to actually show up
+-   enabling table grid lines
+-   adding deselect & select capabilities, such that when either the containing panel (i.e., NOT the table or any buttons), OR a non-row within the table was clicked, any selected row would deselect.
+-   pairing the select/deselect capability with enabling on/off of the "Join" button.
+-   Getting GridBagLayout to play nicely, particularly with grouping "Refresh" and "Join" next to each other in the bottom-right corner with "Back" alone in the bottom-left.
+
+Overall a fun little coding session. Was initially only going to code for 90 minutes, but I told myself I wouldn't leave the coffee shop until I was satisfied with the panel I was working on. So I stayed an extra hour and got it done. Feelsgoodman.
+
+**Next Time...**
+
+We'll look at getting some real data into the table (i.e., Alice's room data). Depending on how long this takes us with background processes needing to be taken care of, we will shift our focus to programming the entry of Bob into Alice's room.

@@ -3,6 +3,7 @@ package main;
 import javax.swing.JPanel;
 
 import ui.MainWindow;
+import ui.room_select.RoomSelectPanel;
 import ui.LoginPanel;
 import ui.ChoicePanel;
 import net.ChatUser;
@@ -44,14 +45,19 @@ public class ChatterApp {
         // create all of our application panels.
         LoginPanel loginPanel = new LoginPanel(chatUser, chatUserLock, appState);
         ChoicePanel choicePanel = new ChoicePanel(chatUser, chatUserLock, appState);
-        int numPanels = 2;
+        RoomSelectPanel roomSelectPanel = new RoomSelectPanel();
+        int numPanels = 3;
         JPanel[] appPanels = new JPanel[numPanels];
         appPanels[0] = loginPanel;
         appPanels[1] = choicePanel;
+        appPanels[2] = roomSelectPanel;
 
         // create the window
         MainWindow mainWindow = new MainWindow(appPanels);
         boolean isRunning = true;
+
+        appState.setAppState(AppStateValue.ROOM_SELECT);
+
         while (isRunning) {
             /**
              * enter here if we are at the login panel.
@@ -125,6 +131,11 @@ public class ChatterApp {
                 } catch (Exception e) {
                     System.out.println("ChatterApp Error!--> " + e.getMessage());
                 }
+            }
+
+            else if (appState.getAppState() == AppStateValue.ROOM_SELECT) {
+                mainWindow.showRoomSelectPanel();
+                System.out.println("farts");
             }
         }
 

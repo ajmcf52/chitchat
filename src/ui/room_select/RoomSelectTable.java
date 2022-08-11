@@ -2,6 +2,7 @@ package ui.room_select;
 
 import java.util.ArrayList;
 import javax.swing.JTable;
+import javax.swing.table.DefaultTableModel;
 
 /**
  * this class will be used to house and display information for 
@@ -9,16 +10,24 @@ import javax.swing.JTable;
  */
 public class RoomSelectTable extends JTable {
 
-
-    
-    private ArrayList<String[]> entries; // 2D dynamic array of table entries
     private static final String[] COLUMNS = {"Room Name",  "Host Name", "# of Guests", "<IP>:<Port>"}; // names of each of the columns 
-
+    private DefaultTableModel model; // table model
     /**
      * constructor for RST.
      */
     public RoomSelectTable() {
-        entries = new ArrayList<String[]>();
+        model = new DefaultTableModel();
+        for (int i = 0; i < COLUMNS.length; i++) {
+            model.addColumn(COLUMNS[i]);
+        }
+        String[] args = {"farts", "table", "andy", "testing"};
+        this.setModel(model);
+        this.addEntry(args);
+    }
+
+    @Override
+    public boolean isCellEditable(int row, int column) {
+        return false;
     }
 
     /**
@@ -31,13 +40,13 @@ public class RoomSelectTable extends JTable {
             System.out.println("Args length mismatch! Returning..");
             return;
         }
-        entries.add(args);
+        model.addRow(args);
     }
 
     /**
      * used ot clear all entries.
      */
-    public void clear() {
-        entries.clear();
-    }
+    // public void clear() {
+    //     model.
+    // }
 }

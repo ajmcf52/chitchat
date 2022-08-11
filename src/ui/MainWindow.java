@@ -32,11 +32,27 @@ public class MainWindow extends JFrame {
     }
 
     /**
+     * called to show the login panel.
+     * Likely won't be of use until if and when we implement name changing
+     */
+    public void showLoginPanel() {
+        layout.show(cardStack, PanelNames.LOGIN_PANEL_NAME);
+    }
+
+    /**
      * this method is called to flip to the 2nd card in
      * the content pane's CardLayout, ChoicePanel.
      */
     public void showChoicePanel() {
         layout.show(cardStack, PanelNames.CHOICE_PANEL_NAME);
+    }
+
+    /**
+     * called to show the room selection panel.
+     */
+    public void showRoomSelectPanel() {
+        layout.show(cardStack, PanelNames.ROOM_SELECT_PANEL_NAME);
+        this.pack();
     }
 
     /*
