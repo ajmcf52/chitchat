@@ -3,6 +3,7 @@ package io;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.io.PrintWriter;
 
+import misc.Worker;
 /**
  * this class is responsible for writing outgoing messages through a particular Socket
  * to a given ChatUser. Outgoing messages are retrieved from a message-oriented ABQ.
@@ -11,25 +12,19 @@ import java.io.PrintWriter;
  * its defined functionality in its capacity of server ChatUser and SeshCoordinator are
  * EXACTLY the same. Thus, there is zero need to subclass OutputWorker with SOW and COW.
  */
-public class OutputWorker extends Thread {
+public class OutputWorker extends Worker {
     
     private PrintWriter out; // what will be used to send outgoing messages.
     private ArrayBlockingQueue<String> messageQueue; // where outgoing messages will be retrieved from.
-    /**
-     * the flag below is used to signify whether this worker is running or not. Can be flipped off from outside
-     * this worker's scope using the switchOff() method. From there, the worker thread dies and must be restarted.
-     */
-    private volatile boolean isRunning;
-    private Object runLock; // lock used to check or switch the OutputWorker's flag.
    
     /**
      * constructor of the OutputWorker.
+     * @param workerNum number unique to this worker within its worker class.
      * @param output PrintWriter to be used for writing outgoing messages; initialized by SessionCoordinator
      * @param msgQueue initialized by SessionCoordinator, where this thread will retrieve outgoing messages to be sent.
      */
-    public OutputWorker(PrintWriter output, ArrayBlockingQueue<String> msgQueue) {
-        runLock = new Object();
-        isRunning = false;
+    public OutputWorker(int workerNum, PrintWriter output, ArrayBlockingQueue<String> msgQueue) {
+        super("OW-" + Integer.toString(workerNum));
         messageQueue = msgQueue;
         out = output;
     }
@@ -39,9 +34,6 @@ public class OutputWorker extends Thread {
      */
     public void run() {
 
-        synchronized (runLock) {
-            isRunning = true; // we will check this flag at the end of the while loop.
-        }
         while (true) {
             try {
                 // blocking operation.
@@ -57,16 +49,6 @@ public class OutputWorker extends Thread {
                     break;
                 }
             }
-        }
-    }
-
-    /**
-     * this method is used to signal to the thread that it is time to exit.
-     * Will typically be accessed from outside this thread's scope. 
-     */
-    public void switchOff() {
-        synchronized (runLock) {
-            isRunning = false;
         }
     }
 }

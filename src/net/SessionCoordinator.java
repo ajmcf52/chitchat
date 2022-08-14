@@ -27,11 +27,11 @@ public class SessionCoordinator extends Thread {
      * ABQs used to fetch incoming messages that are then distributed into the outgoing message queues.
      * InputWorkers are responsible for inserting new messages into these queues.
      */
-    private ArrayList<ArrayBlockingQueue<String>> incomingMessageQueues;
+    private static ArrayList<ArrayBlockingQueue<String>> incomingMessageQueues;
     /**
      * ABQs used to place outgoing messages that are then retrieved and whisked off by OutputWorkers.
      */
-    private ArrayList<ArrayBlockingQueue<String>> outgoingMessageQueues;
+    private static ArrayList<ArrayBlockingQueue<String>> outgoingMessageQueues;
 
     private ArrayList<Socket> chatRoomUserSockets; // sockets of all the users in the given chat room.
     private ArrayList<SessionInputWorker> inputWorkers; // thread-based workers responsible for reading in new messages.

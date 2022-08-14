@@ -12,23 +12,18 @@ import java.util.LinkedList;
  */
 public class SessionInputWorker extends InputWorker {
 
-    private Object scNotifier; // notify this to wake up the SessionCoordinator.
-    private volatile boolean newMessageFlag; // flip this to indicate that a new message has come in.
-    private Object newMessageLock; // lock this before flipping for care against race conditions
+    private ArrayBlockingQueue<Integer> taskQueue; // used to queue up tasks for BroadcastWorkers
     
     /**
      * SIW constructor.
+     * @param workerNumber unique number assigned to this worker within its class.
      * @param input stream to read messages from
      * @param msgQueue queue where newly received messages are to be placed
-     * @param scLock used to notify SC when new message(s) are ready to be retrieved and forwarded. 
-     * @param nmf flipping indicates to SC that new messages have come in.
-     * @param nml lock this before flipping for thread safety.
+     * @param tq task queue, shared amongst all SIWs and BWs
      */
-    public SessionInputWorker(BufferedReader input, ArrayBlockingQueue<String> msgQueue, Object scLock, boolean nmf, Object nml) {
-        super(input, msgQueue);
-        scNotifier = scLock;
-        newMessageFlag = nmf;
-        newMessageLock = nml;
+    public SessionInputWorker(int workerNumber, BufferedReader input, ArrayBlockingQueue<String> msgQueue, ArrayBlockingQueue<Integer> tq) {
+        super("SIW-" + Integer.toString(workerNumber), input, msgQueue);
+        taskQueue = tq;
     }
 
     /**
@@ -38,8 +33,6 @@ public class SessionInputWorker extends InputWorker {
         // to temporarily hold messages.
         // will only ever be accessed by this worker, therefore no synchronization needed.
         LinkedList<String> messages = new LinkedList<String>(); 
-        
-        switchOn();
 
         while (true) {
 
@@ -59,12 +52,13 @@ public class SessionInputWorker extends InputWorker {
                     msg = messages.getFirst();
                     messageQueue.put(msg);
                 }
-                // safely flip the new message flag.
-                synchronized (newMessageLock) {
-                    newMessageFlag = true;
-                }
-                // notify SessionCoordinator that new messages have come in.
-                scNotifier.notify();
+                
+                /**
+                 * we operate on the precondition that ALL worker ID strings follow the same format,
+                 * so this is perfectly legitimate code.
+                 */
+                int workerNum = Integer.parseInt(workerID.split("-")[1]);
+                taskQueue.put(workerNum); // queue up the task for BWs
 
             } catch (Exception e) {
                 System.out.println("SessionInputWorker Error! --> " + e.getMessage());

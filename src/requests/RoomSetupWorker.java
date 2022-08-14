@@ -3,6 +3,7 @@ package requests;
 import java.net.Socket;
 
 import misc.Constants;
+import misc.Requests;
 
 import java.io.PrintWriter;
 import java.io.BufferedReader;
@@ -11,6 +12,7 @@ import java.io.InputStreamReader;
 import net.ChatUser;
 import main.AppStateValue;
 import main.ApplicationState;
+import misc.Worker;
 
 /**
  * This thread-based class is responsible for communicating with the
@@ -18,7 +20,7 @@ import main.ApplicationState;
  * denoted by the user alias.
  * 
  */
-public class RoomSetupWorker extends Thread {
+public class RoomSetupWorker extends Worker {
     
     private ChatUser chatUser; // ChatUser we are setting up as the intended host.
     private Object chatUserLock; // ChatUser will wait to be notified on this (signifies work has been done)
@@ -26,11 +28,13 @@ public class RoomSetupWorker extends Thread {
 
     /**
      * constructor.
+     * @param workerNum number unique to the worker within its class of workers
      * @param ali user alias
      * @param chatLock notified to alert ChatUser in main() of progress.
      * @param state for main() loop control.
      */
-    public RoomSetupWorker(ChatUser chUser, Object chatLock, ApplicationState state) {
+    public RoomSetupWorker(int workerNum, ChatUser chUser, Object chatLock, ApplicationState state) {
+        super("RWS-" + Integer.toString(workerNum));
         chatUser = chUser;
         chatUserLock = chatLock;
         appState = state;
@@ -48,7 +52,7 @@ public class RoomSetupWorker extends Thread {
 
             // write the RoomSetupRequest to the Registry!
             // New room request signifier first, followed immediately by the intended chat user host alias.
-            String roomSetupMsg = Constants.NEW_ROOM_REQ + '\n';
+            String roomSetupMsg = Requests.NEW_ROOM_REQ + '\n';
             out.write(roomSetupMsg);
             String aliasMsg = chatUser.getAlias() + '\n';
             out.write(aliasMsg);

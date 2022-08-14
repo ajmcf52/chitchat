@@ -495,4 +495,6 @@ With that in mind, I think it would be wise to create another thread worker whos
 
 If and when we finish this task tomorrow, we will simply return back to the aforementioned ordered list of things that need to be in place for Bob to join Alice. _JoinRoomWorker_ will need to be fleshed out at some point. Perhaps that is the next chunk we will look flesh out.
 
+Another ~2hrs of development time were put in here.
+
 Until next time.
