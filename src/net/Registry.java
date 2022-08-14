@@ -28,12 +28,12 @@ public class Registry {
      * List of data array objects representing all the current
      * chat rooms that are open and available to be joined.
      */
-    private static ArrayList<String[]> roomListArrays;
+    private static volatile ArrayList<String[]> roomListArrays;
     /**
      * Same as above, but in single-string CSV format.
      * This makes it way easier to send across the network.
      */
-    private static ArrayList<String> roomListCsvObjs; 
+    private static volatile ArrayList<String> roomListCsvObjs; 
     // good for the sake of combatting race conditions.
     private static Object roomListDataLock = new Object(); 
 
@@ -141,12 +141,8 @@ public class Registry {
                         String inetAddressStr = serverSocket.getInetAddress().toString();
                         String portStr = String.valueOf(serverSocket.getLocalPort());
                         String connectionInfoMsg = inetAddressStr + ":" + portStr;
-                        out.write(connectionInfoMsg + '\n');
-                        // stream work done. still need to update local static fields.
-                        out.flush();
-                        out.close();
-                        in.close();
-                        // update local static fields.
+
+                        // update local static fields before responding.
                         String[] roomListValues = {sid, alias, participantCountStr, connectionInfoMsg};  // using SID for room name (For now)
                         String roomListCsv = sid + "," + alias + "," + participantCountStr + "," + connectionInfoMsg;
                         // plan is to add room naming capability once other functionalities are fleshed out.
@@ -154,9 +150,22 @@ public class Registry {
                             roomListArrays.add(roomListValues);
                             roomListCsvObjs.add(roomListCsv);
                         }
+
+                        out.write(connectionInfoMsg + '\n');
+                        // stream work done.
+                        out.flush();
+                        out.close();
+                        in.close();
                         // work done, time to exit.
                         break;
+                    }
 
+                    case (Constants.LIST_ROOMS_REQ): {
+                        /* we enter here if the incoming messages
+                         * pertains to a rooms list request.
+                         */
+                        RoomsListHandler rlh = new RoomsListHandler(socket);
+                        rlh.start();
                     }
                     
                     default: {
@@ -205,7 +214,6 @@ public class Registry {
          * this thread's main line of execution.
          */
         public void run() {
-            // first things first... Create the stream objects
             BufferedReader in;
             PrintWriter out;
 
@@ -216,7 +224,6 @@ public class Registry {
                  * 
                  * Option 2: Grab the lock, copy the list of rooms, 
                  * release, and send the list over.
-                 * 
                  * 
                  * Option 2 avoids a copy operation and will work better
                  * at a smaller scale. Option 1 will be more preferable
@@ -235,21 +242,49 @@ public class Registry {
                  * being updated). This would be a super cool problem to dig into further,
                  * as it seems it would be a relevant issue after simple contemplation.
                  */
+
+            /**
+             * start with sending over the current set of room data
+             */
             try {
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 out = new PrintWriter(socket.getOutputStream());
                 // working with Option 1 for now (from block comment above)
 
-                out.write("BEGIN\n");
-                synchronized (roomListDataLock) {
-                    for (int i = 0; i < roomListArrays.size(); i++) {
-
-                        //out.write();
+                sendRooms(out);
+                out.flush();
+                // wait for either a refresh request, a DONE response, or the socket to close
+                String line;
+            
+                while (true) {
+                    line = in.readLine();
+                    // if we get "DONE" back (or not "REFRESH"), we can assume the user has joined a room.
+                    if (line.equals("DONE") || !line.equals("REFRESH")) {
+                        break;
                     }
+                    // otherwise, we are to send the most up-to-date list of the rooms available.
+                    sendRooms(out);
                 }
 
             } catch (Exception e) {
                 System.out.println("RLH Error! --> " + e.getMessage());
+            }
+        }
+
+        /**
+         * Method used to send over the most recent rooms list to a particular user.
+         * This method could incur race conditions, hence why we synchronize.
+         * @param out output stream being used to send the data.
+         */
+        public void sendRooms(PrintWriter out) {
+            
+            synchronized (roomListDataLock) {
+                int numRooms = roomListCsvObjs.size();
+                out.write("BEGIN " + Integer.toString(numRooms) + '\n');
+                for (int i = 0; i < roomListCsvObjs.size(); i++) {
+                    out.write(roomListCsvObjs.get(i) + '\n'); // send comma-separated room data String values.
+                }
+                out.write("DONE\n");
             }
         }
     }

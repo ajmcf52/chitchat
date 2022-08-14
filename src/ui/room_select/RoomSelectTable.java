@@ -1,5 +1,6 @@
 package ui.room_select;
 
+import java.lang.IndexOutOfBoundsException;
 import java.util.ArrayList;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
@@ -41,6 +42,19 @@ public class RoomSelectTable extends JTable {
             return;
         }
         model.addRow(args);
+    }
+
+    /**
+     * this method is used to remove the entry at a particular index in the list of entries.
+     * @param i index of entry to be removed
+     * @throw IndexOutOfBoundsException
+     */
+    public void removeEntry(int i) throws IndexOutOfBoundsException {
+        if (i < 0 || i >= model.getRowCount()) {
+            System.out.println("Invalid index supplied to removeEntry(i) in RST.java");
+            throw new IndexOutOfBoundsException();
+        }
+        model.removeRow(i);
     }
 
     /**

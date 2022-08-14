@@ -458,3 +458,21 @@ Overall a fun little coding session. Was initially only going to code for 90 min
 **Next Time...**
 
 We'll look at getting some real data into the table (i.e., Alice's room data). Depending on how long this takes us with background processes needing to be taken care of, we will shift our focus to programming the entry of Bob into Alice's room.
+
+---
+
+## Background Processes
+
+### Saturday, August 13th 5:52PM PST
+
+---
+
+Our first sprint session of the day has come to a close.
+
+In this ~2hr time span, we have almost completely fleshed out the _RoomsListFetcher_, a **RoomSelectPanel.java** worker that communicates with the Registry to fetch new (as well as refreshed) lists of rooms that are available to be joined. It is coming along very nicely.
+
+The last bit of work needed for RLF to be done is really to wrap up its class methods (which we are 90-95% done with), after which our work will be to synchronize said worker with the various buttons on _RoomSelectPanel_'s interface. This will take little to no time at all.
+
+Once we are done with that, it will be about time to see if we can boot up two separate instances of the Chatter application for Alice and Bob to interact with one another. The goal will be to get Bob into Alice's room, though whether or not we get to that point will depend on how many bugs/issues we encounter along the way and how tricky they are to solve. Only time will tell.
+
+### Time TBD...

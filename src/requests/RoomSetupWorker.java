@@ -59,7 +59,7 @@ public class RoomSetupWorker extends Thread {
             its channel of communication with that chat session.
             */
             String seshConnectionInfo = in.readLine();
-            System.out.println("here!!");
+            // System.out.println("here!!");
             String[] ipAndPort = seshConnectionInfo.split(":");
             String seshIp = ipAndPort[0];
             int seshPortNum = -1;

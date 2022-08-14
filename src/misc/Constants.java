@@ -23,6 +23,5 @@ public final class Constants {
     public static final String NEW_USER_REQ = "NEW_USER_REQUEST"; // signifies a new user request.
     public static final String NEW_ROOM_REQ = "NEW_ROOM_REQUEST"; // signifies a request for a new chat room.
     public static final String LIST_ROOMS_REQ = "LIST_ROOMS_REQUEST"; // RoomListWorker requesting a complete rooms list.
-    public static final String REFRESH_ROOMLIST_REQ = "REFRESH_ROOMLIST_REQUEST"; // RLW requesting a "refresh" on the rooms list.
     public static final String DELIM = Character.toString((char)0x1E); // [RecordSeparator] special ASCII character, impossible to type. Great delimiter.
 }
