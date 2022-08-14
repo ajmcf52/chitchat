@@ -157,7 +157,7 @@ public class LoginPanel extends JPanel {
      * @param badAliasWarning JLabel containing the warning text.
      */
     public void triggerErrorMessage(JLabel badAliasWarning) {
-        System.out.println("farts");
+        //System.out.println("farts");
         badAliasWarning.setVisible(true);
         Timer timer = new Timer(5000, event -> {
             badAliasWarning.setVisible(false);

@@ -12,11 +12,23 @@ import java.util.LinkedList;
  */
 public class SessionInputWorker extends InputWorker {
 
-    private Object newMessageNotifier; // notify this to let the SessionCoordinator know that new messages have come in.
+    private Object scNotifier; // notify this to wake up the SessionCoordinator.
+    private volatile boolean newMessageFlag; // flip this to indicate that a new message has come in.
+    private Object newMessageLock; // lock this before flipping for care against race conditions
     
-    public SessionInputWorker(BufferedReader input, ArrayBlockingQueue<String> msgQueue) {
+    /**
+     * SIW constructor.
+     * @param input stream to read messages from
+     * @param msgQueue queue where newly received messages are to be placed
+     * @param scLock used to notify SC when new message(s) are ready to be retrieved and forwarded. 
+     * @param nmf flipping indicates to SC that new messages have come in.
+     * @param nml lock this before flipping for thread safety.
+     */
+    public SessionInputWorker(BufferedReader input, ArrayBlockingQueue<String> msgQueue, Object scLock, boolean nmf, Object nml) {
         super(input, msgQueue);
-        newMessageNotifier = new Object();
+        scNotifier = scLock;
+        newMessageFlag = nmf;
+        newMessageLock = nml;
     }
 
     /**
@@ -47,8 +59,12 @@ public class SessionInputWorker extends InputWorker {
                     msg = messages.getFirst();
                     messageQueue.put(msg);
                 }
+                // safely flip the new message flag.
+                synchronized (newMessageLock) {
+                    newMessageFlag = true;
+                }
                 // notify SessionCoordinator that new messages have come in.
-                newMessageNotifier.notify();
+                scNotifier.notify();
 
             } catch (Exception e) {
                 System.out.println("SessionInputWorker Error! --> " + e.getMessage());

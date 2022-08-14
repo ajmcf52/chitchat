@@ -3,7 +3,9 @@ package ui.room_select;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.ListSelectionModel;
+import javax.swing.Timer;
 import javax.swing.event.ListSelectionListener;
+
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.JScrollPane;
 
@@ -21,8 +23,12 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 
+import main.ApplicationState;
+import main.AppStateValue;
 import misc.PanelNames;
+import misc.Requests;
 import misc.Constants;
+
 
 /**
  * this class represents the panel that shows all available chat rooms
@@ -35,18 +41,21 @@ public class RoomSelectPanel extends JPanel {
     private JButton joinButton; // press to join a selected room
     private JScrollPane tablePane; // contains the room table
     private JPanel refreshJoinPanel; // panel containing the refresh & join buttons
+    
     private static RoomSelectTable table; // displays all the room selection data
-    private Object refreshNotifier; // this object is notified for "Refresh" requests
-
+    private Object workerNotifier; // this object is notified for "Refresh" requests
+    private ApplicationState appState; // to be interacted with on particular button presses.
     /**
      * constructor for RSP
      */
-    public RoomSelectPanel() {
+    public RoomSelectPanel(ApplicationState state) {
+        this.setName(PanelNames.ROOM_SELECT_PANEL_NAME);
+        appState = state;
         // fire up the RoomsListFetcher as quickly as possible to get our table populated.
         table = new RoomSelectTable();
-        refreshNotifier = new Object();
+        workerNotifier = new Object();
         
-        RoomsListFetcher rlh = new RoomsListFetcher(refreshNotifier);
+        RoomsListFetcher rlh = new RoomsListFetcher(workerNotifier);
         rlh.start();
         
         tablePane = new JScrollPane();
@@ -108,6 +117,28 @@ public class RoomSelectPanel extends JPanel {
             }
         });
 
+        refreshButton.addActionListener(e -> {
+            refreshButton.setEnabled(false);
+            workerNotifier.notify();
+            
+            Timer timer = new Timer(7500, event -> {
+                // re-enable "Refresh" capability after 7.5 seconds
+                refreshButton.setEnabled(true);
+            });
+            timer.setRepeats(false);
+            timer.start();
+        });
+
+        joinButton.addActionListener(e -> {
+            // TODO flesh out this action listener
+        });
+
+        backButton.addActionListener(e -> {
+            rlh.signalWorkComplete();
+            workerNotifier.notify();
+            appState.setAppState(AppStateValue.CHOICE_PANEL);
+        });
+
     }
 
     /**
@@ -129,6 +160,9 @@ public class RoomSelectPanel extends JPanel {
             csvRoomDataObjs = new ArrayList<String>();
         }
 
+        /**
+         * this method is used to let the RLF worker that it can exit.
+         */
         public void signalWorkComplete() {
             isRunning = false;
         }
@@ -197,7 +231,7 @@ public class RoomSelectPanel extends JPanel {
                 out = new PrintWriter(socket.getOutputStream());
 
                 // send in the request line.
-                String requestLine = Constants.LIST_ROOMS_REQ + '\n';
+                String requestLine = Requests.LIST_ROOMS_REQ + '\n';
                 out.write(requestLine);
                 out.flush();
                 /**
@@ -229,6 +263,7 @@ public class RoomSelectPanel extends JPanel {
                     // otherwise, we can rightfully assume user is requesting a refresh.
                     serviceRefreshRequest(in, out);
                 }
+                // work done; close streams and exit.
                 out.close();
                 in.close();
                 socket.close();

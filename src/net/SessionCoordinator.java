@@ -1,6 +1,5 @@
 package net;
 
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -8,7 +7,6 @@ import io.OutputWorker;
 import io.session.SessionInputWorker;
 
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -41,31 +39,43 @@ public class SessionCoordinator extends Thread {
 
     private ServerSocket connectionReceiver; // socket used to receive new connections to the chat session.
     private int participantCount; // number of users in the chat room.
-    private int serverPort;
+    private int serverPort; // port on which this server is listening.
     private String sessionID; // id of the session this coordinator is in charge of.
     private String hostAlias; // host alias String.
 
+    private volatile boolean newMessageArrived; // signals that new message(s) has arrived for SC to forward along.
+    private final Object newMessageLock = new Object(); // for safely flipping the new message flag.
+
+    private volatile boolean joinRequestArrived; // signals that new join request has arrived for SC to consider.
+    private final Object joinRequestLock = new Object(); // for safely flipping the join request flag.
+
+    private Object scNotifier; // SC's lock (notified on by Registry RequestHandler threads and SC's InputWorkers)
+    // notification of above lock can either mean a user wishes to join, or new messages require forwarding.
+    // we determine which is the case by checking the boolean flags above.
+
+
     /**
      * constructor for the SessionCoordinator
-     * @param serverSocket server socket that will be used to accept incoming user connections to the chat room
+     * @param serveSock server socket that will be used to accept incoming user connections to the chat room
      * @param hostAli alias of the intended chat room host
      * @param sid session ID
+     * @param joinReqLock notified when a user wishes to join this SC's room, or if a message requires forwarding
      */
-    public SessionCoordinator(int scPort, String hostAli, String sid) {
+    public SessionCoordinator(ServerSocket serveSock, String hostAli, String sid, Object joinReqLock) {
+        connectionReceiver = serveSock;
+        scNotifier = joinReqLock;
         incomingMessageQueues = new ArrayList<ArrayBlockingQueue<String>>();
         outgoingMessageQueues = new ArrayList<ArrayBlockingQueue<String>>();
         chatRoomUserSockets = new ArrayList<Socket>();
         inputWorkers = new ArrayList<SessionInputWorker>();
         outputWorkers = new ArrayList<OutputWorker>();
-        serverPort = scPort;
+        serverPort = connectionReceiver.getLocalPort();
         connectionReceiver = null;
         participantCount = 0;
         sessionID = sid;
         hostAlias = hostAli;
-        start();
     }
 
-    // TODO re-work initializeHost().
 
     public void run() {
         initializeHost(hostAlias);
@@ -82,8 +92,6 @@ public class SessionCoordinator extends Thread {
         
         Socket socket = null;
         try {
-            InetAddress address = InetAddress.getByName("127.0.0.1");
-            connectionReceiver = new ServerSocket(serverPort,BACKLOG,address);
             socket = connectionReceiver.accept();
             System.out.println("connection accepted");
             // build and format the welcome message
@@ -100,7 +108,7 @@ public class SessionCoordinator extends Thread {
             ArrayBlockingQueue<String> incoming = new ArrayBlockingQueue<String>(Constants.MSG_QUEUE_LENGTH,true);
             ArrayBlockingQueue<String> outgoing = new ArrayBlockingQueue<String>(Constants.MSG_QUEUE_LENGTH, true);
             // initialize thread-based workers
-            SessionInputWorker inputWorker = new SessionInputWorker(in, incoming);
+            SessionInputWorker inputWorker = new SessionInputWorker(in, incoming, scNotifier, newMessageArrived, newMessageLock);
             OutputWorker outputWorker = new OutputWorker(out, outgoing);
 
             // perform book-keeping
@@ -121,6 +129,18 @@ public class SessionCoordinator extends Thread {
 
         } catch (Exception e) {
             System.out.println("SessionCoordinator Error! --> " + e.getMessage());
+        }
+    }
+
+    public void
+
+    /**
+     * signals this SC that a user is requesting to join the room they are in charge of.
+     * SC is notified elsewhere (see chunk of code where this method was called from).
+     */
+    public void signalJoinRequest() {
+        synchronized (joinRequestLock) {
+            joinRequestArrived = true;
         }
     }
 

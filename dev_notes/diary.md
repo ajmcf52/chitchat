@@ -475,4 +475,24 @@ The last bit of work needed for RLF to be done is really to wrap up its class me
 
 Once we are done with that, it will be about time to see if we can boot up two separate instances of the Chatter application for Alice and Bob to interact with one another. The goal will be to get Bob into Alice's room, though whether or not we get to that point will depend on how many bugs/issues we encounter along the way and how tricky they are to solve. Only time will tell.
 
-### Time TBD...
+### 8:11PM PST
+
+After some careful consideration and design thoughts, we have a little bit of coordination work and thread communication to be done in order to allow for Bob to join Alice's room. For this to happen, _SessionCoordinator_ must undergo development in order for the class to reach its final form (relatively speaking).
+
+In other words, we are addressing a TODO that was planted weeks ago. We put it off knowing that it would take some thoughtful consideration, as well as some intelligent programming.
+
+The thoughtful consideration is somewhat complete. We have partially established the logical steps required for Bob to join Alice's room:
+
+1. End user clicks "Join" button on _RoomSelectPanel_. This, then, fires up a _JoinRoomWorker_ thread.
+2. JRW connects to the Registry, sending along a _Join Room Request_. This request takes the form of "<JoinRequestString> <AliasOfRequestingUser> <NameOfRoomToJoin>\n".
+3. Registry RequestHandler sees this, looks up the connection information for the _SessionCoordinator_ for that particular room, responds back with the connection info for that SC, closes the socket with JRW, then notifies the SC.
+
+We stop here to make a careful distinction. In _SessionCoordinator_'s main line of execution (which we will look to flesh out tomorrow), it can only call _wait()_ on one Object at any given moment. Initially, my plan was to assign two distinct responsibilities to _SessionCoordinator_; that is, forwarding newly received messages to other users in the chat room, and incorporating new users to the chat room. This, by nature, is not a good idea by nature of OOP, and will likely overcomplicate my program.
+
+Given my desire for adherence to OOP and KISS (Keep it simple, stupid!), I think it would be wise to pivot my decision-making here, and give SC the **sole** responsibility of bringing new users into the chat room. This, of course, happens after SC has created the chat streaming avenues for the host itself, which technically can be considered bringing a new user into the chat room (adherence... heheh).
+
+With that in mind, I think it would be wise to create another thread worker whose sole responsibility is to forward newly received messages from one _InputWorker_ to all the _OutputWorkers_, aside from the one OW that is correlated with the IW to avoid redundancy. We will do this tomorrow.
+
+If and when we finish this task tomorrow, we will simply return back to the aforementioned ordered list of things that need to be in place for Bob to join Alice. _JoinRoomWorker_ will need to be fleshed out at some point. Perhaps that is the next chunk we will look flesh out.
+
+Until next time.

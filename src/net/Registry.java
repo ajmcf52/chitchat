@@ -3,9 +3,10 @@ package net;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
+import java.util.HashMap;
 
 import misc.Constants;
+import misc.Requests;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -21,29 +22,32 @@ public class Registry {
     private static volatile int userCount = 0;
     private static Object userCountLock = new Object();
     private static boolean running = false;
-    private static int sessionCount = 0;
+    private static volatile int sessionCount = 0;
     private static Object sessionCountLock = new Object();
 
     /**
-     * List of data array objects representing all the current
+     * Map of data array objects representing all the current
      * chat rooms that are open and available to be joined.
+     * Entries are keyed on room names, which are unique.
      */
-    private static volatile ArrayList<String[]> roomListArrays;
-    /**
-     * Same as above, but in single-string CSV format.
-     * This makes it way easier to send across the network.
-     */
-    private static volatile ArrayList<String> roomListCsvObjs; 
-    // good for the sake of combatting race conditions.
+    private static HashMap<String,String[]> roomListArrayMap;
+    // Same as above, but in single-string CSV format. (for ease of sending across the net)
+    private static HashMap<String,String> roomListCsvMap; 
+    // for race conditions in accessing hashmaps above.
     private static Object roomListDataLock = new Object(); 
-
+    
+    private static HashMap<String,SessionCoordinator> coordinators; // threadpool of coordinators (key -> room name)
+    private static HashMap<String,Object> joinRequestLocks; // map of SC join request locks (key -> room name)
 
     public static void main(String[] args) {
         // initialize room data list
-        roomListArrays = new ArrayList<String[]>();
+        roomListArrayMap = new HashMap<String,String[]>();
+        roomListCsvMap = new HashMap<String,String>();
+        coordinators = new HashMap<String,SessionCoordinator>();
+        joinRequestLocks = new HashMap<String, Object>();
 
         try {
-            System.out.println("UCL --> " + userCountLock.toString());
+            //System.out.println("UCL --> " + userCountLock.toString());
             Socket socket; // socket variable for accepted connections.
             ServerSocket serverSocket = new ServerSocket(Constants.REGISTRY_PORT); // the server socket; accepts connections.
 
@@ -98,7 +102,7 @@ public class Registry {
                      * here, we are servicing a NewUserRequest. To fulfill this request at a basic level,
                      * all we have to do is send back a fresh UID for the user, incrementing userCount after doing so.
                      */
-                    case (Constants.NEW_USER_REQ): {
+                    case (Requests.NEW_USER_REQ): {
                         String alias = in.readLine(); // ChatUser's alias. This can be saved in a HashMap at a later date.
                         int uidNum = -1;
 
@@ -123,19 +127,26 @@ public class Registry {
                      * here we are servicing a new room request. To fulfill this request, we must spawn
                      * a SessionCoordinator and pass along a ServerSocket to which the host ChatUser will connect to.
                      */
-                    case (Constants.NEW_ROOM_REQ): {
+                    case (Requests.NEW_ROOM_REQ): {
                         String alias = in.readLine();
                         String participantCountStr = "1";
 
-                        int sidNum = 0;
+                        String sid = "";
+                        int scPort = -1;
                         synchronized (sessionCountLock) {
+                            // we sync in case two workers are trying to create a room at nearly the same moment in time.
                             sessionCount++;
-                            sidNum = sessionCount;
+                            sid = Constants.SID_PREFIX + String.valueOf(sessionCount);
+                            scPort = Constants.SESSION_PORT_PREFIX + sessionCount;
                         }
-                        String sid = Constants.SID_PREFIX + String.valueOf(sessionCount);
-                        int scPort = Constants.SESSION_PORT_PREFIX + sessionCount;
+                        // form the join request lock, put it away, and share it with the SC
+                        Object joinReqLock = new Object();
+                        joinRequestLocks.put(sid, joinReqLock);
+
                         ServerSocket serverSocket = new ServerSocket(scPort);
-                        SessionCoordinator sc = new SessionCoordinator(scPort, alias, sid);
+                        SessionCoordinator sc = new SessionCoordinator(serverSocket, alias, sid, joinReqLock);
+                        coordinators.put(sid, sc);
+                        sc.start();
 
                         // write back the inet address + port of the SC's server socket for Chat host to connect to
                         String inetAddressStr = serverSocket.getInetAddress().toString();
@@ -147,8 +158,8 @@ public class Registry {
                         String roomListCsv = sid + "," + alias + "," + participantCountStr + "," + connectionInfoMsg;
                         // plan is to add room naming capability once other functionalities are fleshed out.
                         synchronized (roomListDataLock) {
-                            roomListArrays.add(roomListValues);
-                            roomListCsvObjs.add(roomListCsv);
+                            roomListArrayMap.put(sid, roomListValues);
+                            roomListCsvMap.put(sid,roomListCsv);
                         }
 
                         out.write(connectionInfoMsg + '\n');
@@ -160,12 +171,18 @@ public class Registry {
                         break;
                     }
 
-                    case (Constants.LIST_ROOMS_REQ): {
+                    case (Requests.LIST_ROOMS_REQ): {
                         /* we enter here if the incoming messages
                          * pertains to a rooms list request.
                          */
                         RoomsListHandler rlh = new RoomsListHandler(socket);
                         rlh.start();
+                    }
+
+                    case (Requests.JOIN_ROOM_REQ): {
+                        /**
+                         * we enter here when a user is requesting to join an existing room. 
+                         */
                     }
                     
                     default: {
@@ -279,10 +296,10 @@ public class Registry {
         public void sendRooms(PrintWriter out) {
             
             synchronized (roomListDataLock) {
-                int numRooms = roomListCsvObjs.size();
+                int numRooms = roomListCsvMap.size();
                 out.write("BEGIN " + Integer.toString(numRooms) + '\n');
-                for (int i = 0; i < roomListCsvObjs.size(); i++) {
-                    out.write(roomListCsvObjs.get(i) + '\n'); // send comma-separated room data String values.
+                for (String value : roomListCsvMap.values()) {
+                    out.write(value + '\n'); // send comma-separated room data String values.
                 }
                 out.write("DONE\n");
             }

@@ -4,10 +4,7 @@ package misc;
  * this class contains some global constants to be imported and used by various entities across the network.
  */
 public final class Constants {
-    /**
-     * unused constructor.
-     */
-    private Constants() {}
+    
     public static final String TIMEZONE = "Canada/Pacific";
     public static final String WELCOME_TAG = "(WELCOME)";
     public static final int HOST_INDEX = 0;
@@ -20,8 +17,5 @@ public final class Constants {
     public static final int KC_RETURN = 10;
     public static final String UID_PREFIX = "U0";
     public static final String SID_PREFIX = "S0";
-    public static final String NEW_USER_REQ = "NEW_USER_REQUEST"; // signifies a new user request.
-    public static final String NEW_ROOM_REQ = "NEW_ROOM_REQUEST"; // signifies a request for a new chat room.
-    public static final String LIST_ROOMS_REQ = "LIST_ROOMS_REQUEST"; // RoomListWorker requesting a complete rooms list.
     public static final String DELIM = Character.toString((char)0x1E); // [RecordSeparator] special ASCII character, impossible to type. Great delimiter.
 }
