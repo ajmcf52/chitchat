@@ -498,3 +498,31 @@ If and when we finish this task tomorrow, we will simply return back to the afor
 Another ~2hrs of development time were put in here.
 
 Until next time.
+
+---
+
+## Chipping Away
+
+### Sunday, August 14th 6:09PM PST
+
+---
+
+Bit of a lesser day today in terms of progress. I could certainly push the envelope and work later, but I am beginning to think that I really need to start taking my sleep more seriously. Sure, maybe I will get a little less work done today, but in doing so, getting 7 hours of sleep instead of 4, 5 or 6 will, in turn, set me up for success for tomorrow, and the next day, and the day after that.
+
+Despite only spending 2 hours writing code, today was still quite productive:
+
+-   Implemented **Worker.java**, a desirable abstract superclass to have that ultimately eliminates code redundancy for common code across all worker thread classes. This wasn't in the agenda for today, but I realized that it was a desirable thing to get done for worker ID stuff, as well as the common turnOn()/turnOff() methods that should really exist for all workers.
+-   Implemented **BroadcastWorker.java**, a worker class that is responsible for performing the message forwarding task mentioned yesterday. The reason I chose to call it a _broadcast_ worker is because really, that's what it is doing: taking a message from one user, and sending that message to all the rest of the users in that list of users. To my knowledge, that is the essence of message broadcasting.
+-   Modified existing worker classes to subclass _Worker_.
+-   Modified **SessionCoordinator.java** to utilize _BroadcastWorker_. Also compartmentalized some code into an **initializeUser()** method, minimizing redundancy between the procedure of initializing the room host and users joining the room in general.
+
+**To Do Next:**
+
+-   Flesh out **JoinRoomWorker.java**. This will be a bit of a task, but shouldn't be too tough. We have outlined a very clear procedure on paper of what needs to happen within this worker's line of execution.
+-   Test it out and see if it works.
+
+That will probably be enough for tomorrow. If we can get Bob to join Alice by tomorrow, that would be an enormous success. Because from that point, we are really only a hop, skip and a jump from getting two users to talk to one another, and with the architecture I have in place, going from 2 to 3 to 5 to 10 users really shouldn't be any issue. Let's see what happens.
+
+Of course to really scale to, say, even a dozen users, we will want to port this project to the cloud. We could very well make that a _PART 2_ of this project's development, after we have confirmed that the application works great for 2-3 people.
+
+Exciting stuff.

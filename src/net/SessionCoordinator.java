@@ -5,37 +5,38 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import io.OutputWorker;
 import io.session.SessionInputWorker;
+import io.session.BroadcastWorker;
 
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 
 import misc.Constants;
+import misc.Requests;
 import misc.TimeStampGenerator;
+import misc.Worker;
 
 /**
  * The role of this class is to coordinate the sending and receiving of chat messages
  * to-and-from the various ChatUsers in a given chat session.
  */
-public class SessionCoordinator extends Thread {
+public class SessionCoordinator extends Worker {
 
     private static final int BACKLOG = 20;
     
-    /**
-     * ABQs used to fetch incoming messages that are then distributed into the outgoing message queues.
-     * InputWorkers are responsible for inserting new messages into these queues.
-     */
-    private static ArrayList<ArrayBlockingQueue<String>> incomingMessageQueues;
-    /**
-     * ABQs used to place outgoing messages that are then retrieved and whisked off by OutputWorkers.
-     */
-    private static ArrayList<ArrayBlockingQueue<String>> outgoingMessageQueues;
+    private static ArrayList<ArrayBlockingQueue<String>> incomingMessageQueues; // incoming message queues
+    private static ArrayList<ArrayBlockingQueue<String>> outgoingMessageQueues; // outgoing message queues
+    private static ArrayBlockingQueue<Integer> taskQueue; // the singular task queue
 
     private ArrayList<Socket> chatRoomUserSockets; // sockets of all the users in the given chat room.
+    private static ArrayList<Object> newMessageNotifiers; // waited on by OutputWorkers for new messages
+
     private ArrayList<SessionInputWorker> inputWorkers; // thread-based workers responsible for reading in new messages.
     private ArrayList<OutputWorker> outputWorkers; // thread-based workers responsible for writing outgoing messages.
+    private ArrayList<BroadcastWorker> broadcastWorkers; // thread-based workers responsible for forwarding messages (in to out)
 
     private ServerSocket connectionReceiver; // socket used to receive new connections to the chat session.
     private int participantCount; // number of users in the chat room.
@@ -43,30 +44,23 @@ public class SessionCoordinator extends Thread {
     private String sessionID; // id of the session this coordinator is in charge of.
     private String hostAlias; // host alias String.
 
-    private volatile boolean newMessageArrived; // signals that new message(s) has arrived for SC to forward along.
-    private final Object newMessageLock = new Object(); // for safely flipping the new message flag.
-
-    private volatile boolean joinRequestArrived; // signals that new join request has arrived for SC to consider.
-    private final Object joinRequestLock = new Object(); // for safely flipping the join request flag.
-
-    private Object scNotifier; // SC's lock (notified on by Registry RequestHandler threads and SC's InputWorkers)
-    // notification of above lock can either mean a user wishes to join, or new messages require forwarding.
-    // we determine which is the case by checking the boolean flags above.
-
+    private HashMap<String, Integer> aliasWorkerNumberMappings; // maps alias Strings to the ID number allocated to workers responsible for said user.
 
     /**
      * constructor for the SessionCoordinator
+     * @param workerNum number unique to this worker within its class
      * @param serveSock server socket that will be used to accept incoming user connections to the chat room
      * @param hostAli alias of the intended chat room host
      * @param sid session ID
-     * @param joinReqLock notified when a user wishes to join this SC's room, or if a message requires forwarding
      */
-    public SessionCoordinator(ServerSocket serveSock, String hostAli, String sid, Object joinReqLock) {
+    public SessionCoordinator(int workerNum, ServerSocket serveSock, String hostAli, String sid) {
+        super("SC-" + Integer.toString(workerNum));
         connectionReceiver = serveSock;
-        scNotifier = joinReqLock;
         incomingMessageQueues = new ArrayList<ArrayBlockingQueue<String>>();
         outgoingMessageQueues = new ArrayList<ArrayBlockingQueue<String>>();
+        taskQueue = new ArrayBlockingQueue<Integer>(BACKLOG, true);
         chatRoomUserSockets = new ArrayList<Socket>();
+        newMessageNotifiers = new ArrayList<Object>();
         inputWorkers = new ArrayList<SessionInputWorker>();
         outputWorkers = new ArrayList<OutputWorker>();
         serverPort = connectionReceiver.getLocalPort();
@@ -74,13 +68,88 @@ public class SessionCoordinator extends Thread {
         participantCount = 0;
         sessionID = sid;
         hostAlias = hostAli;
+        aliasWorkerNumberMappings = new HashMap<String,Integer>();
     }
 
 
     public void run() {
         initializeHost(hostAlias);
 
-        // do more stuff here (should be looping while waiting to be notified on an object)
+        // once the host is initialized, we simply block and wait for new join or leave messages to come in.
+        while (true) {
+            Socket socket = null;
+            String msg = "";
+            try {
+                socket = connectionReceiver.accept();
+                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                msg = in.readLine();
+            } catch (Exception e) {
+                System.out.println(workerID + " Error! --> " + e.getMessage());
+            }
+            String[] msgArgs = msg.split(Constants.DELIM);
+                switch (msgArgs[0]) {
+                    case (Requests.JOIN_ROOM_REQ): {
+                        String timestampString = "[" + TimeStampGenerator.now() + "]";
+                        String introduction = msgArgs[1] + " has joined the chat room.";
+                        String completeMessage = timestampString + Constants.DELIM + introduction + '\n';
+
+                        initializeUser(msgArgs[1], socket, completeMessage);
+                    }
+                    case (Requests.LEAVE_ROOM_REQ): {
+                        // TODO later when the time comes... Not an immediate priority.
+                    }
+                }
+        }
+    }
+
+    /**
+     * this method is called to initialized a particular user to the chat room.
+     * @param alias name of the user
+     * @param socket socket that is connected to the user
+     * @param initialMessage first message to be sent to all users in the room. (host message is only sent to the host)
+     */
+    public void initializeUser(String alias, Socket socket, String initialMessage) {
+
+        // initialize a bunch of stuff
+        BufferedReader in = null;
+        PrintWriter out = null;
+        try {
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            out = new PrintWriter(socket.getOutputStream());
+         new PrintWriter(socket.getOutputStream());
+        } catch (Exception e) {
+            System.out.println(workerID + " Error! --> " + e.getMessage());
+        }
+        ArrayBlockingQueue<String> incoming = new ArrayBlockingQueue<String>(Constants.MSG_QUEUE_LENGTH,true);
+        ArrayBlockingQueue<String> outgoing = new ArrayBlockingQueue<String>(Constants.MSG_QUEUE_LENGTH, true);
+        newMessageNotifiers.add(new Object());
+
+        SessionInputWorker inputWorker = new SessionInputWorker(participantCount, in, incoming, taskQueue);
+        OutputWorker outputWorker = new OutputWorker(participantCount, out, outgoing, newMessageNotifiers.get(participantCount - 1));
+        BroadcastWorker broadcastWorker = new BroadcastWorker(participantCount, taskQueue, 
+            incomingMessageQueues, outgoingMessageQueues, newMessageNotifiers);
+
+        // perform book-keeping
+        incomingMessageQueues.add(incoming);
+        outgoingMessageQueues.add(outgoing);
+        chatRoomUserSockets.add(socket);
+        inputWorkers.add(inputWorker);
+        outputWorkers.add(outputWorker);
+        broadcastWorkers.add(broadcastWorker);
+        incomingMessageQueues.get(participantCount).add(initialMessage);
+        aliasWorkerNumberMappings.put(alias, participantCount);
+            
+        // fire up the worker threads (Host is always at index zero!!!)
+        inputWorkers.get(participantCount).start();
+        outputWorkers.get(participantCount).start();
+        broadcastWorkers.get(participantCount).start();
+
+            try {
+                taskQueue.put(participantCount);
+            } catch (InterruptedException e) {
+                System.out.println(workerID + " interrupted while queueing task :(");
+            }
+            participantCount++;
     }
 
     /**
@@ -93,54 +162,17 @@ public class SessionCoordinator extends Thread {
         Socket socket = null;
         try {
             socket = connectionReceiver.accept();
-            System.out.println("connection accepted");
+            // System.out.println("connection accepted");
+
             // build and format the welcome message
             String timestampString = "[" + TimeStampGenerator.now() + "]";
             String welcoming = "Welcome, " + hostAlias + ". You are the host of this room.";
-            String sidString = "--" + sessionID + "--";
-            String completeWelcomeMessage = Constants.WELCOME_TAG + Constants.DELIM + timestampString + Constants.DELIM + welcoming + 
-            Constants.DELIM + sidString + '\n';
-            
-            // initialize streams
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            PrintWriter out = new PrintWriter(socket.getOutputStream());
-            // initialize ABQs for reader and writer threads
-            ArrayBlockingQueue<String> incoming = new ArrayBlockingQueue<String>(Constants.MSG_QUEUE_LENGTH,true);
-            ArrayBlockingQueue<String> outgoing = new ArrayBlockingQueue<String>(Constants.MSG_QUEUE_LENGTH, true);
-            // initialize thread-based workers
-            SessionInputWorker inputWorker = new SessionInputWorker(in, incoming, scNotifier, newMessageArrived, newMessageLock);
-            OutputWorker outputWorker = new OutputWorker(out, outgoing);
+            String completeWelcomeMessage = timestampString + Constants.DELIM + welcoming + '\n';
 
-            // perform book-keeping
-            incomingMessageQueues.add(incoming);
-            outgoingMessageQueues.add(outgoing);
-            chatRoomUserSockets.add(socket);
-            inputWorkers.add(inputWorker);
-            outputWorkers.add(outputWorker);
-
-            // fire up the worker threads (Host is always at index zero!!!)
-            inputWorkers.get(Constants.HOST_INDEX).start();
-            outputWorkers.get(Constants.HOST_INDEX).start();
-
-            // send the welcome message, followed by the session ID string.
-            out.write(completeWelcomeMessage);
-            out.flush();
-
+            initializeUser(hostAlias, socket, completeWelcomeMessage);
 
         } catch (Exception e) {
             System.out.println("SessionCoordinator Error! --> " + e.getMessage());
-        }
-    }
-
-    public void
-
-    /**
-     * signals this SC that a user is requesting to join the room they are in charge of.
-     * SC is notified elsewhere (see chunk of code where this method was called from).
-     */
-    public void signalJoinRequest() {
-        synchronized (joinRequestLock) {
-            joinRequestArrived = true;
         }
     }
 
