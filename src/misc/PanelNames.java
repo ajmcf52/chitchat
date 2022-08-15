@@ -4,7 +4,8 @@ package misc;
  * class containing all the panel names of the Chatter application.
  */
 public class PanelNames {
-    public static final String LOGIN_PANEL_NAME = "LoginPanel";
-    public static final String CHOICE_PANEL_NAME = "ChoicePanel";
-    public static final String ROOM_SELECT_PANEL_NAME = "RoomSelectPanel";
+    public static final String LOGIN_PANEL = "LoginPanel";
+    public static final String CHOICE_PANEL = "ChoicePanel";
+    public static final String ROOM_SELECT_PANEL = "RoomSelectPanel";
+    public static final String ROOM_NAME_PANEL = "RoomNamePanel";
 }

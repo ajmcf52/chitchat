@@ -49,7 +49,7 @@ public class RoomSelectPanel extends JPanel {
      * constructor for RSP
      */
     public RoomSelectPanel(ApplicationState state) {
-        this.setName(PanelNames.ROOM_SELECT_PANEL_NAME);
+        this.setName(PanelNames.ROOM_SELECT_PANEL);
         appState = state;
         // fire up the RoomsListFetcher as quickly as possible to get our table populated.
         table = new RoomSelectTable();
@@ -106,7 +106,7 @@ public class RoomSelectPanel extends JPanel {
 
         tablePane.setViewportView(table);
         table.setFillsViewportHeight(true);
-        this.setName(PanelNames.ROOM_SELECT_PANEL_NAME);
+        this.setName(PanelNames.ROOM_SELECT_PANEL);
         
         MyMouseListener listener = new MyMouseListener();
         this.addMouseListener(listener);

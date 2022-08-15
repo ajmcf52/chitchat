@@ -37,14 +37,12 @@ public class Registry {
     private static Object roomListDataLock = new Object(); 
     
     private static HashMap<String,SessionCoordinator> coordinators; // threadpool of coordinators (key -> room name)
-    private static HashMap<String,Object> joinRequestLocks; // map of SC join request locks (key -> room name)
 
     public static void main(String[] args) {
         // initialize room data list
         roomListArrayMap = new HashMap<String,String[]>();
         roomListCsvMap = new HashMap<String,String>();
         coordinators = new HashMap<String,SessionCoordinator>();
-        joinRequestLocks = new HashMap<String, Object>();
 
         try {
             //System.out.println("UCL --> " + userCountLock.toString());
@@ -129,22 +127,18 @@ public class Registry {
                      */
                     case (Requests.NEW_ROOM_REQ): {
                         String alias = in.readLine();
-                        String participantCountStr = "1";
+                        String participantCountStr = "1"; // always the case when a room is first created (only the host!)
 
                         String sid = "";
                         int scPort = -1;
                         synchronized (sessionCountLock) {
                             // we sync in case two workers are trying to create a room at nearly the same moment in time.
-                            sessionCount++;
                             sid = Constants.SID_PREFIX + String.valueOf(sessionCount);
                             scPort = Constants.SESSION_PORT_PREFIX + sessionCount;
                         }
-                        // form the join request lock, put it away, and share it with the SC
-                        Object joinReqLock = new Object();
-                        joinRequestLocks.put(sid, joinReqLock);
 
                         ServerSocket serverSocket = new ServerSocket(scPort);
-                        SessionCoordinator sc = new SessionCoordinator(serverSocket, alias, sid, joinReqLock);
+                        SessionCoordinator sc = new SessionCoordinator(sessionCount, serverSocket, alias, sid);
                         coordinators.put(sid, sc);
                         sc.start();
 

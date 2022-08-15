@@ -21,7 +21,7 @@ import misc.Worker;
  * By employing ABQs, practically all of our race condition problems are
  * handled via internal mechanisms.
  */
-public class BroadcastWorker extends Worker {
+public class MessageRouter extends Worker {
     
     private ArrayBlockingQueue<Integer> taskQueue; // where ID numbers representing tasks are placed
     private ArrayList<ArrayBlockingQueue<String>> incomingMessageQueues; // list of incoming message queues
@@ -36,7 +36,7 @@ public class BroadcastWorker extends Worker {
      * @param out outgoing message queue
      * @param notifiers list of objects to notify on when there are messages to be sent
      */
-    public BroadcastWorker(int workerNumber, ArrayBlockingQueue<Integer> tasks, 
+    public MessageRouter(int workerNumber, ArrayBlockingQueue<Integer> tasks, 
     ArrayList<ArrayBlockingQueue<String>> in, ArrayList<ArrayBlockingQueue<String>> out, ArrayList<Object> notifiers) {
         super("BW-" + Integer.toString(workerNumber));
         taskQueue = tasks;

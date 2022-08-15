@@ -5,7 +5,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import io.OutputWorker;
 import io.session.SessionInputWorker;
-import io.session.BroadcastWorker;
+import io.session.MessageRouter;
 
 import java.net.Socket;
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ public class SessionCoordinator extends Worker {
 
     private ArrayList<SessionInputWorker> inputWorkers; // thread-based workers responsible for reading in new messages.
     private ArrayList<OutputWorker> outputWorkers; // thread-based workers responsible for writing outgoing messages.
-    private ArrayList<BroadcastWorker> broadcastWorkers; // thread-based workers responsible for forwarding messages (in to out)
+    private ArrayList<MessageRouter> broadcastWorkers; // thread-based workers responsible for forwarding messages (in to out)
 
     private ServerSocket connectionReceiver; // socket used to receive new connections to the chat session.
     private int participantCount; // number of users in the chat room.
@@ -126,7 +126,7 @@ public class SessionCoordinator extends Worker {
 
         SessionInputWorker inputWorker = new SessionInputWorker(participantCount, in, incoming, taskQueue);
         OutputWorker outputWorker = new OutputWorker(participantCount, out, outgoing, newMessageNotifiers.get(participantCount - 1));
-        BroadcastWorker broadcastWorker = new BroadcastWorker(participantCount, taskQueue, 
+        MessageRouter broadcastWorker = new MessageRouter(participantCount, taskQueue, 
             incomingMessageQueues, outgoingMessageQueues, newMessageNotifiers);
 
         // perform book-keeping

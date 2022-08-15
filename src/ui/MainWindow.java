@@ -36,7 +36,7 @@ public class MainWindow extends JFrame {
      * Likely won't be of use until if and when we implement name changing
      */
     public void showLoginPanel() {
-        layout.show(cardStack, PanelNames.LOGIN_PANEL_NAME);
+        layout.show(cardStack, PanelNames.LOGIN_PANEL);
     }
 
     /**
@@ -44,15 +44,22 @@ public class MainWindow extends JFrame {
      * the content pane's CardLayout, ChoicePanel.
      */
     public void showChoicePanel() {
-        layout.show(cardStack, PanelNames.CHOICE_PANEL_NAME);
+        layout.show(cardStack, PanelNames.CHOICE_PANEL);
     }
 
     /**
      * called to show the room selection panel.
      */
     public void showRoomSelectPanel() {
-        layout.show(cardStack, PanelNames.ROOM_SELECT_PANEL_NAME);
+        layout.show(cardStack, PanelNames.ROOM_SELECT_PANEL);
         this.pack();
+    }
+
+    /**
+     * called to show the room naming panel.
+     */
+    public void showRoomNamingPanel() {
+        layout.show(cardStack, PanelNames.ROOM_NAME_PANEL);
     }
 
     /*

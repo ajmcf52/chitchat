@@ -8,6 +8,7 @@ import ui.LoginPanel;
 import ui.ChoicePanel;
 import net.ChatUser;
 import ui.ChatWindow;
+import ui.RoomNamePanel;
 /**
  * main entry point for the chatter application.
  */
@@ -45,12 +46,15 @@ public class ChatterApp {
         // create all of our application panels.
         LoginPanel loginPanel = new LoginPanel(chatUser, chatUserLock, appState);
         ChoicePanel choicePanel = new ChoicePanel(chatUser, chatUserLock, appState);
-        RoomSelectPanel roomSelectPanel = new RoomSelectPanel();
-        int numPanels = 3;
+        RoomSelectPanel roomSelectPanel = new RoomSelectPanel(appState);
+        RoomNamePanel roomNamePanel = new RoomNamePanel(chatUser, chatUserLock, appState);
+
+        int numPanels = 4;
         JPanel[] appPanels = new JPanel[numPanels];
         appPanels[0] = loginPanel;
         appPanels[1] = choicePanel;
         appPanels[2] = roomSelectPanel;
+        appPanels[3] = roomNamePanel;
 
         // create the window
         MainWindow mainWindow = new MainWindow(appPanels);
@@ -135,7 +139,20 @@ public class ChatterApp {
 
             else if (appState.getAppState() == AppStateValue.ROOM_SELECT) {
                 mainWindow.showRoomSelectPanel();
-                System.out.println("farts");
+                try {
+                    chatUserLock.wait();
+                } catch (Exception e) {
+                    System.out.println("CU Error during ROOM_SELECT --> " + e.getMessage());
+                }
+            }
+
+            else if (appState.getAppState() == AppStateValue.ROOM_NAMING) {
+                mainWindow.showRoomNamingPanel();
+                try {
+                    chatUserLock.wait();
+                } catch (Exception e) {
+                    System.out.println("CU Error during ROOM_NAMING --> " + e.getMessage());
+                }
             }
         }
 

@@ -18,4 +18,6 @@ public final class Constants {
     public static final String UID_PREFIX = "U0";
     public static final String SID_PREFIX = "S0";
     public static final String DELIM = Character.toString((char)0x1E); // [RecordSeparator] special ASCII character, impossible to type. Great delimiter.
+    public static final int MIN_USER_INPUT_LENGTH = 2;
+    public static final int MAX_USER_INPUT_LENGTH = 16;
 }

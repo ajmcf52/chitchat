@@ -59,13 +59,13 @@ public class ChoicePanel extends JPanel {
         this.add(Box.createRigidArea(new Dimension(0, 60)));
         this.add(createRoomButton);
         this.add(Box.createRigidArea(new Dimension(0, 75)));
-        this.setName(PanelNames.CHOICE_PANEL_NAME);
+        this.setName(PanelNames.CHOICE_PANEL);
 
         createRoomButton.addActionListener(e -> {
             // connect to the registry and send a NewRoomRequest
-            // ^^this is done by the RoomSetupWorker....
-            System.out.println("create room clicked");
-            RoomSetupWorker worker = new RoomSetupWorker(userRef, chatUserLock, appState);
+            // System.out.println("create room clicked");
+
+            RoomSetupWorker worker = new RoomSetupWorker(0, userRef, chatUserLock, appState);
             worker.start();
 
         });

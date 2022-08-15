@@ -526,3 +526,21 @@ That will probably be enough for tomorrow. If we can get Bob to join Alice by to
 Of course to really scale to, say, even a dozen users, we will want to port this project to the cloud. We could very well make that a _PART 2_ of this project's development, after we have confirmed that the application works great for 2-3 people.
 
 Exciting stuff.
+
+---
+
+## Room Naming.
+
+### Monday, August 15th 4:21PM PST
+
+---
+
+I didn't get done today what I set out to get done last time... HOWEVER... I knew that I really wanted to add a room naming feature, and that it would pragmatically only take me a few hours to do, so I went ahead and added that in today.
+
+I also added a **ValidateInput.java** interface with a couple of validation functions that are common to both _LoginPanel_ and _RoomNamePanel_ to reduce code duplication.
+
+**RoomNamePanel.java** is practically done. We have also done some of the book keeping work in connecting the panel with the flow of the rest of the program.
+
+**Next time**, we will flesh out the _JoinRoomWorker_ (...for real this time.) Either that day or the next will likely require some extensive testing to iron out some bugs, as they will undoubtedly be some to take care of.
+
+Until next time.
