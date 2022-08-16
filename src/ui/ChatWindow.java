@@ -15,6 +15,8 @@ import javax.swing.JLabel;
 import javax.swing.BorderFactory;
 import javax.swing.border.*;
 
+import net.ChatUser;
+
 
 /**
  * this class represents the popup chat window that is used for one ChatUser
@@ -50,6 +52,8 @@ public class ChatWindow extends JFrame {
      */
     private MyListModel participanListModel;
     private MyListModel chatFeedModel;
+
+    private ChatUser chatUser; // user to which this chat window is dedicated.
 
     /**
      * constructor for the chat window.
@@ -221,5 +225,15 @@ public class ChatWindow extends JFrame {
      */
     public void removeParticipantName(String name) {
         participanListModel.removeElement(name);
+    }
+
+    /**
+     * this class is responsible for retrieving passing along user-supplied
+     * information (i.e., text messages, exit events, etc) to the user's OutputWorker.
+     */
+    public class UserOutputHandler extends Thread {
+        /**
+         * 
+         */
     }
 }

@@ -547,8 +547,22 @@ Until next time.
 
 ---
 
-##
+## JRW done.. Moving on to the sending of messages.
 
-###
+### Tuesday, August 16th 3:17PM PST
 
 ---
+
+I will admit at this point that I have put off testing my code for a number of days. This may prove to be unwise in the near future. That said, I am working to get my code to the point where I can test the sending and receiving of messages. I suppose the program will mostly be done at that point, if we're being honest with ourselves.
+
+Again, this could prove to be unwise. Perhaps not the most advisable strategy to most developers. That said, I have a pretty solid gameplan in my head of what pieces need to be put in place. The application I am putting together makes perfect sense in my own head. If it didn't, I would surely be spending a heck of a lot more time testing and designing my architecture. Even on that note, during times where I have sensed that the architecture is off, I have self-identified the offness and taken a little time to make some design revisions. I would like to think that I am relatively okay at catching myself quite early with writing nonsensical code before I go too far down the rabbit hole. I wasn't always like this. Perhaps I can attribute this to my own recent development in improved logic and ability to break things down in a procedural manner within the confines of my own head as well as a pencil and paper.
+
+**JoinRoomWorker.java** is done. In fact, that code was relatively easy to complete. That said, I have yet to tie in _SessionCoordinator's_ response code to JRW's requesting. This shouldn't be hard at all, as it will be almost identical to the setup of a room host. I will probably do some refactoring on-the-go as I put that in place to reduce code duplication.
+
+As of now, I have shifted my focus to linking **ChatWindow.java** up to the _ChatUser_ and it's net capabilities to get it talking with other participants in the chat room. This will set me up to have Alice and Bob sending each other messages, which, once we have this completed, the app will be practically 80%-85% complete. We are getting close.
+
+To make the above fall into place, my next step is to flesh out a _UserOutputHandler_ thread worker that handles _ChatWindow_ events (such as a text-based message) by passing them along to the ChatUser's _OutputWorker_. Essentially, we will have an action listener defined in the chat window that wakes up the UOH worker via the wait()/notify() mechanism; this will tell UOH that it has a message to send. UOH fetches the text from the window's text field (it can do this, as I have defined it as a nested class within _ChatWindow_), after which it packages the message into the form of a Chatter message (basically just attaching a timestamp and who is sending it) and inserts said message into the ChatUser's OutputWorker's outgoing message queue, notifying the OW that it has a message to send.
+
+UOH will be able to access OW's message queue by way of a method defined within _ChatUser_, which will be made a field variable inside _ChatWindow_ as a handy reference object. This should actually work quite well.
+
+With this plan in place, I am in the position to bring this code into existence the next time I have time to work on it, which will at the latest be Thursday. I may have time tomorrow, but I also have to meal prep, which is a time consuming process. Who knows, I may still have time to code, all priorities considered (i.e., sleep, exercise, etc).
