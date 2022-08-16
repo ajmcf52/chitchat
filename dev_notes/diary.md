@@ -544,3 +544,11 @@ I also added a **ValidateInput.java** interface with a couple of validation func
 **Next time**, we will flesh out the _JoinRoomWorker_ (...for real this time.) Either that day or the next will likely require some extensive testing to iron out some bugs, as they will undoubtedly be some to take care of.
 
 Until next time.
+
+---
+
+##
+
+###
+
+---

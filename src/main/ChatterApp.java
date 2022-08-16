@@ -38,9 +38,10 @@ public class ChatterApp {
         // Passing in a null ChatUser. 
         // This will eventually be initialized by UserSetupThread via LoginPanel's EvtHandler.
         ApplicationState appState = new ApplicationState();
-        ChatUser chatUser = new ChatUser();
+        Object appStateLock = new Object();
         Object chatUserLock = new Object();
         Object chatLeaveNotifier = new Object();
+        ChatUser chatUser = new ChatUser(appState, chatUserLock, appState);
         ChatWindow chatWindow = null;
 
         // create all of our application panels.

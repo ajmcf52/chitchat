@@ -1,7 +1,6 @@
 package ui.room_select;
 
 import java.lang.IndexOutOfBoundsException;
-import java.util.ArrayList;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 

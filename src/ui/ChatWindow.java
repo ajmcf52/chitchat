@@ -15,7 +15,6 @@ import javax.swing.JLabel;
 import javax.swing.BorderFactory;
 import javax.swing.border.*;
 
-import ui.MyListModel;
 
 /**
  * this class represents the popup chat window that is used for one ChatUser
@@ -25,12 +24,12 @@ public class ChatWindow extends JFrame {
 
 
     private static final int CHAT_CELL_HEIGHT = 15; // number of rows
-    private static final int PARTICIPANT_LIST_WIDTH = 20; // ibid, your honor!
-    private static final int PARTCIPANT_LIST_HEIGHT = 200; // number of rows
+    // private static final int PARTICIPANT_LIST_WIDTH = 20; // ibid, your honor!
+    // private static final int PARTCIPANT_LIST_HEIGHT = 200; // number of rows
     private static final Font CHAT_PLACEHOLDER_FONT = new Font("Serif", Font.ITALIC, 14);
     private static final Font PARTICIPANT_LIST_LABEL_FONT = new Font("MONOSPACED", Font.BOLD | Font.ITALIC, 14);
     private static final int CHAT_TEXTBOX_WIDTH = 100; // width of chat textbox
-    private static final int CHAT_TEXTBOX_HEIGHT = 14;
+    // private static final int CHAT_TEXTBOX_HEIGHT = 14;
     private static final String CHAT_PLACEHOLDER_STR = "Enter message here...";
 
     private String sessionID; // id unique to this session.
@@ -214,5 +213,13 @@ public class ChatWindow extends JFrame {
      */
     public void addParticipantName(String name) {
         participanListModel.addElement(name);
+    }
+
+    /**
+     * used to remove a name from the list of participants in the chat.
+     * @param name alias of the user to be removed.
+     */
+    public void removeParticipantName(String name) {
+        participanListModel.removeElement(name);
     }
 }

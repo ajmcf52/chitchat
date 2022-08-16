@@ -20,4 +20,10 @@ public final class Constants {
     public static final String DELIM = Character.toString((char)0x1E); // [RecordSeparator] special ASCII character, impossible to type. Great delimiter.
     public static final int MIN_USER_INPUT_LENGTH = 2;
     public static final int MAX_USER_INPUT_LENGTH = 16;
+
+    // these three constants are used to declare the chat state of a user in a ternary context.
+    public static final int SOCKET_SETUP = -1;
+    public static final int NOT_CHATTING = 0; 
+    public static final int CHATTING = 1;
+    
 }

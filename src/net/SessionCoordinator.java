@@ -125,7 +125,8 @@ public class SessionCoordinator extends Worker {
         newMessageNotifiers.add(new Object());
 
         SessionInputWorker inputWorker = new SessionInputWorker(participantCount, in, incoming, taskQueue);
-        OutputWorker outputWorker = new OutputWorker(participantCount, out, outgoing, newMessageNotifiers.get(participantCount - 1));
+        String workerCode = "S" + Integer.toString(participantCount);
+        OutputWorker outputWorker = new OutputWorker(workerCode, out, outgoing, newMessageNotifiers.get(participantCount - 1));
         MessageRouter broadcastWorker = new MessageRouter(participantCount, taskQueue, 
             incomingMessageQueues, outgoingMessageQueues, newMessageNotifiers);
 

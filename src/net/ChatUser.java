@@ -20,6 +20,13 @@ public class ChatUser extends Thread {
     private String alias; // this chat user's screen name.
     private String sessionInetAddress; // inet address of a chat session's server socket.
     private int sessionPort; // port of the chat session's server socket.
+    private Socket sessionSocket; // socket for the session.
+    private int sessionHostValue; // 1 -> host of session; 0 -> non-host, but still in a session; -1 -> neither.
+
+    private volatile boolean isRunning; // used to indicate when this thread should shut down.
+    private final Object runLock = new Object(); // lock object for accessing run flag
+    private Object chatUserLock; // notified by outside forces to communicate with this user.
+    private final Object newMessageNotifier = new Object(); // user notifies this to tell OutputWorker there is a new message to send.
 
     /**
      * worker responsible for reading incoming messages from the SessionCoordinator.
@@ -27,17 +34,22 @@ public class ChatUser extends Thread {
      */
     private UserInputWorker inputWorker; // receives incoming messages and passes them to the handler.
     private OutputWorker outputWorker; // sends outgoing messages to SeshCoordinator.
-    private UserInputHandler inputHandler; //receives new messages from IW and handles them accordingly.
+    private UserInputHandler inputHandler; //receives new messages from UIW and handles them accordingly.
     private ChatWindow chatWindowRef; 
 
     /**
-     * default constructor.
+     * default constructor for ChatUser.
+     * @param cul chat user lock
      */
-    public ChatUser() {
+    public ChatUser(Object cul) {
         userID = "";
         alias = "";
         sessionInetAddress = "";
         sessionPort = -1;
+        sessionSocket = null;
+        sessionHostValue = -1;
+        isRunning = false;
+        chatUserLock = cul;
 
         inputWorker = null;
         outputWorker = null;
@@ -46,50 +58,67 @@ public class ChatUser extends Thread {
     }
 
     /**
-     * constructor that will more than likely be used most of the time.
-     * @param uid - user ID
-     * @param a - alias
-     */
-    public ChatUser(String uid, String a) {
-        userID = uid;
-        alias = a;
-        sessionInetAddress = "";
-        sessionPort = -1;
-    }
-
-    /**
      * the ChatUser's main course of action.
      */
     public void run() {
-        if (sessionInetAddress == "") {
-            System.out.println("ChatUser cannot proceed, no session address to connect to!");
-            return;
-        }
-        if (sessionInetAddress.startsWith("0.0.0.0")) {
-            sessionInetAddress = "localhost";
-        }
-        Socket socket = null;
-        BufferedReader in = null;
-        PrintWriter out = null;
+        isRunning = true;
 
-        try {
-            socket = new Socket(sessionInetAddress, sessionPort); // connecting to SessionCoordinator here.
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            out = new PrintWriter(socket.getOutputStream());
+        while (isRunning) {
 
-        } catch (Exception e) {
-            System.out.println("Error in ChatUser I/O! --> " + e.getMessage());
-            e.printStackTrace();
-        }
-        ArrayBlockingQueue<String> msgQueue = new ArrayBlockingQueue<String>(Constants.MSG_QUEUE_LENGTH, true);
-        inputHandler = new UserInputHandler(chatWindowRef, msgQueue);
-        inputWorker = new UserInputWorker(in, msgQueue);
-        inputWorker.start();
-        inputHandler.start();
+            switch (sessionHostValue) {
+                // entered when this user is not chatting.
+                case Constants.NOT_CHATTING: {
+                    try {
+                        chatUserLock.wait();
+                    } catch (Exception e) {
+                        System.out.println(alias + " encountered an error while waiting --> " + e.getMessage());
+                    }
+                }
+                // entered right away for non-host chatters (host enters after setup)
+                case Constants.CHATTING: {
+                    BufferedReader in = null;
+                    PrintWriter out = null;
+                    try {
+                        in = new BufferedReader(new InputStreamReader(sessionSocket.getInputStream()));
+                        out = new PrintWriter(sessionSocket.getOutputStream());
+                    } catch (Exception e) {
+                        System.out.println("Error in ChatUser I/O! --> " + e.getMessage());
+                    }
         
+                    ArrayBlockingQueue<String> msgQueue = new ArrayBlockingQueue<String>(Constants.MSG_QUEUE_LENGTH, true);
+                    inputHandler = new UserInputHandler(chatWindowRef, msgQueue);
+                    inputWorker = new UserInputWorker(in, msgQueue);
+                    inputWorker.start();
+                    inputHandler.start();
+                    
+                    outputWorker = new OutputWorker(userID, out, msgQueue, newMessageNotifier);
+                }
+                // entered for setting up session communcation channels
+                case Constants.SOCKET_SETUP: {
+                    if (sessionInetAddress == "") {
+                        System.out.println("ChatUser cannot proceed, no session address to connect to!");
+                        return;
+                    }
+                    if (sessionInetAddress.startsWith("0.0.0.0")) {
+                        sessionInetAddress = "localhost";
+                    }
 
-        // TODO work on this next time!!!
-        //outputWorker = new OutputWorker(out, msgQueue)
+                    try {
+                        sessionSocket = new Socket(sessionInetAddress, sessionPort); // connecting to SessionCoordinator here.
+                    } catch (Exception e) {
+                        System.out.println("Error in ChatUser I/O! --> " + e.getMessage());
+                        // e.printStackTrace();
+                    }
+                    /**
+                     * now we can move to chat setup.
+                     */
+                    this.setSessionHostValue(Constants.CHATTING);
+                }
+                default:
+                    System.out.println("This shouldn't execute, ever..");
+                    break;
+            }
+        }
     }
 
     /**
@@ -125,6 +154,15 @@ public class ChatUser extends Thread {
     }
 
     /**
+     * initializer for the session Socket of which this user is joining.
+     * @param seshSock Socket connecting this user to the session they are joining.
+     */
+    public void initializeSessionSocket(Socket seshSock) {
+        sessionSocket = seshSock;
+        initializeSessionInfo(sessionSocket.getInetAddress().toString(), seshSock.getLocalPort());
+    }
+
+    /**
      * getter for userID.
      * @return userID
      */
@@ -145,4 +183,25 @@ public class ChatUser extends Thread {
      * @return ChatUser alias
      */
     public String getAlias() { return alias; }
+
+    /**
+     * setter for this user's session host value.
+     * NOTE value is expected to be in the range of [-1,1].
+     * @param value
+     */
+    public void setSessionHostValue(int value) throws IllegalArgumentException {
+        if (value < -1 || value > 1) {
+            throw new IllegalArgumentException("SessionHostValue must be between -1 and 1 inclusive.");
+        }
+        sessionHostValue = value;
+    }
+
+    /**
+     * method used by an outside source to signal a shutdown to this user.
+     */
+    public void signalExit() {
+        synchronized (runLock) {
+            isRunning = false;
+        }
+    }
 }

@@ -80,6 +80,7 @@ public class RoomSetupWorker extends Worker {
             out.close();
             socket.close();
             appState.setAppState(AppStateValue.CHATTING);
+            chatUser.setSessionHostValue(Constants.CHATTING_HOST);
             
             // notify ChatUser that the work has been done.
             synchronized (chatUserLock) {

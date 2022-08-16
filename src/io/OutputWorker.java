@@ -21,13 +21,13 @@ public class OutputWorker extends Worker {
    
     /**
      * constructor of the OutputWorker.
-     * @param workerNum number unique to this worker within its worker class.
+     * @param workerCode 2-character code unique to this worker within its worker class.
      * @param output PrintWriter to be used for writing outgoing messages; initialized by SessionCoordinator
      * @param msgQueue initialized by SessionCoordinator, where this thread will retrieve outgoing messages to be sent.
      * @param nmn new message notifier
      */
-    public OutputWorker(int workerNum, PrintWriter output, ArrayBlockingQueue<String> msgQueue, Object nmn) {
-        super("OW-" + Integer.toString(workerNum));
+    public OutputWorker(String workerCode, PrintWriter output, ArrayBlockingQueue<String> msgQueue, Object nmn) {
+        super("OW-" + workerCode);
         messageQueue = msgQueue;
         out = output;
         newMessageNotifier = nmn;
