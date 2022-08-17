@@ -566,3 +566,21 @@ To make the above fall into place, my next step is to flesh out a _UserOutputHan
 UOH will be able to access OW's message queue by way of a method defined within _ChatUser_, which will be made a field variable inside _ChatWindow_ as a handy reference object. This should actually work quite well.
 
 With this plan in place, I am in the position to bring this code into existence the next time I have time to work on it, which will at the latest be Thursday. I may have time tomorrow, but I also have to meal prep, which is a time consuming process. Who knows, I may still have time to code, all priorities considered (i.e., sleep, exercise, etc).
+
+---
+
+## User IO (Mostly) Taken Care Of
+
+### Wednesday, August 17th 4:10PM PST
+
+---
+
+I say mostly because I have yet to test the code. As previously mentioned, I have been putting off testing for a number of days at this point.
+
+Now that I am at the point where I have completed my previously laid out objective to a satisfactory degree and even patched up code in some other places, I am at the point where I think it would be wise to lean into some test-driven development for a day or two. Surely, I will have a number of bugs to work out, as that is just the nature of how programming works.
+
+The cool thing about test-driven development is that, given the notion that I have an expectation inside my own head of how I expect the application to work in an abstract sense, I can compare that idea in my head to what I observe to be happening, and go from there in applying fixes. I am almost certain that I will be spending all of my programming time tomorrow (and probably some the next day) ironing out bugs. In doing so, I will take care to track notable issues that take a little bit more time to figure out. That said, I am confident in my overall bug-fixing ability, particularly with the way I have laid my code out.
+
+Of course, working through network-related bugs will be a bit more tedious in solving, though I have definitely developed my own method of solving these types of bugs. VS Code itself has proven to be a brilliant editor in this sense, as I am able to a compound launch debug session, which allows me to run multiple programs simultaneously in debug mode, catering to all the various breakpoints littered across the programs I am running. This has proven to be absolutely invaluable in stepping through protocol-centric conversations between entities across a network; with breakpoints set up on either end at all the various potentially problematic points that I wish to investigate at a particular moment, I can simply hit the green arrow and sequentially proceed from breakpoint to breakpoint, bouncing between programs in a seamlessly fluid manner. I absolutely love it.
+
+Until tomorrow! Time for some debugging.... Hehehe
