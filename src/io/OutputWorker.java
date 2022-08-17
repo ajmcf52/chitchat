@@ -58,4 +58,18 @@ public class OutputWorker extends Worker {
             }
         }
     }
+
+    /**
+     * triggers the sending of a message.
+     * @param msg message to be sent
+     */
+    public void triggerMessageSend(String msg) {
+        try {
+            messageQueue.put(msg);
+            newMessageNotifier.notify();
+        } catch (Exception e) {
+            System.out.println("Exception occurred while pushing into " + workerID + "'s outgoing queue! --> " + e.getMessage());
+        }
+
+    }
 }

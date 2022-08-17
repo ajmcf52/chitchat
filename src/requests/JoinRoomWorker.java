@@ -75,7 +75,7 @@ public class JoinRoomWorker extends Worker {
             in.close();
             out.close();
             appState.setAppState(AppStateValue.CHATTING);
-            userJoining.setSessionHostValue(Constants.CHATTING_NONHOST);
+            userJoining.setSessionHostValue(Constants.CHATTING);
             
             synchronized (chatUserLock) {
                 chatUserLock.notify();

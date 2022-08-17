@@ -204,4 +204,12 @@ public class ChatUser extends Thread {
             isRunning = false;
         }
     }
+
+    /**
+     * triggers the sending of a message to be seen by other users in the chat.
+     * @param msg message to be sent, timestamp and all.
+     */
+    public void pushOutgoingMessage(String msg) {
+        outputWorker.triggerMessageSend(msg);
+    }
 }

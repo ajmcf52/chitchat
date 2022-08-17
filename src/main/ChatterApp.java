@@ -31,7 +31,6 @@ public class ChatterApp {
          * for creating the ChatUser's socket. If we iron this out well enough, we
          * may not even need a method of having a user-supplied port number; the 
          * program itself can take care of that.
-         * 
          */
 
         // variables!!
@@ -41,7 +40,7 @@ public class ChatterApp {
         Object appStateLock = new Object();
         Object chatUserLock = new Object();
         Object chatLeaveNotifier = new Object();
-        ChatUser chatUser = new ChatUser(appState, chatUserLock, appState);
+        ChatUser chatUser = new ChatUser(chatUserLock);
         ChatWindow chatWindow = null;
 
         // create all of our application panels.
