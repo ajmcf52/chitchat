@@ -20,9 +20,10 @@ public class RoomSelectTable extends JTable {
         for (int i = 0; i < COLUMNS.length; i++) {
             model.addColumn(COLUMNS[i]);
         }
-        String[] args = {"farts", "table", "andy", "testing"};
         this.setModel(model);
-        this.addEntry(args);
+        
+        //String[] args = {"farts", "table", "andy", "testing"};
+        //this.addEntry(args);
     }
 
     @Override

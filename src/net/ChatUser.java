@@ -26,7 +26,8 @@ public class ChatUser extends Thread {
     private volatile boolean isRunning; // used to indicate when this thread should shut down.
     private final Object runLock = new Object(); // lock object for accessing run flag
     private Object chatUserLock; // notified by outside forces to communicate with this user.
-    private final Object newMessageNotifier = new Object(); // user notifies this to tell OutputWorker there is a new message to send.
+    private final Object outgoingMsgNotifier = new Object(); // ChatUser notifies this to tell OutputWorker there is a new message to send.
+    private final Object incomingMsgNotifier = new Object(); // UserInputWorker notifies this to tell UserInputHandler that there is a new message to receive.
 
     /**
      * worker responsible for reading incoming messages from the SessionCoordinator.
@@ -86,12 +87,12 @@ public class ChatUser extends Thread {
                     }
         
                     ArrayBlockingQueue<String> msgQueue = new ArrayBlockingQueue<String>(Constants.MSG_QUEUE_LENGTH, true);
-                    inputHandler = new UserInputHandler(chatWindowRef, msgQueue);
-                    inputWorker = new UserInputWorker(in, msgQueue);
+                    inputHandler = new UserInputHandler(chatWindowRef, msgQueue, incomingMsgNotifier);
+                    inputWorker = new UserInputWorker(0, in, msgQueue, incomingMsgNotifier);
                     inputWorker.start();
                     inputHandler.start();
                     
-                    outputWorker = new OutputWorker(userID, out, msgQueue, newMessageNotifier);
+                    outputWorker = new OutputWorker(userID, out, msgQueue, outgoingMsgNotifier);
                 }
                 // entered for setting up session communcation channels
                 case Constants.SOCKET_SETUP: {

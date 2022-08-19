@@ -18,6 +18,8 @@ import misc.ValidateInput;
  * First panel that is seen upon executing the Chatter app via ChatterApp.java
  */
 public class LoginPanel extends JPanel {
+    private final static int ALIAS_FIELD_WIDTH = 20;
+
     private JLabel welcomeLabel;
     private JLabel aliasPrompt;
     private JLabel aliasInstructions;
@@ -59,7 +61,7 @@ public class LoginPanel extends JPanel {
         aliasInstructions.setVisible(true);
         aliasInstructions.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        aliasField = new JTextField(20);
+        aliasField = new JTextField(ALIAS_FIELD_WIDTH);
         aliasField.setVisible(true);
         aliasField.setAlignmentX(Component.CENTER_ALIGNMENT);
         aliasField.setFont(new Font("Serif", Font.PLAIN, 18));

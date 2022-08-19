@@ -584,3 +584,21 @@ The cool thing about test-driven development is that, given the notion that I ha
 Of course, working through network-related bugs will be a bit more tedious in solving, though I have definitely developed my own method of solving these types of bugs. VS Code itself has proven to be a brilliant editor in this sense, as I am able to a compound launch debug session, which allows me to run multiple programs simultaneously in debug mode, catering to all the various breakpoints littered across the programs I am running. This has proven to be absolutely invaluable in stepping through protocol-centric conversations between entities across a network; with breakpoints set up on either end at all the various potentially problematic points that I wish to investigate at a particular moment, I can simply hit the green arrow and sequentially proceed from breakpoint to breakpoint, bouncing between programs in a seamlessly fluid manner. I absolutely love it.
 
 Until tomorrow! Time for some debugging.... Hehehe
+
+---
+
+## Debugging, Pt 1
+
+### Thursday, August 18th 5:14PM PST
+
+---
+
+Most of today went pretty smoothly on the debugging front, until I hit **RoomNamePanel.java**. Today was actually the first time seeing the panel, and so more than half of my programming time was spent simply tweaking the layout of said panel. It could be better but I've gotten it to a relatively acceptable point where it is now.
+
+The bug/behavior that was the most-time consuming for me to figure out was a rather silly bug, arguably perhaps not even a bug, but a desired behavior nonetheless. Part of the _RoomNamePanel's_ functionality is to display a red line of text underneath the text field whenever the user attempts to supply "bad" input (which in this case is any non-alphanumeric string outside of the range of 2-16 characters long), informing the user that their input requires tweaking.
+
+My desired behavior was to have this red line of text to appear without changing the layout of the other components that were within the panel. After 30 or so minutes of wrestling with the GridBagLayout manager, I found an answer on StackOverflow that suggested changing the text value in the JLabel from the warning text to " ", instead of flipping the visibility between true and false. This did the trick.
+
+Tomorrow, I will move on to verifying the functionality of the buttons on _RoomNamePanel_, after which I will move on to verifying the functionality of _ChatWindow_.
+
+Until next time.

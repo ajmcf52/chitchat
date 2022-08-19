@@ -8,6 +8,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
+import java.awt.BorderLayout;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -28,6 +29,9 @@ import requests.RoomSetupWorker;
  * a user to enter their desired room name
  */
 public class RoomNamePanel extends JPanel {
+
+    private final static int ROOM_NAMING_FIELD_WIDTH = 20;
+    private final static String WARNING_TEXT = "Name must contain only letters/numbers & be 2-16 characters long!";
 
     private JTextField roomNameField; // text field for entering room name
     private JLabel badNameWarning; // warning that pops up when a bad room name is entered
@@ -51,37 +55,43 @@ public class RoomNamePanel extends JPanel {
         chatUserLock = userLock;
         appState = state;
 
-        roomNameField = new JTextField(20); // makes a field with 20 "columns" (i.e., horizontal spaces roughly)
+        //fieldPanel = new JPanel();
+
+        roomNameField = new JTextField(ROOM_NAMING_FIELD_WIDTH); // makes a field with 20 "columns" (i.e., horizontal spaces roughly)
         roomNameField.setVisible(true);
         roomNameField.setAlignmentX(Component.CENTER_ALIGNMENT);
         roomNameField.setFont(new Font("Serif", Font.PLAIN, 18));
         roomNameField.setMaximumSize(roomNameField.getPreferredSize());
 
-        badNameWarning = new JLabel("Name must contain only letters/numbers & be 2-16 characters long!");
+        badNameWarning = new JLabel();
         badNameWarning.setForeground(Color.RED);
+        badNameWarning.setText(" ");
         badNameWarning.setFont(new Font("Serif", Font.PLAIN, 14));
-        badNameWarning.setVisible(false);
+        badNameWarning.setVisible(true);
         badNameWarning.setAlignmentX(Component.CENTER_ALIGNMENT);
+        badNameWarning.setSize(badNameWarning.getPreferredSize());
+
+        // warningPanel = new JPanel();
+        // warningPanel.setLayout(new BorderLayout());
+        // warningPanel.setSize(warningPanel.getPreferredSize());
+        // warningPanel.add(badNameWarning, BorderLayout.CENTER);
 
         prompt = new JLabel("Please enter a room name:");
         prompt.setFont(new Font("Serif", Font.BOLD, 22));
         prompt.setVisible(true);
-        prompt.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        instructions = new JLabel("must contain between 2-16 characters, containing only letters & numbers.\nNo profanity please! :)");
+        instructions = new JLabel("<html><center>must contain between 2-16 characters, containing only letters & numbers.<br/>No profanity please! :)<center/></html>");
         instructions.setFont(new Font("Serif", Font.ITALIC, 12));
         instructions.setVisible(true);
-        instructions.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         okButton = new JButton();
-        okButton.setText("OK");
+        okButton.setText(" OK ");
         okButton.setFont(new Font("Serif", Font.BOLD, 24));
-        okButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         backButton = new JButton();
         backButton.setText("Back");
         backButton.setFont(new Font("Serif", Font.BOLD, 24));
-        backButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        //backButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // layout programming
 
@@ -93,34 +103,40 @@ public class RoomNamePanel extends JPanel {
          */
 
         constraints.gridx = 1;
-        constraints.gridy = 2;
+        constraints.gridy = 0;
         constraints.gridwidth = 3;
         constraints.gridheight = 2;
-        constraints.fill = GridBagConstraints.BOTH;
+        constraints.anchor = GridBagConstraints.CENTER;
+        constraints.fill = GridBagConstraints.NONE;
         constraints.insets = new Insets(0,0,10,0);
         constraints.weightx = 0.5;
         constraints.weighty = 0.5;
         this.add(prompt, constraints);
 
-        constraints.gridy = 3;
+        constraints.gridy = 2;
+        constraints.anchor = GridBagConstraints.PAGE_START;
+        constraints.insets = new Insets(10,0,0,0);
         constraints.gridheight = 1;
         this.add(instructions, constraints);
 
-        constraints.gridy = 4;
+        constraints.gridy = 3;
         constraints.insets = new Insets(0,0,0,0);
         this.add(roomNameField, constraints);
 
         constraints.gridy = 5;
-        constraints.insets = new Insets(5,0,10,0);
+        constraints.anchor = GridBagConstraints.CENTER;
         this.add(badNameWarning, constraints);
 
+        constraints.ipady = 0;
         constraints.gridy = 6;
+        constraints.gridx = 2;
         constraints.gridwidth = 1;
         constraints.gridheight = 2;
-        constraints.insets = new Insets(5, 0, 10, 0);
+        constraints.anchor = GridBagConstraints.PAGE_END;
+        constraints.insets = new Insets(5, 0, 20, 100);
         this.add(okButton, constraints);
 
-        constraints.gridx = 3;
+        constraints.insets = new Insets(5, 100, 20, 0);
         this.add(backButton, constraints);
 
         this.setName(PanelNames.ROOM_NAME_PANEL);
@@ -174,9 +190,9 @@ public class RoomNamePanel extends JPanel {
      */
     public void triggerErrorMessage(JLabel badNameWarning) {
         //System.out.println("farts");
-        badNameWarning.setVisible(true);
-        Timer timer = new Timer(5000, event -> {
-            badNameWarning.setVisible(false);
+        badNameWarning.setText(WARNING_TEXT);
+        Timer timer = new Timer(3500, event -> {
+            badNameWarning.setText(" ");
         });
         timer.setRepeats(false);
         timer.start();

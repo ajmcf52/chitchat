@@ -12,19 +12,19 @@ import io.InputWorker;
  */
 public class UserInputWorker extends InputWorker {
     
-    private Object newMessageNotifier; // used to notify UIH that there are newly received messages to process
+    private Object incomingMsgNotifier; // used to notify UIH that there are newly received messages to process
 
     /**
      * constructor for UIW.
      * @param workerNum unique number assigned to this worker within its class
      * @param input reader used to read in messages
      * @param msgQueue where newly received messages are placed
-     * @param nmn used to notify the UserInputHandler when there are newly received messages to process.
+     * @param incomingNotifier used to notify the UserInputHandler when there are newly received messages to process.
      * 
      */
-    public UserInputWorker(int workerNum, BufferedReader input, ArrayBlockingQueue<String> msgQueue, Object nmn) {
+    public UserInputWorker(int workerNum, BufferedReader input, ArrayBlockingQueue<String> msgQueue, Object incomingNotifier) {
         super("UIW-" + Integer.toString(workerNum), input,msgQueue);
-        newMessageNotifier = nmn;
+        incomingMsgNotifier = incomingNotifier;
     }
 
     /**
@@ -42,7 +42,7 @@ public class UserInputWorker extends InputWorker {
                 System.out.println("UserInputWorker Error! --> " + e.getMessage());
             }
             messageQueue.add(msg);
-            newMessageNotifier.notify();
+            incomingMsgNotifier.notify();
 
 
             // check to see if it's time to exit.

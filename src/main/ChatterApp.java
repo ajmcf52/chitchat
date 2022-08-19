@@ -15,7 +15,7 @@ import ui.RoomNamePanel;
 public class ChatterApp {
 
     public static void main(String[] args) {
-        System.out.println("Hello World!");
+        //System.out.println("Hello World!");
 
         /**
          * TODO come up with a system that allows a user to input a port number into the program
@@ -60,7 +60,7 @@ public class ChatterApp {
         MainWindow mainWindow = new MainWindow(appPanels);
         boolean isRunning = true;
 
-        appState.setAppState(AppStateValue.ROOM_SELECT);
+        //appState.setAppState(AppStateValue.ROOM_NAMING);
 
         while (isRunning) {
             /**
@@ -110,12 +110,6 @@ public class ChatterApp {
                 catch (InterruptedException e) {
                     System.out.println("ChatterApp error! --> " + e.getMessage());
                 }
-                try {
-                    Thread.sleep(1250);
-                }
-                catch (InterruptedException e) {
-                    System.out.println("ChatterApp thread snooze interrupted during ChoicePanel");
-                }
             }
             /**
              * enter here if we have opened a chat window.
@@ -123,7 +117,7 @@ public class ChatterApp {
             else if (appState.getAppState() == AppStateValue.CHATTING) {
                 // connect to the SeshCoordinator, set up the communication pathways, and begin chatting.
                 System.out.println("Chatting");
-                chatWindow = new ChatWindow("Unassigned Chat");
+                chatWindow = new ChatWindow("Unassigned Chat", chatUser);
                 chatWindow.addLineToFeed("Connecting to SessionCoordinator...");
                 chatUser.initializeChatRoomRef(chatWindow);
                 chatUser.start();
@@ -149,7 +143,9 @@ public class ChatterApp {
             else if (appState.getAppState() == AppStateValue.ROOM_NAMING) {
                 mainWindow.showRoomNamingPanel();
                 try {
-                    chatUserLock.wait();
+                    synchronized (chatUserLock) {
+                        chatUserLock.wait();
+                    }
                 } catch (Exception e) {
                     System.out.println("CU Error during ROOM_NAMING --> " + e.getMessage());
                 }

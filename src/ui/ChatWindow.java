@@ -39,8 +39,6 @@ public class ChatWindow extends JFrame {
 
     private String sessionID; // id unique to this session.
     private JPanel chatPanel; // panel of the chat window.
-    // private JPanel leftSidePanel; // contains chat feed and message control.
-    // private JPanel rightSidePanel; // contains solely the participant list.
 
     // Variables with dynamic data below...
     private JList<String> chatFeed; // current state of the chat.

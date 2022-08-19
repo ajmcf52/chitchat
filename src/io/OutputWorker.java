@@ -17,20 +17,20 @@ public class OutputWorker extends Worker {
     
     private PrintWriter out; // what will be used to send outgoing messages.
     private ArrayBlockingQueue<String> messageQueue; // where outgoing messages will be retrieved from.
-    private Object newMessageNotifier; // wait on this for new messages to be forwarded.
+    private Object outgoingMsgNotifier; // wait on this for new messages that require sending.
    
     /**
      * constructor of the OutputWorker.
      * @param workerCode 2-character code unique to this worker within its worker class.
      * @param output PrintWriter to be used for writing outgoing messages; initialized by SessionCoordinator
      * @param msgQueue initialized by SessionCoordinator, where this thread will retrieve outgoing messages to be sent.
-     * @param nmn new message notifier
+     * @param outgoingNotifier used by ChatUser to notify this class of a new message needing to be sent.
      */
-    public OutputWorker(String workerCode, PrintWriter output, ArrayBlockingQueue<String> msgQueue, Object nmn) {
+    public OutputWorker(String workerCode, PrintWriter output, ArrayBlockingQueue<String> msgQueue, Object outgoingNotifier) {
         super("OW-" + workerCode);
         messageQueue = msgQueue;
         out = output;
-        newMessageNotifier = nmn;
+        outgoingMsgNotifier = outgoingNotifier;
     }
 
     /**
@@ -40,7 +40,7 @@ public class OutputWorker extends Worker {
 
         while (true) {
             try {
-                newMessageNotifier.wait(); // wait until notified by a BroadcastWorker, then take all that are available.
+                outgoingMsgNotifier.wait(); // wait until notified by a BroadcastWorker, then take all that are available.
                 ArrayList<String> toSend = new ArrayList<String>();
                 messageQueue.drainTo(toSend);
                 for (String msg : toSend) {
@@ -66,7 +66,7 @@ public class OutputWorker extends Worker {
     public void triggerMessageSend(String msg) {
         try {
             messageQueue.put(msg);
-            newMessageNotifier.notify();
+            outgoingMsgNotifier.notify();
         } catch (Exception e) {
             System.out.println("Exception occurred while pushing into " + workerID + "'s outgoing queue! --> " + e.getMessage());
         }

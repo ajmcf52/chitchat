@@ -14,7 +14,7 @@ public class MainWindow extends JFrame {
 
     public MainWindow(JPanel... panels) {
         this.setTitle("Chatter");
-        this.setSize(500,300);
+        this.setSize(600,400);
         this.setLocationRelativeTo(null); // centers the component
         
         cardStack = new JPanel();

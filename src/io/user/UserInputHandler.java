@@ -27,15 +27,15 @@ public class UserInputHandler extends Thread {
 
     private volatile boolean isRunning; // flag is used to switch worker on and off.
     private Object runLock; //lock for aforementioned run flag.
-    private Object newMessageNotifier; // waited on for new messages to pull from the queue.
+    private Object incomingMessageNotifier; // waited on for new messages to pull from the queue.
 
     /**
      * constructor for UIH.
      * @param chatWin chat window reference object
      * @param msgQueue message queue
-     * @param nmn new message notifier, notified by UserInputWorker (the receiver of messages via Socket)
+     * @param incomingNotifier new message notifier, notified by UserInputWorker (the receiver of messages via Socket)
      */
-    public UserInputHandler(ChatWindow chatWin, ArrayBlockingQueue<String> msgQueue, Object nmn) {
+    public UserInputHandler(ChatWindow chatWin, ArrayBlockingQueue<String> msgQueue, Object incomingNotifier) {
         chatWindowRef = chatWin;
         messageQueue = msgQueue;
         isRunning = false;
@@ -52,9 +52,9 @@ public class UserInputHandler extends Thread {
         while (true) {
             String msg = null;
             try {
-                synchronized (newMessageNotifier) {
+                synchronized (incomingMessageNotifier) {
                     // wait here until notified by UserInputWorker that we have new messages to process
-                    newMessageNotifier.wait();
+                    incomingMessageNotifier.wait();
                 }
                 msg = messageQueue.take();
             } catch (Exception e) {

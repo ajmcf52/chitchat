@@ -10,7 +10,7 @@ import java.awt.Dimension;
 
 import misc.PanelNames;
 import net.ChatUser;
-import requests.RoomSetupWorker;
+import main.AppStateValue;
 import main.ApplicationState;
 
 /**
@@ -62,12 +62,14 @@ public class ChoicePanel extends JPanel {
         this.setName(PanelNames.CHOICE_PANEL);
 
         createRoomButton.addActionListener(e -> {
-            // connect to the registry and send a NewRoomRequest
-            // System.out.println("create room clicked");
+            appState.setAppState(AppStateValue.ROOM_NAMING);
+            synchronized (chatUserLock) {
+                chatUserLock.notify();
+            }
+        });
 
-            RoomSetupWorker worker = new RoomSetupWorker(0, userRef, chatUserLock, appState);
-            worker.start();
-
+        joinRoomButton.addActionListener(e -> {
+            // TODO flesh out this code.
         });
 
     }
