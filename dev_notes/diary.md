@@ -602,3 +602,15 @@ My desired behavior was to have this red line of text to appear without changing
 Tomorrow, I will move on to verifying the functionality of the buttons on _RoomNamePanel_, after which I will move on to verifying the functionality of _ChatWindow_.
 
 Until next time.
+
+---
+
+## Bugs. A lot of bugs. But we're fixing them.
+
+### Friday, August 19th 4:58PM PST
+
+---
+
+Title says it all. I must have neutralized around 25 bugs in 2 hours, some more significant than others, some tricky, some not. I probably forgot to synchronize on wait() or notify() calls half a dozen times. That is still a habit I need to adopt, apparently. Luckily, that one is an extremely easy bug to identify and fix.
+
+For next time, the last bug I solved today is on line 129 of _initializeUser()_ of **SessionCoordinator.java**; the chat room is loading up. We are getting closer and closer. Just have to keep plugging away.

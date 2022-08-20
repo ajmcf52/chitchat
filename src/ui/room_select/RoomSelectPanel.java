@@ -45,6 +45,8 @@ public class RoomSelectPanel extends JPanel {
     private static RoomSelectTable table; // displays all the room selection data
     private Object workerNotifier; // this object is notified for "Refresh" requests
     private ApplicationState appState; // to be interacted with on particular button presses.
+
+    private RoomsListFetcher roomsListFetcher; // thread-based worker used to fetch the list of rooms
     /**
      * constructor for RSP
      */
@@ -54,9 +56,6 @@ public class RoomSelectPanel extends JPanel {
         // fire up the RoomsListFetcher as quickly as possible to get our table populated.
         table = new RoomSelectTable();
         workerNotifier = new Object();
-        
-        RoomsListFetcher rlh = new RoomsListFetcher(workerNotifier);
-        rlh.start();
         
         tablePane = new JScrollPane();
         backButton = new JButton("Back");
@@ -134,11 +133,15 @@ public class RoomSelectPanel extends JPanel {
         });
 
         backButton.addActionListener(e -> {
-            rlh.signalWorkComplete();
+            roomsListFetcher.signalWorkComplete();
             workerNotifier.notify();
             appState.setAppState(AppStateValue.CHOICE_PANEL);
         });
+    }
 
+    public void populateRoomsList() {
+        RoomsListFetcher rlf = new RoomsListFetcher(workerNotifier);
+        rlf.start();
     }
 
     /**
@@ -165,6 +168,7 @@ public class RoomSelectPanel extends JPanel {
          */
         public void signalWorkComplete() {
             isRunning = false;
+            this.interrupt();
         }
 
         /**
@@ -256,7 +260,9 @@ public class RoomSelectPanel extends JPanel {
                 }
                 // principal list fetch complete; wait on user for any Refresh requests.
                 while (true) {
-                    workerNotify.wait();
+                    synchronized (workerNotify) {
+                        workerNotify.wait();
+                    }
                     if (!isRunning) {
                         break; // work is done, time to break.
                     }
@@ -270,7 +276,7 @@ public class RoomSelectPanel extends JPanel {
 
             }
             catch (Exception e) {
-                System.out.println("RLH Error! --> " + e.getMessage());
+                System.out.println("RoomSelectPanel Error! --> " + e.getMessage());
             }
         }
     }

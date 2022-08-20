@@ -66,6 +66,7 @@ public class ChatterApp {
             /**
              * enter here if we are at the login panel.
              */
+            System.out.println("state: " + appState.getAppState().name());
             if (appState.getAppState() == AppStateValue.LOGIN_PANEL) {
                 try {
                     /*
@@ -134,7 +135,9 @@ public class ChatterApp {
             else if (appState.getAppState() == AppStateValue.ROOM_SELECT) {
                 mainWindow.showRoomSelectPanel();
                 try {
-                    chatUserLock.wait();
+                    synchronized (chatUserLock) {
+                        chatUserLock.wait();
+                    }
                 } catch (Exception e) {
                     System.out.println("CU Error during ROOM_SELECT --> " + e.getMessage());
                 }

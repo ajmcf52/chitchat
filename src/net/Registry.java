@@ -145,7 +145,7 @@ public class Registry {
                         // write back the inet address + port of the SC's server socket for Chat host to connect to
                         String inetAddressStr = serverSocket.getInetAddress().toString();
                         String portStr = String.valueOf(serverSocket.getLocalPort());
-                        String connectionInfoMsg = inetAddressStr + ":" + portStr;
+                        String connectionInfoMsg = inetAddressStr + ":" + portStr + '\n';
 
                         // update local static fields before responding.
                         String[] roomListValues = {sid, alias, participantCountStr, connectionInfoMsg};  // using SID for room name (For now)
@@ -156,7 +156,7 @@ public class Registry {
                             roomListCsvMap.put(sid,roomListCsv);
                         }
 
-                        out.write(connectionInfoMsg + '\n');
+                        out.write(connectionInfoMsg);
                         // stream work done.
                         out.flush();
                         out.close();
@@ -171,12 +171,15 @@ public class Registry {
                          */
                         RoomsListHandler rlh = new RoomsListHandler(socket);
                         rlh.start();
+                        break;
                     }
 
                     case (Requests.JOIN_ROOM_REQ): {
                         /**
                          * we enter here when a user is requesting to join an existing room. 
                          */
+                        // TODO implement this!
+                        break;
                     }
                     
                     default: {
@@ -278,7 +281,7 @@ public class Registry {
                 }
 
             } catch (Exception e) {
-                System.out.println("RLH Error! --> " + e.getMessage());
+                System.out.println("RLH Error!!! --> " + e.getMessage());
             }
         }
 

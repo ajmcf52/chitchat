@@ -54,6 +54,7 @@ public class RoomSetupWorker extends Worker {
             // New room request signifier first, followed immediately by the intended chat user host alias.
             String roomSetupMsg = Requests.NEW_ROOM_REQ + '\n';
             out.write(roomSetupMsg);
+            //out.flush();
             String aliasMsg = chatUser.getAlias() + '\n';
             out.write(aliasMsg);
             out.flush();
@@ -62,8 +63,8 @@ public class RoomSetupWorker extends Worker {
             which the ChatUser will connect to. Once connected to the SessionThread, this will open
             its channel of communication with that chat session.
             */
+
             String seshConnectionInfo = in.readLine();
-            // System.out.println("here!!");
             String[] ipAndPort = seshConnectionInfo.split(":");
             String seshIp = ipAndPort[0];
             int seshPortNum = -1;
@@ -79,7 +80,7 @@ public class RoomSetupWorker extends Worker {
             in.close();
             out.close();
             socket.close();
-            appState.setAppState(AppStateValue.ROOM_NAMING);
+            appState.setAppState(AppStateValue.CHATTING);
             
             // notify ChatUser that the work has been done.
             synchronized (chatUserLock) {
@@ -87,7 +88,7 @@ public class RoomSetupWorker extends Worker {
             }
 
         } catch (Exception e) {
-            System.out.println("RoomSetupThread Exception --> " + e.getMessage());
+            System.out.println("RoomSetupWorker Exception --> " + e.getMessage());
         }
     }
 }

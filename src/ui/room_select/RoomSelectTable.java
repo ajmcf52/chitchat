@@ -21,9 +21,6 @@ public class RoomSelectTable extends JTable {
             model.addColumn(COLUMNS[i]);
         }
         this.setModel(model);
-        
-        //String[] args = {"farts", "table", "andy", "testing"};
-        //this.addEntry(args);
     }
 
     @Override

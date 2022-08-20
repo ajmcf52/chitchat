@@ -40,6 +40,7 @@ public class UserInputHandler extends Thread {
         messageQueue = msgQueue;
         isRunning = false;
         runLock = new Object();
+        incomingMessageNotifier = incomingNotifier;
     }
 
     /**

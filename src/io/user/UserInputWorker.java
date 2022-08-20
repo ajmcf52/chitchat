@@ -42,7 +42,9 @@ public class UserInputWorker extends InputWorker {
                 System.out.println("UserInputWorker Error! --> " + e.getMessage());
             }
             messageQueue.add(msg);
-            incomingMsgNotifier.notify();
+            synchronized (incomingMsgNotifier) {
+                incomingMsgNotifier.notify();
+            }
 
 
             // check to see if it's time to exit.

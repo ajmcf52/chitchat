@@ -26,8 +26,8 @@ public class ChatUser extends Thread {
     private volatile boolean isRunning; // used to indicate when this thread should shut down.
     private final Object runLock = new Object(); // lock object for accessing run flag
     private Object chatUserLock; // notified by outside forces to communicate with this user.
-    private final Object outgoingMsgNotifier = new Object(); // ChatUser notifies this to tell OutputWorker there is a new message to send.
-    private final Object incomingMsgNotifier = new Object(); // UserInputWorker notifies this to tell UserInputHandler that there is a new message to receive.
+    private final static Object outgoingMsgNotifier = new Object(); // ChatUser notifies this to tell OutputWorker there is a new message to send.
+    private final static Object incomingMsgNotifier = new Object(); // UserInputWorker notifies this to tell UserInputHandler that there is a new message to receive.
 
     /**
      * worker responsible for reading incoming messages from the SessionCoordinator.
@@ -70,7 +70,9 @@ public class ChatUser extends Thread {
                 // entered when this user is not chatting.
                 case Constants.NOT_CHATTING: {
                     try {
-                        chatUserLock.wait();
+                        synchronized (chatUserLock) {
+                            chatUserLock.wait();
+                        }
                     } catch (Exception e) {
                         System.out.println(alias + " encountered an error while waiting --> " + e.getMessage());
                     }
@@ -93,6 +95,15 @@ public class ChatUser extends Thread {
                     inputHandler.start();
                     
                     outputWorker = new OutputWorker(userID, out, msgQueue, outgoingMsgNotifier);
+                    outputWorker.start();
+
+                    try {
+                        synchronized (chatUserLock) {
+                            chatUserLock.wait();
+                        }
+                    } catch (Exception e) {
+                        System.out.println(alias + " encountered an error while waiting --> " + e.getMessage());
+                    }
                 }
                 // entered for setting up session communcation channels
                 case Constants.SOCKET_SETUP: {
@@ -114,6 +125,7 @@ public class ChatUser extends Thread {
                      * now we can move to chat setup.
                      */
                     this.setSessionHostValue(Constants.CHATTING);
+                    break;
                 }
                 default:
                     System.out.println("This shouldn't execute, ever..");

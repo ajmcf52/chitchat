@@ -33,7 +33,6 @@ public abstract class Worker extends Thread {
      */
     public void turnOn() {
         isRunning = true;
-        start();
     }
 
     /**

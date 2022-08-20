@@ -66,7 +66,9 @@ public class MessageRouter extends Worker {
                 for (int i = 0; i < numUsers; i++) {
                     ArrayBlockingQueue<String> outgoing = outgoingMessageQueues.get(i);
                     outgoing.addAll(messagesToFwd);
-                    newMessageNotifiers.get(i).notify();
+                    synchronized (newMessageNotifiers.get(i)) {
+                        newMessageNotifiers.get(i).notify();
+                    }
                 }
                 
             } catch (Exception e) {

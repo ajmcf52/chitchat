@@ -36,7 +36,7 @@ public class SessionCoordinator extends Worker {
 
     private ArrayList<SessionInputWorker> inputWorkers; // thread-based workers responsible for reading in new messages.
     private ArrayList<OutputWorker> outputWorkers; // thread-based workers responsible for writing outgoing messages.
-    private ArrayList<MessageRouter> broadcastWorkers; // thread-based workers responsible for forwarding messages (in to out)
+    private ArrayList<MessageRouter> messageRouters; // thread-based workers responsible for forwarding messages (in to out)
 
     private ServerSocket connectionReceiver; // socket used to receive new connections to the chat session.
     private int participantCount; // number of users in the chat room.
@@ -64,7 +64,6 @@ public class SessionCoordinator extends Worker {
         inputWorkers = new ArrayList<SessionInputWorker>();
         outputWorkers = new ArrayList<OutputWorker>();
         serverPort = connectionReceiver.getLocalPort();
-        connectionReceiver = null;
         participantCount = 0;
         sessionID = sid;
         hostAlias = hostAli;
@@ -116,7 +115,6 @@ public class SessionCoordinator extends Worker {
         try {
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream());
-         new PrintWriter(socket.getOutputStream());
         } catch (Exception e) {
             System.out.println(workerID + " Error! --> " + e.getMessage());
         }
@@ -126,8 +124,10 @@ public class SessionCoordinator extends Worker {
 
         SessionInputWorker inputWorker = new SessionInputWorker(participantCount, in, incoming, taskQueue);
         String workerCode = "S" + Integer.toString(participantCount);
+        participantCount++;
+
         OutputWorker outputWorker = new OutputWorker(workerCode, out, outgoing, newMessageNotifiers.get(participantCount - 1));
-        MessageRouter broadcastWorker = new MessageRouter(participantCount, taskQueue, 
+        MessageRouter messageRouter = new MessageRouter(participantCount, taskQueue, 
             incomingMessageQueues, outgoingMessageQueues, newMessageNotifiers);
 
         // perform book-keeping
@@ -136,21 +136,20 @@ public class SessionCoordinator extends Worker {
         chatRoomUserSockets.add(socket);
         inputWorkers.add(inputWorker);
         outputWorkers.add(outputWorker);
-        broadcastWorkers.add(broadcastWorker);
+        messageRouters.add(messageRouter);
         incomingMessageQueues.get(participantCount).add(initialMessage);
         aliasWorkerNumberMappings.put(alias, participantCount);
             
         // fire up the worker threads (Host is always at index zero!!!)
         inputWorkers.get(participantCount).start();
         outputWorkers.get(participantCount).start();
-        broadcastWorkers.get(participantCount).start();
+        messageRouters.get(participantCount).start();
 
-            try {
-                taskQueue.put(participantCount);
-            } catch (InterruptedException e) {
-                System.out.println(workerID + " interrupted while queueing task :(");
-            }
-            participantCount++;
+        try {
+            taskQueue.put(participantCount);
+        } catch (InterruptedException e) {
+            System.out.println(workerID + " interrupted while queueing task :(");
+        }
     }
 
     /**
@@ -174,6 +173,7 @@ public class SessionCoordinator extends Worker {
 
         } catch (Exception e) {
             System.out.println("SessionCoordinator Error! --> " + e.getMessage());
+            //e.printStackTrace();
         }
     }
 

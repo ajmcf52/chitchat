@@ -40,7 +40,9 @@ public class OutputWorker extends Worker {
 
         while (true) {
             try {
-                outgoingMsgNotifier.wait(); // wait until notified by a BroadcastWorker, then take all that are available.
+                synchronized (outgoingMsgNotifier) {
+                    outgoingMsgNotifier.wait();
+                }
                 ArrayList<String> toSend = new ArrayList<String>();
                 messageQueue.drainTo(toSend);
                 for (String msg : toSend) {
@@ -66,7 +68,9 @@ public class OutputWorker extends Worker {
     public void triggerMessageSend(String msg) {
         try {
             messageQueue.put(msg);
-            outgoingMsgNotifier.notify();
+            synchronized (outgoingMsgNotifier) {
+                outgoingMsgNotifier.notify();
+            }
         } catch (Exception e) {
             System.out.println("Exception occurred while pushing into " + workerID + "'s outgoing queue! --> " + e.getMessage());
         }
