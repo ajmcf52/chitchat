@@ -4,6 +4,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 import misc.PanelNames;
+import ui.room_select.RoomSelectPanel;
 
 import java.awt.CardLayout;
 
@@ -48,11 +49,21 @@ public class MainWindow extends JFrame {
     }
 
     /**
-     * called to show the room selection panel.
+     * called to show the room selection panel. Also populates the table.
+     * @rsp the panel whose table is being populated
      */
-    public void showRoomSelectPanel() {
+    public void showRoomSelectPanel(RoomSelectPanel rsp) {
         layout.show(cardStack, PanelNames.ROOM_SELECT_PANEL);
+        populateRoomSelectTable(rsp);
         this.pack();
+    }
+
+    /**
+     * initializes population of RoomSelectPanel's table of listed rooms.
+     * @param rsp the panel.
+     */
+    public void populateRoomSelectTable(RoomSelectPanel rsp) {
+        rsp.populateRoomsList();
     }
 
     /**
@@ -61,22 +72,4 @@ public class MainWindow extends JFrame {
     public void showRoomNamingPanel() {
         layout.show(cardStack, PanelNames.ROOM_NAME_PANEL);
     }
-
-    /*
-     * HelloWorldDisplay displayPanel = new HelloWorldDisplay();
-      JButton okButton = new JButton("OK");
-      ButtonHandler listener = new ButtonHandler();
-      okButton.addActionListener(listener);
-
-      JPanel content = new JPanel();
-      content.setLayout(new BorderLayout());
-      content.add(displayPanel, BorderLayout.CENTER);
-      content.add(okButton, BorderLayout.SOUTH);
-
-      JFrame window = new JFrame("GUI Test");
-      window.setContentPane(content);
-      window.setSize(250,100);
-      window.setLocation(100,100);
-      window.setVisible(true);
-     */
 }

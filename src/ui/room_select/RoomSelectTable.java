@@ -53,11 +53,4 @@ public class RoomSelectTable extends JTable {
         }
         model.removeRow(i);
     }
-
-    /**
-     * used ot clear all entries.
-     */
-    // public void clear() {
-    //     model.
-    // }
 }

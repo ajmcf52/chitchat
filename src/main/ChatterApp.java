@@ -133,7 +133,7 @@ public class ChatterApp {
             }
 
             else if (appState.getAppState() == AppStateValue.ROOM_SELECT) {
-                mainWindow.showRoomSelectPanel();
+                mainWindow.showRoomSelectPanel(roomSelectPanel);
                 try {
                     synchronized (chatUserLock) {
                         chatUserLock.wait();

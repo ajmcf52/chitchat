@@ -627,4 +627,15 @@ For next time, the last bug I solved today is on line 129 of _initializeUser()_ 
 
 -   Fixed the remainder of the outstanding bugs.
 -   Chat session title is now correct.
--
+-   Bob can now accurately see Alice's room listing in _RoomSelectPanel_.
+
+Big progress being made in a short amount of dev time today. Only 90 minutes, As I spent the first 2.5 hours here at the coffee shop going into great depth about my future in the coming weeks, months, and years. Sure, I sacrificed some development time to do so, but I would like to think that that kind of stuff is worth being done every once in a while.
+
+Off to dinner with my dad. I plan on doing a bit more work tonight if I am up for it. Then again, I may end up crashing early, as I never really got to catch up on sleep this morning.
+
+**To Do Next**:
+
+-   Get IP address displaying correctly in the room listing information (i.e., change "0.0.0.0/0.0.0.0" to "0.0.0.0")
+-   Implement the joining of a room.
+
+Every day, we inch closer and closer to the finish line. Tomorrow will be a huge day.

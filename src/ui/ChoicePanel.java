@@ -69,7 +69,10 @@ public class ChoicePanel extends JPanel {
         });
 
         joinRoomButton.addActionListener(e -> {
-            // TODO flesh out this code.
+            appState.setAppState(AppStateValue.ROOM_SELECT);
+            synchronized (chatUserLock) {
+                chatUserLock.notify();
+            }
         });
 
     }

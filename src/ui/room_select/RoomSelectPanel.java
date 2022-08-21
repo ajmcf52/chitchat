@@ -118,9 +118,11 @@ public class RoomSelectPanel extends JPanel {
 
         refreshButton.addActionListener(e -> {
             refreshButton.setEnabled(false);
-            workerNotifier.notify();
+            synchronized (workerNotifier) {
+                workerNotifier.notify();
+            }
             
-            Timer timer = new Timer(7500, event -> {
+            Timer timer = new Timer(3000, event -> {
                 // re-enable "Refresh" capability after 7.5 seconds
                 refreshButton.setEnabled(true);
             });
@@ -134,11 +136,17 @@ public class RoomSelectPanel extends JPanel {
 
         backButton.addActionListener(e -> {
             roomsListFetcher.signalWorkComplete();
-            workerNotifier.notify();
+            synchronized (workerNotifier) {
+                workerNotifier.notify();
+            }
             appState.setAppState(AppStateValue.CHOICE_PANEL);
         });
     }
 
+    /**
+     * instantiates and starts the thread responsible for populating the rooms list table.
+     * This persistent thread worker also handles refresh requests.
+     */
     public void populateRoomsList() {
         RoomsListFetcher rlf = new RoomsListFetcher(workerNotifier);
         rlf.start();
