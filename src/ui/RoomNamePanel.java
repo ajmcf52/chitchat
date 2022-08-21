@@ -31,7 +31,7 @@ import requests.RoomSetupWorker;
 public class RoomNamePanel extends JPanel {
 
     private final static int ROOM_NAMING_FIELD_WIDTH = 20;
-    private final static String WARNING_TEXT = "Name must contain only letters/numbers & be 2-16 characters long!";
+    private final static String WARNING_TEXT = "Name may not include any special characters & can be 2-16 characters long!";
 
     private JTextField roomNameField; // text field for entering room name
     private JLabel badNameWarning; // warning that pops up when a bad room name is entered
@@ -80,7 +80,7 @@ public class RoomNamePanel extends JPanel {
         prompt.setFont(new Font("Serif", Font.BOLD, 22));
         prompt.setVisible(true);
 
-        instructions = new JLabel("<html><center>must contain between 2-16 characters, containing only letters & numbers.<br/>No profanity please! :)<center/></html>");
+        instructions = new JLabel("<html><center>must contain between 2-16 characters.<br/>No profanity please! :)<center/></html>");
         instructions.setFont(new Font("Serif", Font.ITALIC, 12));
         instructions.setVisible(true);
 
@@ -147,12 +147,12 @@ public class RoomNamePanel extends JPanel {
             String roomName = roomNameField.getText();
 
             if (!ValidateInput.validateLength(roomName, Constants.MIN_USER_INPUT_LENGTH, Constants.MAX_USER_INPUT_LENGTH)
-            || !ValidateInput.validateAlphaNumeric(roomName)) {
+            || !ValidateInput.validateGeneric(roomName)) {
                 triggerErrorMessage(badNameWarning);
                 return;
             }
 
-            RoomSetupWorker rsWorker = new RoomSetupWorker(0, userRef, chatUserLock, appState);
+            RoomSetupWorker rsWorker = new RoomSetupWorker(roomName, userRef, chatUserLock, appState);
             rsWorker.start();
 
         });

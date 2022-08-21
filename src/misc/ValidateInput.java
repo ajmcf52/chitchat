@@ -34,4 +34,21 @@ public interface ValidateInput {
         }
         return true;
     }
+
+    /**
+     * used to validate a string whose characters are generically visible and non-special
+     * (i.e., characters that fall within the ASCII range of 32 to 126 inclusive)
+     * @param str
+     * @return
+     */
+    public static boolean validateGeneric(String str) {
+        int strLen = str.length();
+        for (int i = 0; i < strLen; i++) {
+            if (str.charAt(i) < Constants.SPACE_ASCII || str.charAt(i) > Constants.TILDE_ASCII) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 }

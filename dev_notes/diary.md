@@ -614,3 +614,17 @@ Until next time.
 Title says it all. I must have neutralized around 25 bugs in 2 hours, some more significant than others, some tricky, some not. I probably forgot to synchronize on wait() or notify() calls half a dozen times. That is still a habit I need to adopt, apparently. Luckily, that one is an extremely easy bug to identify and fix.
 
 For next time, the last bug I solved today is on line 129 of _initializeUser()_ of **SessionCoordinator.java**; the chat room is loading up. We are getting closer and closer. Just have to keep plugging away.
+
+---
+
+## Progress.
+
+### Saturday, August 20th
+
+---
+
+**What got done:**
+
+-   Fixed the remainder of the outstanding bugs.
+-   Chat session title is now correct.
+-

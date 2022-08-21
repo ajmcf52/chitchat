@@ -27,8 +27,16 @@
     ],
     "compounds": [
         {
-            "name": "Compound",
+            "name": "Compound (1U)",
             "configurations": ["Launch Registry", "Launch ChatterApp"]
+        },
+        {
+            "name": "2U",
+            "configurations": [
+                "Launch Registry",
+                "Launch ChatterApp",
+                "Launch ChatterApp"
+            ]
         }
     ]
 }

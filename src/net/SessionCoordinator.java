@@ -41,7 +41,7 @@ public class SessionCoordinator extends Worker {
     private ServerSocket connectionReceiver; // socket used to receive new connections to the chat session.
     private int participantCount; // number of users in the chat room.
     private int serverPort; // port on which this server is listening.
-    private String sessionID; // id of the session this coordinator is in charge of.
+    private String roomName; // id of the session this coordinator is in charge of.
     private String hostAlias; // host alias String.
 
     private HashMap<String, Integer> aliasWorkerNumberMappings; // maps alias Strings to the ID number allocated to workers responsible for said user.
@@ -51,9 +51,9 @@ public class SessionCoordinator extends Worker {
      * @param workerNum number unique to this worker within its class
      * @param serveSock server socket that will be used to accept incoming user connections to the chat room
      * @param hostAli alias of the intended chat room host
-     * @param sid session ID
+     * @param nameOfRoom name of the room
      */
-    public SessionCoordinator(int workerNum, ServerSocket serveSock, String hostAli, String sid) {
+    public SessionCoordinator(int workerNum, ServerSocket serveSock, String hostAli, String nameOfRoom) {
         super("SC-" + Integer.toString(workerNum));
         connectionReceiver = serveSock;
         incomingMessageQueues = new ArrayList<ArrayBlockingQueue<String>>();
@@ -63,9 +63,10 @@ public class SessionCoordinator extends Worker {
         newMessageNotifiers = new ArrayList<Object>();
         inputWorkers = new ArrayList<SessionInputWorker>();
         outputWorkers = new ArrayList<OutputWorker>();
+        messageRouters = new ArrayList<MessageRouter>();
         serverPort = connectionReceiver.getLocalPort();
         participantCount = 0;
-        sessionID = sid;
+        roomName = nameOfRoom;
         hostAlias = hostAli;
         aliasWorkerNumberMappings = new HashMap<String,Integer>();
     }
@@ -124,9 +125,8 @@ public class SessionCoordinator extends Worker {
 
         SessionInputWorker inputWorker = new SessionInputWorker(participantCount, in, incoming, taskQueue);
         String workerCode = "S" + Integer.toString(participantCount);
-        participantCount++;
 
-        OutputWorker outputWorker = new OutputWorker(workerCode, out, outgoing, newMessageNotifiers.get(participantCount - 1));
+        OutputWorker outputWorker = new OutputWorker(workerCode, out, outgoing, newMessageNotifiers.get(participantCount));
         MessageRouter messageRouter = new MessageRouter(participantCount, taskQueue, 
             incomingMessageQueues, outgoingMessageQueues, newMessageNotifiers);
 
@@ -150,6 +150,8 @@ public class SessionCoordinator extends Worker {
         } catch (InterruptedException e) {
             System.out.println(workerID + " interrupted while queueing task :(");
         }
+
+        participantCount++;
     }
 
     /**
@@ -166,14 +168,15 @@ public class SessionCoordinator extends Worker {
 
             // build and format the welcome message
             String timestampString = "[" + TimeStampGenerator.now() + "]";
-            String welcoming = "Welcome, " + hostAlias + ". You are the host of this room.";
-            String completeWelcomeMessage = timestampString + Constants.DELIM + welcoming + '\n';
+            String welcoming = "Welcome, " + hostAlias + ". You are the host of: " + roomName;
+            String completeWelcomeMessage = Constants.WELCOME_TAG + Constants.DELIM + timestampString + 
+            Constants.DELIM + welcoming + '\n';
 
             initializeUser(hostAlias, socket, completeWelcomeMessage);
 
         } catch (Exception e) {
             System.out.println("SessionCoordinator Error! --> " + e.getMessage());
-            //e.printStackTrace();
+            e.printStackTrace();
         }
     }
 

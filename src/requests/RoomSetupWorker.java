@@ -25,16 +25,18 @@ public class RoomSetupWorker extends Worker {
     private ChatUser chatUser; // ChatUser we are setting up as the intended host.
     private Object chatUserLock; // ChatUser will wait to be notified on this (signifies work has been done)
     private ApplicationState appState; // modified to let main() know where we are at.
+    private String roomName; // desired name of the room
 
     /**
      * constructor.
-     * @param workerNum number unique to the worker within its class of workers
+     * @param nameOfRoom number unique to the worker within its class of workers
      * @param ali user alias
      * @param chatLock notified to alert ChatUser in main() of progress.
      * @param state for main() loop control.
      */
-    public RoomSetupWorker(int workerNum, ChatUser chUser, Object chatLock, ApplicationState state) {
-        super("RWS-" + Integer.toString(workerNum));
+    public RoomSetupWorker(String nameOfRoom, ChatUser chUser, Object chatLock, ApplicationState state) {
+        super("RWS-0");
+        roomName = nameOfRoom;
         chatUser = chUser;
         chatUserLock = chatLock;
         appState = state;
@@ -55,8 +57,8 @@ public class RoomSetupWorker extends Worker {
             String roomSetupMsg = Requests.NEW_ROOM_REQ + '\n';
             out.write(roomSetupMsg);
             //out.flush();
-            String aliasMsg = chatUser.getAlias() + '\n';
-            out.write(aliasMsg);
+            String aliasAndRoomNameMsg = chatUser.getAlias() + "," + roomName + '\n'; // send room name and alias, CSV style.
+            out.write(aliasAndRoomNameMsg);
             out.flush();
 
             /* Registry should respond with the inet address of the SessionThread's server socket,

@@ -126,20 +126,20 @@ public class Registry {
                      * a SessionCoordinator and pass along a ServerSocket to which the host ChatUser will connect to.
                      */
                     case (Requests.NEW_ROOM_REQ): {
-                        String alias = in.readLine();
+                        String aliasAndRoomName = in.readLine();
+                        String[] args = aliasAndRoomName.split(",");
+                        String alias = args[0];
+                        String roomName = args[1];
                         String participantCountStr = "1"; // always the case when a room is first created (only the host!)
 
-                        String sid = "";
                         int scPort = -1;
                         synchronized (sessionCountLock) {
-                            // we sync in case two workers are trying to create a room at nearly the same moment in time.
-                            sid = Constants.SID_PREFIX + String.valueOf(sessionCount);
                             scPort = Constants.SESSION_PORT_PREFIX + sessionCount;
                         }
 
                         ServerSocket serverSocket = new ServerSocket(scPort);
-                        SessionCoordinator sc = new SessionCoordinator(sessionCount, serverSocket, alias, sid);
-                        coordinators.put(sid, sc);
+                        SessionCoordinator sc = new SessionCoordinator(sessionCount, serverSocket, alias, roomName);
+                        coordinators.put(roomName, sc);
                         sc.start();
 
                         // write back the inet address + port of the SC's server socket for Chat host to connect to
@@ -148,12 +148,12 @@ public class Registry {
                         String connectionInfoMsg = inetAddressStr + ":" + portStr + '\n';
 
                         // update local static fields before responding.
-                        String[] roomListValues = {sid, alias, participantCountStr, connectionInfoMsg};  // using SID for room name (For now)
-                        String roomListCsv = sid + "," + alias + "," + participantCountStr + "," + connectionInfoMsg;
+                        String[] roomListValues = {roomName, alias, participantCountStr, connectionInfoMsg};  // using SID for room name (For now)
+                        String roomListCsv = roomName + "," + alias + "," + participantCountStr + "," + connectionInfoMsg;
                         // plan is to add room naming capability once other functionalities are fleshed out.
                         synchronized (roomListDataLock) {
-                            roomListArrayMap.put(sid, roomListValues);
-                            roomListCsvMap.put(sid,roomListCsv);
+                            roomListArrayMap.put(roomName, roomListValues);
+                            roomListCsvMap.put(roomName,roomListCsv);
                         }
 
                         out.write(connectionInfoMsg);

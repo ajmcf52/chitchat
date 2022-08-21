@@ -100,9 +100,20 @@ public class UserInputHandler extends Thread {
         
         if (components[0].equals(Constants.WELCOME_TAG)) {
             // if we enter in here, we have a welcome message.
-            // welcome messages hold, after the last delimiter, the Session ID.
-            // we will use this SID to set the title of the window accordingly.
-            chatWindowRef.setTitle("ChatSession " + components[components.length - 1]);
+            // welcome messages hold, after the first appearance of ':', the room name.
+            // we will use this to set the title of the window accordingly.
+
+            /**
+             * seeking the first ":" that appears after the first ".", as this will be
+             * followed by the room name. We can expect this format to be the same every time,
+             * as it is programmed inside SessionCoordinator.
+             */
+            int firstPeriodIndex = msg.indexOf(".");
+            int semiColonIndex = msg.indexOf(":", firstPeriodIndex);
+
+            String roomName = msg.substring(semiColonIndex + 1);
+            chatWindowRef.setTitle("Chatter --- " + roomName);
+            msg = msg.replace(Constants.WELCOME_TAG, "");
         }
         
         chatWindowRef.addLineToFeed(msg);
