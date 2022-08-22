@@ -2,6 +2,8 @@ package io.user;
 
 import java.util.concurrent.ArrayBlockingQueue;
 
+import javax.swing.SwingUtilities;
+
 import ui.ChatWindow;
 import misc.Constants;
 
@@ -114,9 +116,28 @@ public class UserInputHandler extends Thread {
             String roomName = msg.substring(semiColonIndex + 1);
             chatWindowRef.setTitle("Chatter --- " + roomName);
             msg = msg.replace(Constants.WELCOME_TAG, "");
+            msg = msg.substring(1);
+
+            /**
+             * splitting twice on key points of the welcome string to determine the user alias,
+             * so we can add it to the participant list.
+             * 
+             * There's probably a better way to do this, but this way works as well.
+             */
+            String[] args = msg.split(", ");
+            args = args[1].split("\\.");
+            String alias = args[0];
+            chatWindowRef.addParticipantName(alias);
+            
         }
+        final String finalMessage = msg;
+        SwingUtilities.invokeLater(new Runnable() {
+
+            @Override
+            public void run() {
+                chatWindowRef.addLineToFeed(finalMessage);
+            }});
         
-        chatWindowRef.addLineToFeed(msg);
         
         
     }

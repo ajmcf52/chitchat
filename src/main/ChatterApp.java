@@ -60,7 +60,7 @@ public class ChatterApp {
         MainWindow mainWindow = new MainWindow(appPanels);
         boolean isRunning = true;
 
-        //appState.setAppState(AppStateValue.ROOM_NAMING);
+        // appState.setAppState(AppStateValue.CHATTING);
 
         while (isRunning) {
             /**

@@ -639,3 +639,23 @@ Off to dinner with my dad. I plan on doing a bit more work tonight if I am up fo
 -   Implement the joining of a room.
 
 Every day, we inch closer and closer to the finish line. Tomorrow will be a huge day.
+
+---
+
+## Frustrating.
+
+### Sunday, August 21st 9:31PM PST
+
+---
+
+Instead of worrying about the minutia that were noted as things to do next from last time, I am going to cut straight into the meat & potatoes of crucial tasks that need to be implemented as soon as possible.
+
+**To do today:**
+
+-   implement the sending a message.
+-   add "Join Room" functionality to allow Bob to join Alice's room.
+-   depending on how much time we have, test both functionalities.
+
+so sending a message was already mostly implemented, but text doesn't seem to want to appear in the models I have being shown in my _JLists_. Seems to have something to do with needing to update UI properties using a _SwingWorker_. Sigh...........
+
+I guess I know what I'm working on tomorrow.

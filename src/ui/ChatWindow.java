@@ -15,6 +15,7 @@ import javax.swing.JList;
 import javax.swing.JTextField;
 import javax.swing.JLabel;
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.border.*;
 
 import net.ChatUser;
@@ -32,6 +33,7 @@ public class ChatWindow extends JFrame {
     // private static final int PARTICIPANT_LIST_WIDTH = 20; // ibid, your honor!
     // private static final int PARTCIPANT_LIST_HEIGHT = 200; // number of rows
     private static final Font CHAT_PLACEHOLDER_FONT = new Font("Serif", Font.ITALIC, 14);
+    private static final Font CHAT_TYPING_FONT = new Font("Serif", Font.PLAIN, 14);
     private static final Font PARTICIPANT_LIST_LABEL_FONT = new Font("MONOSPACED", Font.BOLD | Font.ITALIC, 14);
     private static final int CHAT_TEXTBOX_WIDTH = 100; // width of chat textbox
     // private static final int CHAT_TEXTBOX_HEIGHT = 14;
@@ -43,10 +45,11 @@ public class ChatWindow extends JFrame {
     // Variables with dynamic data below...
     private JList<String> chatFeed; // current state of the chat.
     private JTextField chatTextField; // where outgoing messages can be entered.
+    private JButton sendMsgButton; // button used to send a message.
     private JList<String> participantList; // where participants are shown.
     private JLabel participantListLabel; // simple participant list label.
-    private String chatFeedString; // text displayed in the chat feed. (messages separated by '\n')
-    private String participantListString; //participant list string. (participants separated by '\n')
+    //private String chatFeedString; // text displayed in the chat feed. (messages separated by '\n')
+    //private String participantListString; //participant list string. (participants separated by '\n')
 
     /**
      * JList models for displaying lines of read-only text
@@ -66,8 +69,8 @@ public class ChatWindow extends JFrame {
         outputHandler = new UserOutputHandler(messageEventNotifier);
         outputHandler.start();
 
-        chatFeedString = "";
-        participantListString = "";
+        //chatFeedString = "";
+        //participantListString = "";
         sessionID = sid;
         this.setTitle("CHAT SESSION - " + sessionID);
         this.setSize(400, 400);
@@ -79,11 +82,13 @@ public class ChatWindow extends JFrame {
         chatPanel = new JPanel();
         chatFeed = new JList<String>(chatFeedModel);
         chatTextField = new JTextField("", CHAT_TEXTBOX_WIDTH);
+        sendMsgButton = new JButton("Send");
         participantList = new JList<String>(participanListModel);
         participantListLabel = new JLabel("Participants");
 
         chatPanel.setLayout(new GridBagLayout());
         GridBagConstraints chatFeedConstraints = new GridBagConstraints();
+        GridBagConstraints sendMsgButtonConstraints = new GridBagConstraints();
         GridBagConstraints textFieldConstraints = new GridBagConstraints();
         GridBagConstraints participantListConstraints = new GridBagConstraints();
         GridBagConstraints participantLabelConstraints = new GridBagConstraints();
@@ -107,21 +112,30 @@ public class ChatWindow extends JFrame {
          */
         chatFeedConstraints.gridx = 0;
         chatFeedConstraints.gridy = 0;
-        chatFeedConstraints.gridheight = 17;
+        chatFeedConstraints.gridheight = 18;
         chatFeedConstraints.gridwidth = 16;
         chatFeedConstraints.fill = GridBagConstraints.BOTH;
         chatFeedConstraints.weightx = 0.8;
         chatFeedConstraints.weighty = 0.85;
-        chatFeedConstraints.insets = new Insets(20, 10, 0, 0);
+        chatFeedConstraints.insets = new Insets(5, 10, 0, 0);
 
         textFieldConstraints.gridx = 0;
-        textFieldConstraints.gridy = 17;
-        textFieldConstraints.gridheight = 3;
+        textFieldConstraints.gridy = 18;
+        textFieldConstraints.gridheight = 1;
         textFieldConstraints.gridwidth = 16;
         textFieldConstraints.fill = GridBagConstraints.HORIZONTAL;
         textFieldConstraints.weightx = 0.8;
         textFieldConstraints.weighty = 0.15;
         textFieldConstraints.insets = new Insets(0, 5, 0, 5);
+        
+        sendMsgButtonConstraints.gridx = 15;
+        sendMsgButtonConstraints.gridy = 19;
+        sendMsgButtonConstraints.gridheight = 1;
+        sendMsgButtonConstraints.gridwidth = 1;
+        sendMsgButtonConstraints.fill = GridBagConstraints.NONE;
+        sendMsgButtonConstraints.weightx = 0.1;
+        sendMsgButtonConstraints.weighty = 0.1;
+        sendMsgButtonConstraints.insets = new Insets(0,170,0,0);
 
         participantListConstraints.gridx = 16;
         participantListConstraints.gridy = 2;
@@ -148,13 +162,9 @@ public class ChatWindow extends JFrame {
         TitledBorder titledBorder = BorderFactory.createTitledBorder(lineBorder,"Chat Feed");
         titledBorder.setTitleJustification(TitledBorder.ABOVE_TOP);
         chatFeed.setBorder(titledBorder);
-        
-        // add the initial messages (if there are any)
-        MyListModel model = (MyListModel) chatFeed.getModel();
-        String[] messages = chatFeedString.split("\n");
-        for (int i = 0; i < messages.length; i++) {
-            model.addElement(messages[i]);
-        }
+        chatFeed.setVisibleRowCount(-1);
+        chatFeed.setSelectionBackground(Color.WHITE);
+        chatFeed.setSelectionForeground(Color.BLACK);
 
         chatTextField.setText(CHAT_PLACEHOLDER_STR);
         chatTextField.setForeground(Color.LIGHT_GRAY);
@@ -170,16 +180,13 @@ public class ChatWindow extends JFrame {
         loweredBevel = BorderFactory.createLoweredBevelBorder();
         compound = BorderFactory.createCompoundBorder(raisedBevel, loweredBevel);
         participantList.setBorder(compound);
+        participantList.setVisibleRowCount(-1);
+        participantList.setSelectionBackground(Color.WHITE);
+        participantList.setSelectionForeground(Color.BLACK);
         
-        model = (MyListModel) participantList.getModel();
-        messages = participantListString.split("\n");
-        for (int i = 0; i < messages.length; i++) {
-            model.addElement(messages[i]);
-        }
-
         /**
          * This focus listener ensures we have 
-         * nicely formatted placeholder text :)
+         * nicely formatted placeholder text.
          */
         chatTextField.addFocusListener(new FocusListener() {
             @Override
@@ -187,12 +194,15 @@ public class ChatWindow extends JFrame {
                 if (chatTextField.getText().equals(CHAT_PLACEHOLDER_STR)) {
                     chatTextField.setText("");
                 chatTextField.setForeground(Color.BLACK);
+                chatTextField.setFont(CHAT_TYPING_FONT);
+
                 }
 
             }
             @Override
             public void focusLost(FocusEvent e) {
                 if (chatTextField.getText().isEmpty()) {
+                    chatTextField.setFont(CHAT_PLACEHOLDER_FONT);
                     chatTextField.setText(CHAT_PLACEHOLDER_STR);
                     chatTextField.setForeground(Color.LIGHT_GRAY);
                 }
@@ -212,13 +222,20 @@ public class ChatWindow extends JFrame {
                     return;
                 }
                 // all we have to do is notify; UOW handles the rest.
-                messageEventNotifier.notify();
+                sendMsgButton.doClick();
             }
             
+        });
+
+        sendMsgButton.addActionListener(e -> {
+            synchronized (messageEventNotifier) {
+                messageEventNotifier.notify();
+            }
         });
         
         chatPanel.add(chatFeed, chatFeedConstraints);
         chatPanel.add(chatTextField, textFieldConstraints);
+        chatPanel.add(sendMsgButton, sendMsgButtonConstraints);
         chatPanel.add(participantList, participantListConstraints);
         chatPanel.add(participantListLabel, participantLabelConstraints);
 
@@ -233,6 +250,8 @@ public class ChatWindow extends JFrame {
      */
     public void addLineToFeed(String line) {
         chatFeedModel.addElement(line);
+        chatFeed.ensureIndexIsVisible(chatFeedModel.size());
+        chatFeed.setModel(chatFeedModel);
     }
 
     /**
@@ -241,6 +260,7 @@ public class ChatWindow extends JFrame {
      */
     public void addParticipantName(String name) {
         participanListModel.addElement(name);
+        participantList.ensureIndexIsVisible(participanListModel.size());
     }
 
     /**
@@ -291,9 +311,14 @@ public class ChatWindow extends JFrame {
                 if (!toSend.isEmpty()) {
                     // clear the text
                     chatTextField.setText("");
-                    // package the message into an acceptable format, and push it along to the ChatUser's OutputWorker.
+                    
                     String timestamp = TimeStampGenerator.now();
-                    String completeMsg = timestamp + Constants.DELIM + toSend + '\n';
+                    // include version of the message that should be included in your own feed.
+                    String selfMsg = "[" + timestamp + "]" + " You: " + toSend;
+                    addLineToFeed(selfMsg);
+
+                    // package the message into an acceptable format, and push it along to the ChatUser's OutputWorker.
+                    String completeMsg = "[" + timestamp + "]" + Constants.DELIM + chatUser.getAlias() + ":" + Constants.DELIM + toSend + '\n';
                     chatUser.pushOutgoingMessage(completeMsg);
                 }
 
