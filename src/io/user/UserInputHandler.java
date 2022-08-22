@@ -136,7 +136,8 @@ public class UserInputHandler extends Thread {
             @Override
             public void run() {
                 chatWindowRef.addLineToFeed(finalMessage);
-            }});
+            }
+        });
         
         
         

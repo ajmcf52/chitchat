@@ -13,14 +13,17 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JList;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.JLabel;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.border.*;
+import javax.swing.DefaultListModel;
 
 import net.ChatUser;
 import misc.TimeStampGenerator;
 import misc.Constants;
+import io.user.UserOutputHandler;
 
 /**
  * this class represents the popup chat window that is used for one ChatUser
@@ -54,8 +57,10 @@ public class ChatWindow extends JFrame {
     /**
      * JList models for displaying lines of read-only text
      */
-    private MyListModel participanListModel;
-    private MyListModel chatFeedModel;
+    //private MyListModel participanListModel;
+    //private MyListModel chatFeedModel;
+    private DefaultListModel<String> participantListModel;
+    private DefaultListModel<String> chatFeedModel;
 
     private ChatUser chatUser; // user to which this chat window is dedicated.
     private UserOutputHandler outputHandler; // handles user-generated output events (i.e., sending a message)
@@ -66,7 +71,7 @@ public class ChatWindow extends JFrame {
      */
     public ChatWindow(String sid, ChatUser user) {
         chatUser = user;
-        outputHandler = new UserOutputHandler(messageEventNotifier);
+        outputHandler = new UserOutputHandler(messageEventNotifier, chatUser, this);
         outputHandler.start();
 
         //chatFeedString = "";
@@ -77,13 +82,13 @@ public class ChatWindow extends JFrame {
         this.setLocationRelativeTo(null);
 
         // instantiating objects
-        participanListModel = new MyListModel();
+        participantListModel = new MyListModel();
         chatFeedModel = new MyListModel();
         chatPanel = new JPanel();
         chatFeed = new JList<String>(chatFeedModel);
         chatTextField = new JTextField("", CHAT_TEXTBOX_WIDTH);
         sendMsgButton = new JButton("Send");
-        participantList = new JList<String>(participanListModel);
+        participantList = new JList<String>(participantListModel);
         participantListLabel = new JLabel("Participants");
 
         chatPanel.setLayout(new GridBagLayout());
@@ -228,6 +233,16 @@ public class ChatWindow extends JFrame {
         });
 
         sendMsgButton.addActionListener(e -> {
+            String msgText = chatTextField.getText();
+            if (msgText.isEmpty()) {
+                return;
+            }
+            String timestamp = TimeStampGenerator.now();
+            String selfMsg = "[" + timestamp + "]" + " You: " + msgText;
+            chatFeedModel.addElement(selfMsg);
+            chatFeed.ensureIndexIsVisible(chatFeedModel.size());
+            chatFeed.requestFocus();
+
             synchronized (messageEventNotifier) {
                 messageEventNotifier.notify();
             }
@@ -250,8 +265,6 @@ public class ChatWindow extends JFrame {
      */
     public void addLineToFeed(String line) {
         chatFeedModel.addElement(line);
-        chatFeed.ensureIndexIsVisible(chatFeedModel.size());
-        chatFeed.setModel(chatFeedModel);
     }
 
     /**
@@ -259,8 +272,8 @@ public class ChatWindow extends JFrame {
      * @param name alias of the user to be added.
      */
     public void addParticipantName(String name) {
-        participanListModel.addElement(name);
-        participantList.ensureIndexIsVisible(participanListModel.size());
+        participantListModel.addElement(name);
+        participantList.ensureIndexIsVisible(participantListModel.size() - 1);
     }
 
     /**
@@ -268,75 +281,92 @@ public class ChatWindow extends JFrame {
      * @param name alias of the user to be removed.
      */
     public void removeParticipantName(String name) {
-        participanListModel.removeElement(name);
+        participantListModel.removeElement(name);
+    }
+
+    /**
+     * helper method used to retrieve and reset the text within the chat window's text field.
+     * @return String-based message to be sent to others in the chat room.
+     */
+    public String retrieveChatFieldText() {
+        String chatText = chatTextField.getText();
+        chatTextField.setText("");
+        return chatText;
     }
 
     /**
      * this class is responsible for retrieving passing along user-supplied
      * information (i.e., text messages, exit events, etc) to the user's OutputWorker.
      */
-    public class UserOutputHandler extends Thread {
+    // public class UserOutputHandler extends Thread {
 
-        private Object eventNotifier; // UOH waits on this for various events to pop up for it to handle
-        private volatile boolean isRunning; // flag used to signal a shut down
-        private final Object runLock = new Object(); // lock object used to externally signal a shut down while avoiding race conditions
+    //     private Object eventNotifier; // UOH waits on this for various events to pop up for it to handle
+    //     private volatile boolean isRunning; // flag used to signal a shut down
+    //     private final Object runLock = new Object(); // lock object used to externally signal a shut down while avoiding race conditions
 
-        /**
-         * constructor for UOH.
-         * @param user reference to the user attached to the chat window.
-         * @param notifier object used to notify this worker of events needing to be handled.
-         */
-        public UserOutputHandler(Object notifier) {
-            eventNotifier = notifier;
-            isRunning = false;
-        }
+    //     /**
+    //      * constructor for UOH.
+    //      * @param user reference to the user attached to the chat window.
+    //      * @param notifier object used to notify this worker of events needing to be handled.
+    //      */
+    //     public UserOutputHandler(Object notifier) {
+    //         eventNotifier = notifier;
+    //         isRunning = false;
+    //     }
 
-        /**
-         * this worker's main line of execution.
-         */
-        public void run() {
-            isRunning = true;
+    //     /**
+    //      * this worker's main line of execution.
+    //      */
+    //     public void run() {
+    //         isRunning = true;
 
-            System.out.println("UserOutputHandler has booted; waiting for events...");
-            while (isRunning) {
-                try {
-                    synchronized (eventNotifier) {
-                        eventNotifier.wait();
-                    }
-                } catch (Exception e) {
-                    System.out.println("UOH Error! --> " + e.getMessage());
-                }
-                // UOH has been woken up; check for an event to handle
-                String toSend = chatTextField.getText();
-                if (!toSend.isEmpty()) {
-                    // clear the text
-                    chatTextField.setText("");
+    //         System.out.println("UserOutputHandler has booted; waiting for events...");
+    //         while (isRunning) {
+    //             try {
+    //                 synchronized (eventNotifier) {
+    //                     eventNotifier.wait();
+    //                 }
+    //             } catch (Exception e) {
+    //                 System.out.println("UOH Error! --> " + e.getMessage());
+    //             }
+    //             // UOH has been woken up; check for an event to handle
+    //             String toSend = chatTextField.getText();
+    //             if (!toSend.isEmpty()) {
+    //                 // clear the text
+    //                 chatTextField.setText("");
                     
-                    String timestamp = TimeStampGenerator.now();
-                    // include version of the message that should be included in your own feed.
-                    String selfMsg = "[" + timestamp + "]" + " You: " + toSend;
-                    addLineToFeed(selfMsg);
+    //                 String timestamp = TimeStampGenerator.now();
+    //                 // include version of the message that should be included in your own feed.
+    //                 final String selfMsg = "[" + timestamp + "]" + " You: " + toSend;
+    //                 //addLineToFeed(selfMsg);
+    //                 SwingUtilities.invokeLater(new Runnable() {
+    //                     @Override
+    //                     public void run() {
+    //                         System.out.println("adding line to feed");
+    //                         addLineToFeed(selfMsg);
+    //                     }
+    //                 });
 
-                    // package the message into an acceptable format, and push it along to the ChatUser's OutputWorker.
-                    String completeMsg = "[" + timestamp + "]" + Constants.DELIM + chatUser.getAlias() + ":" + Constants.DELIM + toSend + '\n';
-                    chatUser.pushOutgoingMessage(completeMsg);
-                }
+    //                 // package the message into an acceptable format, and push it along to the ChatUser's OutputWorker.
+    //                 String completeMsg = "[" + timestamp + "]" + Constants.DELIM + chatUser.getAlias() + ":" + Constants.DELIM + toSend + '\n';
+    //                 chatUser.pushOutgoingMessage(completeMsg);
+    //             }
 
-                synchronized (runLock) {
-                    if (!isRunning) {
-                        break;
-                    }
-                }
-            }
-        }
+    //             synchronized (runLock) {
+    //                 if (!isRunning) {
+    //                     break;
+    //                 }
+    //             }
+    //         }
+    //     }
 
-        /**
-         * method used to externally signal a shut down to this worker.
-         */
-        public void turnOff() {
-            synchronized (runLock) {
-                isRunning = false;
-            }
-        }
-    }
+    //     /**
+    //      * method used to externally signal a shut down to this worker.
+    //      */
+    //     public void turnOff() {
+    //         synchronized (runLock) {
+    //             isRunning = false;
+    //         }
+    //     }
+    // }
 }
