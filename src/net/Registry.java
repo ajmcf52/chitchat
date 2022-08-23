@@ -3,6 +3,7 @@ package net;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import misc.Constants;
@@ -32,7 +33,9 @@ public class Registry {
      */
     private static HashMap<String,String[]> roomListArrayMap;
     // Same as above, but in single-string CSV format. (for ease of sending across the net)
-    private static HashMap<String,String> roomListCsvMap; 
+    private static HashMap<String,String> roomListCsvMap;
+    // map for tracking users in each of the rooms.
+    private static HashMap<String, ArrayList<String>> roomUsers;
     // for race conditions in accessing hashmaps above.
     private static Object roomListDataLock = new Object(); 
     
@@ -42,6 +45,7 @@ public class Registry {
         // initialize room data list
         roomListArrayMap = new HashMap<String,String[]>();
         roomListCsvMap = new HashMap<String,String>();
+        roomUsers = new HashMap<String, ArrayList<String>>();
         coordinators = new HashMap<String,SessionCoordinator>();
 
         try {
@@ -119,6 +123,7 @@ public class Registry {
                         out.flush();
                         out.close();
                         in.close();
+                        socket.close();
                         break;
                     }
                     /**
@@ -150,10 +155,13 @@ public class Registry {
                         // update local static fields before responding.
                         String[] roomListValues = {roomName, alias, participantCountStr, connectionInfoMsg};  // using SID for room name (For now)
                         String roomListCsv = roomName + "," + alias + "," + participantCountStr + "," + connectionInfoMsg;
+                        ArrayList<String> roomUserList = new ArrayList<String>();
+                        roomUserList.add(alias);
                         // plan is to add room naming capability once other functionalities are fleshed out.
                         synchronized (roomListDataLock) {
                             roomListArrayMap.put(roomName, roomListValues);
                             roomListCsvMap.put(roomName,roomListCsv);
+                            roomUsers.put(roomName, roomUserList);
                         }
 
                         out.write(connectionInfoMsg);
@@ -161,6 +169,7 @@ public class Registry {
                         out.flush();
                         out.close();
                         in.close();
+                        socket.close();
                         // work done, time to exit.
                         break;
                     }
@@ -175,10 +184,43 @@ public class Registry {
                     }
 
                     case (Requests.JOIN_ROOM_REQ): {
-                        /**
-                         * we enter here when a user is requesting to join an existing room. 
+                        /** Enter here when a user is requesting to join an existing room.
+                         * NOTE perhaps illogically, because the connection info is readily available from
+                         * looking at the room listing in RoomSelectTable, Registry doesn't have to be contacted
+                         * first for SessionCoordinator's connection information.
+                         * 
+                         * Thus, SC contacts Registry post-haste for the sake of notifying that a new user has
+                         * joined their room.
                          */
-                        // TODO implement this!
+                        
+                        // alias of user joining and name of room being joined are sent delimited on the same line by ","
+                        String aliasAndRoomName = in.readLine();
+                        String[] args = aliasAndRoomName.split(",");
+                        String alias = args[0];
+                        String roomName = args[1];
+
+                        // lock before updating data structures
+                        synchronized (roomListDataLock) {
+                            String[] roomDataArr = roomListArrayMap.get(roomName);
+                            int count = Integer.parseInt(roomDataArr[Constants.GUEST_COUNT_TABLE_INDEX]);
+                            count++;
+                            roomDataArr[Constants.GUEST_COUNT_TABLE_INDEX] = Integer.toString(count);
+                            roomListArrayMap.put(roomName, roomDataArr);
+
+                            String roomDataCsv = "";
+                            for (String s : roomDataArr) {
+                                roomDataCsv += s + ",";
+                            }
+                            roomDataCsv.substring(0, roomDataCsv.length() - 1);
+                            roomListCsvMap.put(roomName, roomDataCsv);
+
+                            roomUsers.get(roomName).add(alias);
+                        }
+                        out.write("OK\n");
+                        out.flush();
+                        out.close();
+                        in.close();
+                        socket.close();
                         break;
                     }
                     

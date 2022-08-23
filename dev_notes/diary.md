@@ -659,3 +659,20 @@ Instead of worrying about the minutia that were noted as things to do next from 
 so sending a message was already mostly implemented, but text doesn't seem to want to appear in the models I have being shown in my _JLists_. Seems to have something to do with needing to update UI properties using a _SwingWorker_. Sigh...........
 
 I guess I know what I'm working on tomorrow.
+
+---
+
+## Progress.
+
+### Monday, August 22nd 4:18PM PST
+
+---
+
+**What got done:**
+
+-   After several days of debugging in frustration, I **finally** figured out how to get _JList_ text to update for _outgoing messages being sent by a user_. (i.e., "\[_timestamp_\] You: Hello!). All the answers I saw on StackOverflow pointed to calling _ensureIndexIsVisible(row)_, but this function call never did anything for me. I did notice, however, that the text would appear after clicking, so I thought to myself, "what if I just make a function call that allocates focus to the JList after a message is sent?", and sure enough, it worked like a charm. Very very relieved. That was one of the tougher bugs I've had to solve so far with this project. When it comes time to getting Bob and Alice talking, we may have to make a similar adjustment in a different function call.
+-   A lot of the user joining code is in place. I didn't get to spend that much time on it today, as most of my time was spent in solving the aforementioned bug. That said, the code was already 50-60% done before touching it today; now, it's probably closer to 90-95% done in getting a user successfully joined. _JoinRoomWorker's_ communication with _SessionCoordinator_ is squared away; additionally, we have _Registry's_ user and room participant information being successfully updated by way of protocol messaging via the SC. The **last** bit of code for this part is literally two lines, instantiating the _JoinRoomWorker_ and calling **start()** on the "Join Room" button click within _RoomSelectPanel_. That's it. Of course, we will need to debug. Next to zero chance that the code works right off the bat. That being said, debugging is a part of game, it is nothing new, and I am confident in my ability to solve any issues that come my way next time I get to touch the code, which will likely be tomorrow.
+
+More progress. Inching toward our objective. I think we are on track for finishing a functional version of the application by the end of the month. It should really only take a 3-5 more days, so we should even have a few days in reserve. Let's keep on trucking and get it done.
+
+Out.

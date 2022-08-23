@@ -59,7 +59,7 @@ public class JoinRoomWorker extends Worker {
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             PrintWriter out = new PrintWriter(new PrintWriter(socket.getOutputStream()));
             // send the initial request message, "JOIN_ROOM_REQUEST <alias of user requesting to join>\n"
-            String requestMessage = Requests.JOIN_ROOM_REQ + " " + userJoining.getAlias() + '\n';
+            String requestMessage = Requests.JOIN_ROOM_REQ + Constants.DELIM + userJoining.getAlias() + '\n';
             out.write(requestMessage);
             out.flush();
             // read the response (should just read "OK")

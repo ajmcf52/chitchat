@@ -17,7 +17,19 @@ public final class Constants {
     public static final int KC_RETURN = 10;
     public static final String UID_PREFIX = "U0";
     public static final String SID_PREFIX = "S0";
-    public static final String DELIM = Character.toString((char)0x1E); // [RecordSeparator] special ASCII character, impossible to type. Great delimiter.
+    public static final int GUEST_COUNT_TABLE_INDEX = 2;
+
+    /** [RecordSeparator] special ASCII character, impossible to type. Great delimiter. 
+     * 
+     * Reason for using this is so incoming messages that include user-supplied characters
+     * can be separated from other information without compromising what the user sent.
+     * 
+     * For example, if we used " " or "," as a delimiter for messages that include user text,
+     * messages would become inevitably compromised. By using a delimiter that cannot (to my knowledge)
+     * be typed by a user on the keyboard (at least in reasonable circumstances), we maintain integrity
+     * of user-supplied messages sent across the network to other users.
+     */
+    public static final String DELIM = Character.toString((char)0x1E); 
     public static final int SPACE_ASCII = 32;
     public static final int TILDE_ASCII = 126;
     public static final int MIN_USER_INPUT_LENGTH = 2;

@@ -56,7 +56,6 @@ public class RoomSetupWorker extends Worker {
             // New room request signifier first, followed immediately by the intended chat user host alias.
             String roomSetupMsg = Requests.NEW_ROOM_REQ + '\n';
             out.write(roomSetupMsg);
-            //out.flush();
             String aliasAndRoomNameMsg = chatUser.getAlias() + "," + roomName + '\n'; // send room name and alias, CSV style.
             out.write(aliasAndRoomNameMsg);
             out.flush();
