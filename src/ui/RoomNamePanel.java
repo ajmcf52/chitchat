@@ -159,7 +159,9 @@ public class RoomNamePanel extends JPanel {
 
         backButton.addActionListener(e -> {
             appState.setAppState(AppStateValue.CHOICE_PANEL);
-            chatUserLock.notify();
+            synchronized (chatUserLock) {
+                chatUserLock.notify();
+            }
         });
 
         roomNameField.addKeyListener(new KeyListener() {

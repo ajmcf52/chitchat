@@ -79,6 +79,9 @@ public class ChatUser extends Thread {
                 }
                 // entered right away for non-host chatters (host enters after setup)
                 case Constants.CHATTING: {
+                    if (alias.equals("bob")) {
+                        System.out.println("lets go bobby boy");
+                    }
                     BufferedReader in = null;
                     PrintWriter out = null;
                     try {

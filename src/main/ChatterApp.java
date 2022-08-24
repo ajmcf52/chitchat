@@ -37,7 +37,6 @@ public class ChatterApp {
         // Passing in a null ChatUser. 
         // This will eventually be initialized by UserSetupThread via LoginPanel's EvtHandler.
         ApplicationState appState = new ApplicationState();
-        Object appStateLock = new Object();
         Object chatUserLock = new Object();
         Object chatLeaveNotifier = new Object();
         ChatUser chatUser = new ChatUser(chatUserLock);
@@ -46,7 +45,7 @@ public class ChatterApp {
         // create all of our application panels.
         LoginPanel loginPanel = new LoginPanel(chatUser, chatUserLock, appState);
         ChoicePanel choicePanel = new ChoicePanel(chatUser, chatUserLock, appState);
-        RoomSelectPanel roomSelectPanel = new RoomSelectPanel(appState);
+        RoomSelectPanel roomSelectPanel = new RoomSelectPanel(appState, chatUser, chatUserLock);
         RoomNamePanel roomNamePanel = new RoomNamePanel(chatUser, chatUserLock, appState);
 
         int numPanels = 4;
@@ -149,6 +148,7 @@ public class ChatterApp {
                     synchronized (chatUserLock) {
                         chatUserLock.wait();
                     }
+                    System.out.println("notified from waiting.");
                 } catch (Exception e) {
                     System.out.println("CU Error during ROOM_NAMING --> " + e.getMessage());
                 }

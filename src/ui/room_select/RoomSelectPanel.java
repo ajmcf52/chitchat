@@ -27,7 +27,10 @@ import main.ApplicationState;
 import main.AppStateValue;
 import misc.PanelNames;
 import misc.Requests;
+import net.ChatUser;
 import misc.Constants;
+
+import requests.JoinRoomWorker;
 
 
 /**
@@ -47,15 +50,25 @@ public class RoomSelectPanel extends JPanel {
     private ApplicationState appState; // to be interacted with on particular button presses.
 
     private RoomsListFetcher roomsListFetcher; // thread-based worker used to fetch the list of rooms
+    private ChatUser userRef; // reference to the chat user object
+    private Object chatUserLock; // lock object for communicating synchronous events with the user
+
     /**
      * constructor for RSP
+     * @param state the application's internal state
+     * @param user the chat user (i.e., Bob)
+     * @param userLock lock used to communicate crucial events with the user
      */
-    public RoomSelectPanel(ApplicationState state) {
+    public RoomSelectPanel(ApplicationState state, ChatUser user, Object userLock) {
         this.setName(PanelNames.ROOM_SELECT_PANEL);
         appState = state;
         // fire up the RoomsListFetcher as quickly as possible to get our table populated.
         table = new RoomSelectTable();
         workerNotifier = new Object();
+
+        roomsListFetcher = new RoomsListFetcher(workerNotifier);
+        userRef = user;
+        chatUserLock = userLock;
         
         tablePane = new JScrollPane();
         backButton = new JButton("Back");
@@ -131,7 +144,13 @@ public class RoomSelectPanel extends JPanel {
         });
 
         joinButton.addActionListener(e -> {
-            // TODO flesh out this action listener
+            int row = table.getSelectedRow();
+            int col = Constants.IP_PORT_TABLE_INDEX;
+            if (row == -1) // "Join" when getSelectedRow() == -1, so this should really never happen.
+                return;
+            String ipPortString = (String) table.getModel().getValueAt(row, col);
+            JoinRoomWorker jrw = new JoinRoomWorker(0, ipPortString, userRef, chatUserLock, state);
+            jrw.start();
         });
 
         backButton.addActionListener(e -> {
@@ -148,8 +167,7 @@ public class RoomSelectPanel extends JPanel {
      * This persistent thread worker also handles refresh requests.
      */
     public void populateRoomsList() {
-        RoomsListFetcher rlf = new RoomsListFetcher(workerNotifier);
-        rlf.start();
+        roomsListFetcher.start();
     }
 
     /**

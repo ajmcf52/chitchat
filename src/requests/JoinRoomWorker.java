@@ -39,12 +39,13 @@ public class JoinRoomWorker extends Worker {
         it up to the correctness of my code to handle this. If this constructor breaks
         for ArrayOutOfBounds or NumberFormat, then the bug(s) should be easy to track down.
      */
-    public JoinRoomWorker(int workerNum, String connectInfo, ChatUser userJoin, Object chatUserLock, ApplicationState state) {
+    public JoinRoomWorker(int workerNum, String connectInfo, ChatUser userJoin, Object userLock, ApplicationState state) {
         super("JRW-" + Integer.toString(workerNum));
         String[] connectionArgs = connectInfo.split(":");
-        sessionIP = connectionArgs[0];
+        sessionIP = connectionArgs[0].startsWith("0.0.0.0") ? "localhost" : connectionArgs[0];
         sessionPort = Integer.parseInt(connectionArgs[1]);
         userJoining = userJoin;
+        chatUserLock = userLock;
         appState = state;
     }
 
@@ -55,6 +56,7 @@ public class JoinRoomWorker extends Worker {
         Socket socket = null;
 
         try {
+
             socket = new Socket(InetAddress.getByName(sessionIP), sessionPort);
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             PrintWriter out = new PrintWriter(new PrintWriter(socket.getOutputStream()));
