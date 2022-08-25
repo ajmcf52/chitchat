@@ -127,7 +127,7 @@ public class ChatUser extends Thread {
                     /**
                      * now we can move to chat setup.
                      */
-                    this.setSessionHostValue(Constants.CHATTING);
+                    this.setSessionValue(Constants.CHATTING);
                     break;
                 }
                 default:
@@ -205,7 +205,7 @@ public class ChatUser extends Thread {
      * NOTE value is expected to be in the range of [-1,1].
      * @param value
      */
-    public void setSessionHostValue(int value) throws IllegalArgumentException {
+    public void setSessionValue(int value) throws IllegalArgumentException {
         if (value < -1 || value > 1) {
             throw new IllegalArgumentException("SessionHostValue must be between -1 and 1 inclusive.");
         }

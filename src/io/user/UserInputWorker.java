@@ -31,13 +31,14 @@ public class UserInputWorker extends InputWorker {
      * this worker's main line of execution.
      */
     public void run() {
-        
         turnOn();
 
         while (true) {
             String msg = null;
             try {
                 msg = in.readLine();
+                if (msg.contains("bob"))
+                    System.out.println("hiya");
             } catch (Exception e) {
                 System.out.println("UserInputWorker Error! --> " + e.getMessage());
             }

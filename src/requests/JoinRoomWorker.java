@@ -73,11 +73,15 @@ public class JoinRoomWorker extends Worker {
                 System.out.println("hmmmm...");
             }
             // work done; initialize ChatUser field info, notify, close streams (keep socket open for ChatUser) and exit.
+            
             userJoining.initializeSessionSocket(socket);
-            in.close();
-            out.close();
+            
+            //userJoining.initializeSessionInfo(sessionIP, sessionPort);
+            // in.close();
+            // out.close();
+            // socket.close();
             appState.setAppState(AppStateValue.CHATTING);
-            userJoining.setSessionHostValue(Constants.CHATTING);
+            userJoining.setSessionValue(Constants.CHATTING);
             
             synchronized (chatUserLock) {
                 chatUserLock.notify();

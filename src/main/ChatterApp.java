@@ -117,6 +117,7 @@ public class ChatterApp {
             else if (appState.getAppState() == AppStateValue.CHATTING) {
                 // connect to the SeshCoordinator, set up the communication pathways, and begin chatting.
                 System.out.println("Chatting");
+                mainWindow.setVisible(false);
                 chatWindow = new ChatWindow("Unassigned Chat", chatUser);
                 chatWindow.addLineToFeed("Connecting to SessionCoordinator...");
                 chatUser.initializeChatRoomRef(chatWindow);

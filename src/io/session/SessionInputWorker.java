@@ -33,8 +33,10 @@ public class SessionInputWorker extends InputWorker {
         // to temporarily hold messages.
         // will only ever be accessed by this worker, therefore no synchronization needed.
         LinkedList<String> messages = new LinkedList<String>(); 
-
+        turnOn();
+        
         while (true) {
+            
 
             try {
                 /**
@@ -67,6 +69,7 @@ public class SessionInputWorker extends InputWorker {
             // check to see if it is time to exit.
             synchronized (runLock) {
                 if (!isRunning) {
+                    System.out.println("hiya");
                     break;
                 }
             }

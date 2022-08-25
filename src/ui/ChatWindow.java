@@ -239,9 +239,9 @@ public class ChatWindow extends JFrame {
             }
             String timestamp = TimeStampGenerator.now();
             String selfMsg = "[" + timestamp + "]" + " You: " + msgText;
-            chatFeedModel.addElement(selfMsg);
-            chatFeed.ensureIndexIsVisible(chatFeedModel.size());
-            chatFeed.requestFocus();
+            addLineToFeed(selfMsg);
+            // chatFeed.ensureIndexIsVisible(chatFeedModel.size());
+            // chatFeed.requestFocus();
 
             synchronized (messageEventNotifier) {
                 messageEventNotifier.notify();
@@ -265,6 +265,8 @@ public class ChatWindow extends JFrame {
      */
     public void addLineToFeed(String line) {
         chatFeedModel.addElement(line);
+        chatFeed.ensureIndexIsVisible(chatFeedModel.size());
+        chatFeed.requestFocus();
     }
 
     /**
@@ -273,7 +275,8 @@ public class ChatWindow extends JFrame {
      */
     public void addParticipantName(String name) {
         participantListModel.addElement(name);
-        participantList.ensureIndexIsVisible(participantListModel.size() - 1);
+        participantList.ensureIndexIsVisible(participantListModel.size());
+        participantList.requestFocus();
     }
 
     /**

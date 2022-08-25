@@ -38,7 +38,7 @@ public class MessageRouter extends Worker {
      */
     public MessageRouter(int workerNumber, ArrayBlockingQueue<Integer> tasks, 
     ArrayList<ArrayBlockingQueue<String>> in, ArrayList<ArrayBlockingQueue<String>> out, ArrayList<Object> notifiers) {
-        super("BW-" + Integer.toString(workerNumber));
+        super("MR-" + Integer.toString(workerNumber));
         taskQueue = tasks;
         incomingMessageQueues = in;
         outgoingMessageQueues = out;
@@ -51,6 +51,9 @@ public class MessageRouter extends Worker {
     public void run() {
         
         while (true) {
+            if (workerID.equals("MR-1")) {
+                System.out.println("Mista mista!");
+            }
             Integer task = null;
             try {
                 task = taskQueue.take();  // take a task from the task queue

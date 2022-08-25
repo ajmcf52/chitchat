@@ -2,8 +2,6 @@ package io.user;
 
 import java.util.concurrent.ArrayBlockingQueue;
 
-import javax.swing.SwingUtilities;
-
 import ui.ChatWindow;
 import misc.Constants;
 
@@ -130,14 +128,8 @@ public class UserInputHandler extends Thread {
             chatWindowRef.addParticipantName(alias);
             
         }
-        final String finalMessage = msg;
-        SwingUtilities.invokeLater(new Runnable() {
-
-            @Override
-            public void run() {
-                chatWindowRef.addLineToFeed(finalMessage);
-            }
-        });
+        
+        chatWindowRef.addLineToFeed(msg);
         
         
         

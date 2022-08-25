@@ -8,7 +8,6 @@ import io.session.SessionInputWorker;
 import io.session.MessageRouter;
 
 import java.net.Socket;
-import java.nio.Buffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.io.BufferedReader;
@@ -99,7 +98,6 @@ public class SessionCoordinator extends Worker {
                         String introduction = alias + " has joined the chat room.";
                         String completeMessage = timestampString + Constants.DELIM + introduction + '\n';
                         
-                        // NOTE this method call closes the socket and all associated streams.
                         initializeUser(alias, socket, completeMessage, in, out);
 
                         // let Registry know that a new user has requested to join.
@@ -175,8 +173,12 @@ public class SessionCoordinator extends Worker {
         inputWorkers.add(inputWorker);
         outputWorkers.add(outputWorker);
         messageRouters.add(messageRouter);
-        incomingMessageQueues.get(participantCount).add(initialMessage);
         aliasWorkerNumberMappings.put(alias, participantCount);
+
+        // queue up the sending of an initial welcome message
+        for (ArrayBlockingQueue<String> incomingMsgQueue : incomingMessageQueues) {
+            incomingMsgQueue.add(initialMessage);
+        }
             
         // fire up the worker threads (Host is always at index zero!!!)
         inputWorkers.get(participantCount).start();
@@ -188,6 +190,8 @@ public class SessionCoordinator extends Worker {
         } catch (InterruptedException e) {
             System.out.println(workerID + " interrupted while queueing task :(");
         }
+
+        participantCount++;
     }
 
     /**

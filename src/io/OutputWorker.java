@@ -37,15 +37,19 @@ public class OutputWorker extends Worker {
      * this worker's main line of execution.
      */
     public void run() {
-
+        turnOn();
+        
         while (true) {
             try {
                 synchronized (outgoingMsgNotifier) {
                     outgoingMsgNotifier.wait();
                 }
+                
                 ArrayList<String> toSend = new ArrayList<String>();
                 messageQueue.drainTo(toSend);
                 for (String msg : toSend) {
+                    if (msg.contains("bob"))
+                        System.out.println("here!!!");
                     out.write(msg);
                 }
                 out.flush();
