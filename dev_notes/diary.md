@@ -676,3 +676,17 @@ I guess I know what I'm working on tomorrow.
 More progress. Inching toward our objective. I think we are on track for finishing a functional version of the application by the end of the month. It should really only take a 3-5 more days, so we should even have a few days in reserve. Let's keep on trucking and get it done.
 
 Out.
+
+---
+
+## Bugs: Getting closer.
+
+### Thursday, August 25th 2:39PM PST
+
+---
+
+I spent 3 hours yesterday working through and debugging network code, to the point where I came to the conclusion that the way I had come to build some things in the way I did, specificalyl regarding _SessionCoordinator_ and _ChatUser_, are a little off. The foundational components for the communication channels are excellent and seem to be quite robust for the most part. The weakness in my current approach, as it stands, seems to be rooted in the interface that I have laid out for messages to be sent and received. It could certainly be formalized to a much greater extent.
+
+This is what we are now going to work on: Formalizing some message types into a serializable format.
+
+As there is a chance that this attempt may flop (though I am about 90% confident in my ability to make it work and to make it work well), I will be starting and checking out a new branch to develop this, "serialized".
