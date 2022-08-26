@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 import misc.Constants;
@@ -12,6 +13,8 @@ import net.ChatUser;
 import main.AppStateValue;
 import main.ApplicationState;
 import misc.Worker;
+
+import messages.NewUserMessage;
 
 /**
      * This class is responsible for setting up the ChatUser with its properties, namely its alias and UID.
@@ -49,11 +52,11 @@ import misc.Worker;
 
             try {
                 socket = new Socket(Constants.REGISTRY_IP,Constants.REGISTRY_PORT);
-                PrintWriter out = new PrintWriter(socket.getOutputStream());
+                ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
                 BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 // send the protocol message on one line, then the alias on following line.
-                out.write(Requests.NEW_USER_REQ + '\n');
-                out.write(alias + '\n');
+                NewUserMessage msg = new NewUserMessage(alias);
+                out.writeObject(msg);
                 out.flush();
                 String response = in.readLine(); // should be a UID string for the user
                 //System.out.println(response);

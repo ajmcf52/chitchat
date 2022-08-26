@@ -7,10 +7,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import misc.Constants;
-import misc.Requests;
+import messages.NewUserMessage;
+import messages.NewRoomMessage;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.io.PrintWriter;
 
 /**
@@ -92,145 +94,173 @@ public class Registry {
             socket = sock;
         }
 
+        public void handleMessage(NewUserMessage msg) {
+
+        }
+
         public void run() {
             // handle the request!
             try {
-                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+
                 PrintWriter out = new PrintWriter(socket.getOutputStream());
-                String requestString = in.readLine();
+                //String requestString = in.readLine();
+                Object msg = in.readObject();
+                if (msg instanceof NewUserMessage) {
+                    NewUserMessage userMsg = (NewUserMessage) msg;
+                    String alias = userMsg.getAlias();
+                    int uidNum = -1;
 
-                switch (requestString) {
-                    /*
-                     * here, we are servicing a NewUserRequest. To fulfill this request at a basic level,
-                     * all we have to do is send back a fresh UID for the user, incrementing userCount after doing so.
-                     */
-                    case (Requests.NEW_USER_REQ): {
-                        String alias = in.readLine(); // ChatUser's alias. This can be saved in a HashMap at a later date.
-                        int uidNum = -1;
-
-                        // get a hold of userCount (synchronized access)
-                        synchronized (userCountLock) {
-                            // increment userCount, copy value into a placeholder, and exit sync block
-                            userCount++;
-                            uidNum = userCount;
-                        }
-
-                        String uid = Constants.UID_PREFIX + String.valueOf(uidNum); // generate UID string
-
-                        // whisk the UID back over the socket.
-                        out.write(uid);
-                        // Work done! Prepare for exit.
-                        out.flush();
-                        out.close();
-                        in.close();
-                        socket.close();
-                        break;
+                    synchronized (userCountLock) {
+                        userCount++;
+                        uidNum = userCount;
                     }
-                    /**
-                     * here we are servicing a new room request. To fulfill this request, we must spawn
-                     * a SessionCoordinator and pass along a ServerSocket to which the host ChatUser will connect to.
-                     */
-                    case (Requests.NEW_ROOM_REQ): {
-                        String aliasAndRoomName = in.readLine();
-                        String[] args = aliasAndRoomName.split(",");
-                        String alias = args[0];
-                        String roomName = args[1];
-                        String participantCountStr = "1"; // always the case when a room is first created (only the host!)
+                    String uid = Constants.UID_PREFIX + String.valueOf(uidNum);
+                    out.write(uid + '\n');
+                    out.flush();
+                    out.close();
+                    in.close();
+                    socket.close();
+                }
+                /**
+                 * here we are servicing a new room request. To fulfill this request, we must spawn
+                 * a SessionCoordinator and pass along a ServerSocket to which the host ChatUser will connect to.
+                 */
+                else if (msg instanceof NewRoomMessage) {
 
-                        int scPort = -1;
-                        synchronized (sessionCountLock) {
-                            scPort = Constants.SESSION_PORT_PREFIX + sessionCount;
-                        }
+                    // basic information determination from the NRM.
+                    NewRoomMessage nrm = (NewRoomMessage) msg;
+                    String hostAlias = nrm.getHost();
+                    String roomName = nrm.getRoomName();
+                    String participantCountStr = "1";
 
-                        ServerSocket serverSocket = new ServerSocket(scPort);
-                        SessionCoordinator sc = new SessionCoordinator(sessionCount, serverSocket, alias, roomName);
-                        coordinators.put(roomName, sc);
-                        sc.start();
-
-                        // write back the inet address + port of the SC's server socket for Chat host to connect to
-                        String inetAddressStr = serverSocket.getInetAddress().toString();
-                        String portStr = String.valueOf(serverSocket.getLocalPort());
-                        String connectionInfoMsg = inetAddressStr + ":" + portStr + '\n';
-
-                        // update local static fields before responding.
-                        String[] roomListValues = {roomName, alias, participantCountStr, connectionInfoMsg};  // using SID for room name (For now)
-                        String roomListCsv = roomName + "," + alias + "," + participantCountStr + "," + connectionInfoMsg;
-                        ArrayList<String> roomUserList = new ArrayList<String>();
-                        roomUserList.add(alias);
-                        // plan is to add room naming capability once other functionalities are fleshed out.
-                        synchronized (roomListDataLock) {
-                            roomListArrayMap.put(roomName, roomListValues);
-                            roomListCsvMap.put(roomName,roomListCsv);
-                            roomUsers.put(roomName, roomUserList);
-                        }
-
-                        out.write(connectionInfoMsg);
-                        // stream work done.
-                        out.flush();
-                        out.close();
-                        in.close();
-                        socket.close();
-                        // work done, time to exit.
-                        break;
+                    // determining the session port.
+                    // we lock, as other rooms could be being created simultaneously (race condition)
+                    int sessionPort = -1;
+                    synchronized (sessionCountLock) {
+                        sessionPort = Constants.SESSION_PORT_PREFIX + sessionCount;
                     }
 
-                    case (Requests.LIST_ROOMS_REQ): {
-                        /* we enter here if the incoming messages
-                         * pertains to a rooms list request.
-                         */
-                        RoomsListHandler rlh = new RoomsListHandler(socket);
-                        rlh.start();
-                        break;
+                    // booting up the SeshCoordinator thread.
+                    ServerSocket serverSocket = new ServerSocket(sessionPort);
+                    SessionCoordinator seshCoord = new SessionCoordinator(sessionCount, serverSocket, hostAlias, roomName);
+                    coordinators.put(roomName, seshCoord);
+                    seshCoord.start();
+
+                    // more info determination
+                    String ipString = serverSocket.getInetAddress().toString();
+                    String portStr = Integer.toString(sessionPort);
+                    String sessionInfoMsg = ipString + ":" + portStr;
+
+                    // putting together some book keeping data values
+                    String[] roomListValues = {roomName, hostAlias, participantCountStr, sessionInfoMsg};
+                    String roomListCsv = "";
+                    for (String s : roomListValues)
+                        roomListCsv += s + ",";
+                    roomListCsv = roomListCsv.substring(0,roomListCsv.length()-1); // trim off the last ","
+                    ArrayList<String> roomUserList = new ArrayList<String>();
+                    roomUserList.add(hostAlias);
+
+                    // putting away the "book keeping" data
+                    synchronized (roomListDataLock) {
+                        roomListArrayMap.put(roomName, roomListValues);
+                        roomListCsvMap.put(roomName, roomListCsv);
+                        roomUsers.put(roomName, roomUserList);
                     }
 
-                    case (Requests.JOIN_ROOM_REQ): {
-                        /** Enter here when a user is requesting to join an existing room.
-                         * NOTE perhaps illogically, because the connection info is readily available from
-                         * looking at the room listing in RoomSelectTable, Registry doesn't have to be contacted
-                         * first for SessionCoordinator's connection information.
-                         * 
-                         * Thus, SC contacts Registry post-haste for the sake of notifying that a new user has
-                         * joined their room.
-                         */
-                        
-                        // alias of user joining and name of room being joined are sent delimited on the same line by ","
-                        String aliasAndRoomName = in.readLine();
-                        String[] args = aliasAndRoomName.split(",");
-                        String alias = args[0];
-                        String roomName = args[1];
-
-                        // lock before updating data structures
-                        synchronized (roomListDataLock) {
-                            String[] roomDataArr = roomListArrayMap.get(roomName);
-                            int count = Integer.parseInt(roomDataArr[Constants.GUEST_COUNT_TABLE_INDEX]);
-                            count++;
-                            roomDataArr[Constants.GUEST_COUNT_TABLE_INDEX] = Integer.toString(count);
-                            roomListArrayMap.put(roomName, roomDataArr);
-
-                            String roomDataCsv = "";
-                            for (String s : roomDataArr) {
-                                roomDataCsv += s + ",";
-                            }
-                            roomDataCsv.substring(0, roomDataCsv.length() - 1);
-                            roomListCsvMap.put(roomName, roomDataCsv);
-
-                            roomUsers.get(roomName).add(alias);
-                        }
-                        out.write("OK\n");
-                        out.flush();
-                        out.close();
-                        in.close();
-                        socket.close();
-                        break;
-                    }
-                    
-                    default: {
-                        System.out.println("RequestHandler -> default case.");
-                    }
+                    // writing the response message for user to connect to SeshCoordinator, and closing.
+                    out.write(sessionInfoMsg + '\n');
+                    out.flush();
+                    out.close();
+                    in.close();
+                    socket.close();
                 }
 
-            } catch (IOException e) {
-                System.out.println("RequestHandler IO Error! -->" + e.getMessage());
+
+                //         // write back the inet address + port of the SC's server socket for Chat host to connect to
+                //         String inetAddressStr = serverSocket.getInetAddress().toString();
+                //         String portStr = String.valueOf(serverSocket.getLocalPort());
+                //         String connectionInfoMsg = inetAddressStr + ":" + portStr + '\n';
+
+                //         // update local static fields before responding.
+                //         String[] roomListValues = {roomName, alias, participantCountStr, connectionInfoMsg};  // using SID for room name (For now)
+                //         String roomListCsv = roomName + "," + alias + "," + participantCountStr + "," + connectionInfoMsg;
+                //         ArrayList<String> roomUserList = new ArrayList<String>();
+                //         roomUserList.add(alias);
+                //         // plan is to add room naming capability once other functionalities are fleshed out.
+                //         synchronized (roomListDataLock) {
+                //             roomListArrayMap.put(roomName, roomListValues);
+                //             roomListCsvMap.put(roomName,roomListCsv);
+                //             roomUsers.put(roomName, roomUserList);
+                //         }
+
+                //         out.write(connectionInfoMsg);
+                //         // stream work done.
+                //         out.flush();
+                //         out.close();
+                //         in.close();
+                //         socket.close();
+                //         // work done, time to exit.
+                //         break;
+                //     }
+
+                //     case (Requests.LIST_ROOMS_REQ): {
+                //         /* we enter here if the incoming messages
+                //          * pertains to a rooms list request.
+                //          */
+                //         RoomsListHandler rlh = new RoomsListHandler(socket);
+                //         rlh.start();
+                //         break;
+                //     }
+
+                //     case (Requests.JOIN_ROOM_REQ): {
+                //         /** Enter here when a user is requesting to join an existing room.
+                //          * NOTE perhaps illogically, because the connection info is readily available from
+                //          * looking at the room listing in RoomSelectTable, Registry doesn't have to be contacted
+                //          * first for SessionCoordinator's connection information.
+                //          * 
+                //          * Thus, SC contacts Registry post-haste for the sake of notifying that a new user has
+                //          * joined their room.
+                //          */
+                        
+                //         // alias of user joining and name of room being joined are sent delimited on the same line by ","
+                //         String aliasAndRoomName = in.readLine();
+                //         String[] args = aliasAndRoomName.split(",");
+                //         String alias = args[0];
+                //         String roomName = args[1];
+
+                //         // lock before updating data structures
+                //         synchronized (roomListDataLock) {
+                //             String[] roomDataArr = roomListArrayMap.get(roomName);
+                //             int count = Integer.parseInt(roomDataArr[Constants.GUEST_COUNT_TABLE_INDEX]);
+                //             count++;
+                //             roomDataArr[Constants.GUEST_COUNT_TABLE_INDEX] = Integer.toString(count);
+                //             roomListArrayMap.put(roomName, roomDataArr);
+
+                //             String roomDataCsv = "";
+                //             for (String s : roomDataArr) {
+                //                 roomDataCsv += s + ",";
+                //             }
+                //             roomDataCsv.substring(0, roomDataCsv.length() - 1);
+                //             roomListCsvMap.put(roomName, roomDataCsv);
+
+                //             roomUsers.get(roomName).add(alias);
+                //         }
+                //         out.write("OK\n");
+                //         out.flush();
+                //         out.close();
+                //         in.close();
+                //         socket.close();
+                //         break;
+                //     }
+                    
+                //     default: {
+                //         System.out.println("RequestHandler -> default case.");
+                //     }
+                // }
+
+            } catch (Exception e) {
+                System.out.println("RequestHandler Error! -->" + e.getMessage());
             }
         }
     }

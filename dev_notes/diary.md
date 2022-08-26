@@ -690,3 +690,17 @@ I spent 3 hours yesterday working through and debugging network code, to the poi
 This is what we are now going to work on: Formalizing some message types into a serializable format.
 
 As there is a chance that this attempt may flop (though I am about 90% confident in my ability to make it work and to make it work well), I will be starting and checking out a new branch to develop this, "serialized".
+
+### 4:54PM PST
+
+After a solid 2+ hours of development, I am essentially back to where I was yesterday in terms of program output, but with a much more solid plan of what needs to be done.
+
+The _Message_ class has been subclassed by 4 different classes at this point, 2 of which have been tested and both seem to work like a dream (_NewRoom_ and _NewUser_). Now that we have gotten to _JoinRoom_, I am realizing now that I have to seriously re-work how the **SessionCoordinator.java** class is set up.
+
+Given that I am starting to get hungry, now would be a great time to go to the gym, and let my mind do some subconscious processing on how I might best proceed in re-working the _SessionCoordinator_.
+
+At a cursory level, its functionality hasn't changed much; SC starts by first communicating with the host of the room that it has been assigned to; after sending a _WelcomeMessage_ to said room host, it then sits on standby, waiting for either a _JoinRoomMessage_ or a _ExitRoomMessage_ to come along.
+
+I, more or less, know what needs to be done. I just think I need to step away for a bit and come back fresh after some exercise, so I can potentially chip away some more before going to bed tonight. If not, I will certainly be putting in more hours tomorrow. Tonight would be good though.
+
+Out.

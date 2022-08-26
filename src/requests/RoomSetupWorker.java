@@ -8,11 +8,14 @@ import misc.Requests;
 import java.io.PrintWriter;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.ObjectOutputStream;
 
 import net.ChatUser;
 import main.AppStateValue;
 import main.ApplicationState;
 import misc.Worker;
+
+import messages.NewRoomMessage;
 
 /**
  * This thread-based class is responsible for communicating with the
@@ -49,20 +52,17 @@ public class RoomSetupWorker extends Worker {
         Socket socket = null;
         try {
             socket = new Socket(Constants.REGISTRY_IP, Constants.REGISTRY_PORT);
-            PrintWriter out = new PrintWriter(socket.getOutputStream());
+            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
             BufferedReader in = new BufferedReader(new InputStreamReader((socket.getInputStream())));
 
-            // write the RoomSetupRequest to the Registry!
-            // New room request signifier first, followed immediately by the intended chat user host alias.
-            String roomSetupMsg = Requests.NEW_ROOM_REQ + '\n';
-            out.write(roomSetupMsg);
-            String aliasAndRoomNameMsg = chatUser.getAlias() + "," + roomName + '\n'; // send room name and alias, CSV style.
-            out.write(aliasAndRoomNameMsg);
+            // write the NewRoomMessage to Registry.
+            NewRoomMessage nrm = new NewRoomMessage(chatUser.getAlias(), roomName);
+            out.writeObject(nrm);
             out.flush();
 
-            /* Registry should respond with the inet address of the SessionThread's server socket,
-            which the ChatUser will connect to. Once connected to the SessionThread, this will open
-            its channel of communication with that chat session.
+            /* Registry should respond with the inet address of the SessionCoordinator's server socket,
+            which the ChatUser will connect to. Once connected to the SessionCoordinator, this will open
+            its channel of communication with the chat session.
             */
 
             String seshConnectionInfo = in.readLine();
@@ -72,7 +72,7 @@ public class RoomSetupWorker extends Worker {
             try {
                 seshPortNum = Integer.valueOf(ipAndPort[1]);
             } catch (Exception e) {
-                System.out.println("Error in RSW retrieving port number from Registry --> " + e.getMessage());
+                System.out.println("Error in RSW retrieving/casting port num from Registry --> " + e.getMessage());
             }
             
             chatUser.initializeSessionInfo(seshIp, seshPortNum);
