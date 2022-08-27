@@ -1,5 +1,6 @@
 package io.user;
 
+import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import messages.Message;
@@ -52,18 +53,22 @@ public class UserInputHandler extends Thread {
         switchOn();
 
         while (true) {
-            Message msg = null;
+            ArrayList<Message> messages = new ArrayList<>();
             try {
-                synchronized (incomingMessageNotifier) {
-                    // wait here until notified by UserInputWorker that we have new messages to process
+                synchronized (incomingMessageNotifier) { // notified by UserInputWorker
                     incomingMessageNotifier.wait();
                 }
-                msg = messageQueue.take();
+                
+                messageQueue.drainTo(messages);
                 
             } catch (Exception e) {
                 System.out.println("UIH Error! --> " + e.getMessage());
             }
-            handleMessage(msg);
+            
+            // handle each and every single message.
+            for (Message msg : messages) {
+                handleMessage(msg);
+            }
 
             synchronized (runLock) {
                 if (!isRunning) {
@@ -93,45 +98,17 @@ public class UserInputHandler extends Thread {
 
     /**
      * handles incoming messages appropriately.
-     * @param msg
+     * @param msg the incoming message.
      */
     public void handleMessage(Message msg) {
         
-        String[] components = msg.split(Constants.DELIM);
-        msg.replace(Constants.DELIM," ");
+        /**
+         * the way we have set up the Message class, the text we would want to display
+         * for all possible Message types that a ChatUser can possibly receive will be
+         * directly attainable by calling the getContent() method.
+         */
         
-        if (components[0].equals(Constants.WELCOME_TAG)) {
-            // if we enter in here, we have a welcome message.
-            // welcome messages hold, after the first appearance of ':', the room name.
-            // we will use this to set the title of the window accordingly.
-
-            /**
-             * seeking the first ":" that appears after the first ".", as this will be
-             * followed by the room name. We can expect this format to be the same every time,
-             * as it is programmed inside SessionCoordinator.
-             */
-            int firstPeriodIndex = msg.indexOf(".");
-            int semiColonIndex = msg.indexOf(":", firstPeriodIndex);
-
-            String roomName = msg.substring(semiColonIndex + 1);
-            chatWindowRef.setTitle("Chatter --- " + roomName);
-            msg = msg.replace(Constants.WELCOME_TAG, "");
-            msg = msg.substring(1);
-
-            /**
-             * splitting twice on key points of the welcome string to determine the user alias,
-             * so we can add it to the participant list.
-             * 
-             * There's probably a better way to do this, but this way works as well.
-             */
-            String[] args = msg.split(", ");
-            args = args[1].split("\\.");
-            String alias = args[0];
-            chatWindowRef.addParticipantName(alias);
-            
-        }
-        
-        chatWindowRef.addLineToFeed(msg);
+        chatWindowRef.addLineToFeed(msg.getContent());
         
         
         

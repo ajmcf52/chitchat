@@ -1,14 +1,13 @@
 package io.user;
 
 import messages.SimpleMessage;
-import misc.TimeStampGenerator;
 import net.ChatUser;
 import ui.ChatWindow;
 
 /**
  * this class is responsible for retrieving passing along user-supplied
- * information (i.e., text messages, exit events, etc) to the user's OutputWorker.
-     */
+ * information (i.e., SimpleMessages) to the user's OutputWorker.
+ */
 public class UserOutputHandler extends Thread {
 
     private ChatUser chatUser; // reference object for triggering the sending messages.
@@ -42,24 +41,18 @@ public class UserOutputHandler extends Thread {
                     eventNotifier.wait();
                 }
             } catch (Exception e) {
-                System.out.println("UOH Error! --> " + e.getMessage());
+                System.out.println("UOH Error while waiting for events.. --> " + e.getMessage());
             }
 
-            // UOH has been woken up; check for: i) a message to send, or ii) an exit event to handle.
+            // at this point, there should be text in the text field to send.
             String toSend = chatWindowRef.retrieveChatFieldText();
             if (toSend.equals("")) {
                 System.out.println("Blank message... Nothing to send.");
                 continue; // if the message is blank, there is nothing to do here.
             }
-            // TODO implement a method of handling exit events.
 
-            String timestamp = TimeStampGenerator.now();
-
-            // package the message into an acceptable format, and push it along to the ChatUser's OutputWorker.
-            String completeMsg = "[" + timestamp + "] " + chatUser.getAlias() + ": "+ toSend;
-            SimpleMessage outgoing = new SimpleMessage(chatUser.getAlias(), completeMsg);
-
-            // push the message.
+            // package the text into a message, and push it out.
+            SimpleMessage outgoing = new SimpleMessage(chatUser.getAlias(), toSend);
             chatUser.pushOutgoingMessage(outgoing);
 
             synchronized (runLock) {

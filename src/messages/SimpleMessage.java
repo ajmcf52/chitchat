@@ -18,6 +18,7 @@ public class SimpleMessage extends Message {
      * @param t text content of the message
      */
     public SimpleMessage(String a, String t) {
+        super();
         alias = a;
         text = t;
     }
@@ -32,7 +33,7 @@ public class SimpleMessage extends Message {
      */
     @Override
     public String getContent() {
-        return getFormattedStamp() + " " + text;
+        return getFormattedStamp() + " " + alias + ": " + text;
     }
     
 }

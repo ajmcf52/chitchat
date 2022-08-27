@@ -17,6 +17,7 @@ public class WelcomeMessage extends Message {
      * @param hosting indicates whether or not this user will be host of the room.
      */
     public WelcomeMessage(String user, String roomName, boolean hosting) {
+        super();
         userJoining = user;
         roomJoined = roomName;
         isHost = hosting;

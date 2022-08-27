@@ -7,8 +7,6 @@ import io.InputWorker;
 import messages.Message;
 import misc.ValidateInput;
 
-import java.util.LinkedList;
-
 /**
  * a special type of InputWorker that solely works with the SessionCoordinator.
  */
