@@ -1,8 +1,6 @@
 package io.user;
 
-import javax.swing.SwingUtilities;
-
-import misc.Constants;
+import messages.SimpleMessage;
 import misc.TimeStampGenerator;
 import net.ChatUser;
 import ui.ChatWindow;
@@ -46,14 +44,23 @@ public class UserOutputHandler extends Thread {
             } catch (Exception e) {
                 System.out.println("UOH Error! --> " + e.getMessage());
             }
-            // UOH has been woken up; check for an event to handle
+
+            // UOH has been woken up; check for: i) a message to send, or ii) an exit event to handle.
             String toSend = chatWindowRef.retrieveChatFieldText();
-                
+            if (toSend.equals("")) {
+                System.out.println("Blank message... Nothing to send.");
+                continue; // if the message is blank, there is nothing to do here.
+            }
+            // TODO implement a method of handling exit events.
+
             String timestamp = TimeStampGenerator.now();
 
             // package the message into an acceptable format, and push it along to the ChatUser's OutputWorker.
-            String completeMsg = "[" + timestamp + "]" + Constants.DELIM + chatUser.getAlias() + ":" + Constants.DELIM + toSend + '\n';
-            chatUser.pushOutgoingMessage(completeMsg);
+            String completeMsg = "[" + timestamp + "] " + chatUser.getAlias() + ": "+ toSend;
+            SimpleMessage outgoing = new SimpleMessage(chatUser.getAlias(), completeMsg);
+
+            // push the message.
+            chatUser.pushOutgoingMessage(outgoing);
 
             synchronized (runLock) {
                 if (!isRunning) {

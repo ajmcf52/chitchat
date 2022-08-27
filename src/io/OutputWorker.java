@@ -2,7 +2,10 @@ package io;
 
 import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.io.PrintWriter;
+
+import messages.Message;
+
+import java.io.ObjectOutputStream;
 
 import misc.Worker;
 /**
@@ -15,8 +18,8 @@ import misc.Worker;
  */
 public class OutputWorker extends Worker {
     
-    private PrintWriter out; // what will be used to send outgoing messages.
-    private ArrayBlockingQueue<String> messageQueue; // where outgoing messages will be retrieved from.
+    private ObjectOutputStream out; // what will be used to send outgoing messages.
+    private ArrayBlockingQueue<Message> messageQueue; // where outgoing messages will be retrieved from.
     private Object outgoingMsgNotifier; // wait on this for new messages that require sending.
    
     /**
@@ -26,7 +29,7 @@ public class OutputWorker extends Worker {
      * @param msgQueue initialized by SessionCoordinator, where this thread will retrieve outgoing messages to be sent.
      * @param outgoingNotifier used by ChatUser to notify this class of a new message needing to be sent.
      */
-    public OutputWorker(String workerCode, PrintWriter output, ArrayBlockingQueue<String> msgQueue, Object outgoingNotifier) {
+    public OutputWorker(String workerCode, ObjectOutputStream output, ArrayBlockingQueue<Message> msgQueue, Object outgoingNotifier) {
         super("OW-" + workerCode);
         messageQueue = msgQueue;
         out = output;
@@ -44,13 +47,10 @@ public class OutputWorker extends Worker {
                 synchronized (outgoingMsgNotifier) {
                     outgoingMsgNotifier.wait();
                 }
-                
-                ArrayList<String> toSend = new ArrayList<String>();
+                ArrayList<Message> toSend = new ArrayList<Message>();
                 messageQueue.drainTo(toSend);
-                for (String msg : toSend) {
-                    if (msg.contains("bob"))
-                        System.out.println("here!!!");
-                    out.write(msg);
+                for (Object msg : toSend) {
+                    out.writeObject(msg);
                 }
                 out.flush();
             } catch (Exception e) {
@@ -69,7 +69,7 @@ public class OutputWorker extends Worker {
      * triggers the sending of a message.
      * @param msg message to be sent
      */
-    public void triggerMessageSend(String msg) {
+    public void triggerMessageSend(Message msg) {
         try {
             messageQueue.put(msg);
             synchronized (outgoingMsgNotifier) {

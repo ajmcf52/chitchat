@@ -704,3 +704,17 @@ At a cursory level, its functionality hasn't changed much; SC starts by first co
 I, more or less, know what needs to be done. I just think I need to step away for a bit and come back fresh after some exercise, so I can potentially chip away some more before going to bed tonight. If not, I will certainly be putting in more hours tomorrow. Tonight would be good though.
 
 Out.
+
+---
+
+## Tired, but trucking away.
+
+### Friday, August 26th 5:04PM PST
+
+---
+
+Body is in need of a really good sleep tonight, so that is what I aim to provide it with.
+
+Code is on track to being good and workable, it is simply in a state of experiencing large change that is difficult to measure and observe. I will be in a much better spot to report on the changes tomorrow after some food and rest.
+
+2 more hours logged today.

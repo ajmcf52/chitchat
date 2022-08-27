@@ -1,9 +1,10 @@
 package io.session;
 
-import java.io.BufferedReader;
+import java.io.ObjectInputStream;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import io.InputWorker;
+import messages.Message;
 
 import java.util.LinkedList;
 
@@ -21,7 +22,7 @@ public class SessionInputWorker extends InputWorker {
      * @param msgQueue queue where newly received messages are to be placed
      * @param tq task queue, shared amongst all SIWs and BWs
      */
-    public SessionInputWorker(int workerNumber, BufferedReader input, ArrayBlockingQueue<String> msgQueue, ArrayBlockingQueue<Integer> tq) {
+    public SessionInputWorker(int workerNumber, ObjectInputStream input, ArrayBlockingQueue<Message> msgQueue, ArrayBlockingQueue<Integer> tq) {
         super("SIW-" + Integer.toString(workerNumber), input, msgQueue);
         taskQueue = tq;
     }
@@ -30,46 +31,33 @@ public class SessionInputWorker extends InputWorker {
      * this worker's main line of execution.
      */
     public void run() {
-        // to temporarily hold messages.
-        // will only ever be accessed by this worker, therefore no synchronization needed.
-        LinkedList<String> messages = new LinkedList<String>(); 
         turnOn();
         
         while (true) {
-            
-
             try {
-                /**
-                 * Block initially. We intentionally do this so while this thread has no input to read,
-                 * it doesn't "busy wait", allowing other threads to make use of available CPU cycles instead.
-                 */
-                String msg = in.readLine();
-                messages.add(msg);
-                // while there are messages to read, read them in one by one. ready() does not block.
-                while (in.ready()) {
-                    messages.add(in.readLine());
+                Object obj = in.readObject();
+                if (!(obj instanceof Message)) {
+                    System.out.println(workerID + " Error: received Object not castable to Message.");
+                    break;
                 }
-                // add all received messages to the ABQ in the order by which they were received.
-                while (!messages.isEmpty()) {
-                    msg = messages.getFirst();
-                    messageQueue.put(msg);
-                }
+                Message msg = (Message) obj;
+                messageQueue.put(msg);
                 
                 /**
-                 * we operate on the precondition that ALL worker ID strings follow the same format,
-                 * so this is perfectly legitimate code.
+                 * NOTE all worker ID strings follow a strict format. This should be fine.
+                 * If it breaks, it should be relatively straightforward as to why it broke
+                 * and how to fix it.
                  */
                 int workerNum = Integer.parseInt(workerID.split("-")[1]);
                 taskQueue.put(workerNum); // queue up the task for BWs
 
             } catch (Exception e) {
-                System.out.println("SessionInputWorker Error! --> " + e.getMessage());
+                System.out.println(workerID + " Error! --> " + e.getMessage());
             }
 
             // check to see if it is time to exit.
             synchronized (runLock) {
                 if (!isRunning) {
-                    System.out.println("hiya");
                     break;
                 }
             }

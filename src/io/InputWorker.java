@@ -1,8 +1,9 @@
 package io;
 
-import java.io.BufferedReader;
+import java.io.ObjectInputStream;
 import java.util.concurrent.ArrayBlockingQueue;
 
+import messages.Message;
 import misc.Worker;
 
 /**
@@ -13,8 +14,8 @@ import misc.Worker;
  */
 public abstract class InputWorker extends Worker {
     
-    protected BufferedReader in; // what will be used to read messages from.
-    protected ArrayBlockingQueue<String> messageQueue; // where newly received messages will be placed.
+    protected ObjectInputStream in; // what will be used to read messages from.
+    protected ArrayBlockingQueue<Message> messageQueue; // where newly received messages will be placed.
 
     /**
      * constructor of the InputWorker.
@@ -22,7 +23,7 @@ public abstract class InputWorker extends Worker {
      * @param input what will be used to read incoming messages; initialized by SessionCoordinator.
      * @param msgQueue where incoming messages will be placed; initialized by SessionCoordinator.
      */
-    public InputWorker(String wid, BufferedReader input, ArrayBlockingQueue<String> msgQueue) {
+    public InputWorker(String wid, ObjectInputStream input, ArrayBlockingQueue<Message> msgQueue) {
         super(wid);
         isRunning = false;
         messageQueue = msgQueue;

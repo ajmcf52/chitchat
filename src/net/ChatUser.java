@@ -9,6 +9,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import io.OutputWorker;
 import io.user.*;
+import messages.Message;
 import misc.Constants;
 import ui.ChatWindow;
 
@@ -225,7 +226,7 @@ public class ChatUser extends Thread {
      * triggers the sending of a message to be seen by other users in the chat.
      * @param msg message to be sent, timestamp and all.
      */
-    public void pushOutgoingMessage(String msg) {
+    public void pushOutgoingMessage(Message msg) {
         outputWorker.triggerMessageSend(msg);
     }
 }

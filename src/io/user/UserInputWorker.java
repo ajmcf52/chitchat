@@ -1,9 +1,10 @@
 package io.user;
 
-import java.io.BufferedReader;
+import java.io.ObjectInputStream;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import io.InputWorker;
+import messages.Message;
 
 /**
  * A special type of InputWorker that receives messages
@@ -22,8 +23,8 @@ public class UserInputWorker extends InputWorker {
      * @param incomingNotifier used to notify the UserInputHandler when there are newly received messages to process.
      * 
      */
-    public UserInputWorker(int workerNum, BufferedReader input, ArrayBlockingQueue<String> msgQueue, Object incomingNotifier) {
-        super("UIW-" + Integer.toString(workerNum), input,msgQueue);
+    public UserInputWorker(int workerNum, ObjectInputStream input, ArrayBlockingQueue<Message> msgQueue, Object incomingNotifier) {
+        super("UIW-" + Integer.toString(workerNum), input, msgQueue);
         incomingMsgNotifier = incomingNotifier;
     }
 
@@ -34,19 +35,24 @@ public class UserInputWorker extends InputWorker {
         turnOn();
 
         while (true) {
-            String msg = null;
+            Object obj = null;
+            Message msg = null;
             try {
-                msg = in.readLine();
-                if (msg.contains("bob"))
-                    System.out.println("hiya");
+                obj = in.readObject();
+                if (!(obj instanceof Message)) {
+                    System.out.println(workerID + ": Something is wrong here.");
+                    break;
+                }
             } catch (Exception e) {
                 System.out.println("UserInputWorker Error! --> " + e.getMessage());
             }
+            // if we make it this far, obj is an instance of Message.
+            msg = (Message) obj;
             messageQueue.add(msg);
+
             synchronized (incomingMsgNotifier) {
                 incomingMsgNotifier.notify();
             }
-
 
             // check to see if it's time to exit.
             synchronized (runLock) {

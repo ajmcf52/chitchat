@@ -1,6 +1,9 @@
 package io.session;
 
 import java.util.concurrent.ArrayBlockingQueue;
+
+import messages.Message;
+
 import java.util.ArrayList;
 
 import misc.Worker;
@@ -24,8 +27,8 @@ import misc.Worker;
 public class MessageRouter extends Worker {
     
     private ArrayBlockingQueue<Integer> taskQueue; // where ID numbers representing tasks are placed
-    private ArrayList<ArrayBlockingQueue<String>> incomingMessageQueues; // list of incoming message queues
-    private ArrayList<ArrayBlockingQueue<String>> outgoingMessageQueues; // list of outgoing message queues
+    private ArrayList<ArrayBlockingQueue<Message>> incomingMessageQueues; // list of incoming message queues
+    private ArrayList<ArrayBlockingQueue<Message>> outgoingMessageQueues; // list of outgoing message queues
     private ArrayList<Object> newMessageNotifiers; // list of objects to notify on when there are messages to be sent.
 
     /**
@@ -37,7 +40,7 @@ public class MessageRouter extends Worker {
      * @param notifiers list of objects to notify on when there are messages to be sent
      */
     public MessageRouter(int workerNumber, ArrayBlockingQueue<Integer> tasks, 
-    ArrayList<ArrayBlockingQueue<String>> in, ArrayList<ArrayBlockingQueue<String>> out, ArrayList<Object> notifiers) {
+    ArrayList<ArrayBlockingQueue<Message>> in, ArrayList<ArrayBlockingQueue<Message>> out, ArrayList<Object> notifiers) {
         super("MR-" + Integer.toString(workerNumber));
         taskQueue = tasks;
         incomingMessageQueues = in;
@@ -51,23 +54,25 @@ public class MessageRouter extends Worker {
     public void run() {
         
         while (true) {
-            if (workerID.equals("MR-1")) {
-                System.out.println("Mista mista!");
-            }
+
             Integer task = null;
             try {
                 task = taskQueue.take();  // take a task from the task queue
                 // execute the task (i.e., forward the messages)
 
-                ArrayList<String> messagesToFwd = new ArrayList<String>();
-                ArrayBlockingQueue<String> msgQueue = incomingMessageQueues.get(task);
+                ArrayList<Message> messagesToFwd = new ArrayList<Message>();
+                ArrayBlockingQueue<Message> msgQueue = incomingMessageQueues.get(task);
                 // retrieve the messages to be forwarded
                 msgQueue.drainTo(messagesToFwd);
 
                 // forward the messages and notify the appropriate OutputWorker.
                 int numUsers = outgoingMessageQueues.size();
                 for (int i = 0; i < numUsers; i++) {
-                    ArrayBlockingQueue<String> outgoing = outgoingMessageQueues.get(i);
+                    if (task == i) {
+                        continue; // we don't want to send the message back where it came from.
+                    }
+                        
+                    ArrayBlockingQueue<Message> outgoing = outgoingMessageQueues.get(i);
                     outgoing.addAll(messagesToFwd);
                     synchronized (newMessageNotifiers.get(i)) {
                         newMessageNotifiers.get(i).notify();

@@ -2,6 +2,7 @@ package io.user;
 
 import java.util.concurrent.ArrayBlockingQueue;
 
+import messages.Message;
 import ui.ChatWindow;
 import misc.Constants;
 
@@ -23,7 +24,7 @@ public class UserInputHandler extends Thread {
      * this is where incoming messages will be retrieved from,
      * after they are placed there by UserInputWorker.
      */
-    private ArrayBlockingQueue<String> messageQueue;
+    private ArrayBlockingQueue<Message> messageQueue;
 
     private volatile boolean isRunning; // flag is used to switch worker on and off.
     private Object runLock; //lock for aforementioned run flag.
@@ -35,7 +36,7 @@ public class UserInputHandler extends Thread {
      * @param msgQueue message queue
      * @param incomingNotifier new message notifier, notified by UserInputWorker (the receiver of messages via Socket)
      */
-    public UserInputHandler(ChatWindow chatWin, ArrayBlockingQueue<String> msgQueue, Object incomingNotifier) {
+    public UserInputHandler(ChatWindow chatWin, ArrayBlockingQueue<Message> msgQueue, Object incomingNotifier) {
         chatWindowRef = chatWin;
         messageQueue = msgQueue;
         isRunning = false;
@@ -51,13 +52,14 @@ public class UserInputHandler extends Thread {
         switchOn();
 
         while (true) {
-            String msg = null;
+            Message msg = null;
             try {
                 synchronized (incomingMessageNotifier) {
                     // wait here until notified by UserInputWorker that we have new messages to process
                     incomingMessageNotifier.wait();
                 }
                 msg = messageQueue.take();
+                
             } catch (Exception e) {
                 System.out.println("UIH Error! --> " + e.getMessage());
             }
@@ -93,7 +95,7 @@ public class UserInputHandler extends Thread {
      * handles incoming messages appropriately.
      * @param msg
      */
-    public void handleMessage(String msg) {
+    public void handleMessage(Message msg) {
         
         String[] components = msg.split(Constants.DELIM);
         msg.replace(Constants.DELIM," ");

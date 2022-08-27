@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 
 import misc.Constants;
@@ -20,6 +22,8 @@ import misc.TimeStampGenerator;
 import misc.Worker;
 
 import messages.JoinRoomMessage;
+import messages.SimpleMessage;
+import messages.WelcomeMessage;
 
 /**
  * The role of this class is to coordinate the sending and receiving of chat messages
@@ -75,59 +79,61 @@ public class SessionCoordinator extends Worker {
 
 
     public void run() {
+        /**
+         * the first thing that SessionCoordinator needs to do is set up the host of the room.
+         */
         initializeHost(hostAlias);
 
         // once the host is initialized, we simply block and wait for new join or leave messages to come in.
         while (true) {
             Socket socket = null;
-            String msg = "";
-            BufferedReader in = null;
+            Object msg = null; 
+            ObjectInputStream in = null;
             PrintWriter out = null;
             try {
                 socket = connectionReceiver.accept();
-                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                in = new ObjectInputStream(socket.getInputStream());
                 out = new PrintWriter(socket.getOutputStream());
-                msg = in.readLine();
+                msg = in.readObject();
 
             } catch (Exception e) {
                 System.out.println(workerID + " Error! --> " + e.getMessage());
             }
-            String[] msgArgs = msg.split(Constants.DELIM);
-            String alias = msgArgs[1];
-                switch (msgArgs[0]) {
-                    case (Requests.JOIN_ROOM_REQ): {
-                        String timestampString = "[" + TimeStampGenerator.now() + "]";
-                        String introduction = alias + " has joined the chat room.";
-                        String completeMessage = timestampString + Constants.DELIM + introduction + '\n';
+            if (msg instanceof )
+                //switch (msgArgs[0]) {
+                //     case (Requests.JOIN_ROOM_REQ): {
+                //         String timestampString = "[" + TimeStampGenerator.now() + "]";
+                //         String introduction = alias + " has joined the chat room.";
+                //         String completeMessage = timestampString + Constants.DELIM + introduction + '\n';
                         
-                        initializeUser(alias, socket, completeMessage, in, out);
+                //         initializeUser(alias, socket, completeMessage, in, out);
 
-                        // let Registry know that a new user has requested to join.
-                        try {
-                            // connect to Registry.
-                            Socket registrySocket = new Socket(Constants.REGISTRY_IP, Constants.REGISTRY_PORT);
-                            BufferedReader regIn = new BufferedReader(new InputStreamReader(registrySocket.getInputStream()));
-                            PrintWriter regOut = new PrintWriter(registrySocket.getOutputStream());
-                            regOut.write(Requests.JOIN_ROOM_REQ + '\n');
-                            regOut.write(alias + "," + roomName + '\n');
-                            regOut.flush();
+                //         // let Registry know that a new user has requested to join.
+                //         try {
+                //             // connect to Registry.
+                //             Socket registrySocket = new Socket(Constants.REGISTRY_IP, Constants.REGISTRY_PORT);
+                //             BufferedReader regIn = new BufferedReader(new InputStreamReader(registrySocket.getInputStream()));
+                //             PrintWriter regOut = new PrintWriter(registrySocket.getOutputStream());
+                //             regOut.write(Requests.JOIN_ROOM_REQ + '\n');
+                //             regOut.write(alias + "," + roomName + '\n');
+                //             regOut.flush();
 
-                            String response = regIn.readLine();
-                            if (response.equals("OK")) {
-                                System.out.println("Registry up-to-date with user " + alias + " joining " + roomName);
-                            }
-                            regOut.close();
-                            regIn.close();
-                            registrySocket.close();
+                //             String response = regIn.readLine();
+                //             if (response.equals("OK")) {
+                //                 System.out.println("Registry up-to-date with user " + alias + " joining " + roomName);
+                //             }
+                //             regOut.close();
+                //             regIn.close();
+                //             registrySocket.close();
                             
-                        } catch (Exception e) {
-                            System.out.println("SC Error in communicating user join with Registry --> " + e.getMessage());
-                        }
-                    }
-                    case (Requests.LEAVE_ROOM_REQ): {
-                        // TODO later when the time comes... Not an immediate priority.
-                    }
-                }
+                //         } catch (Exception e) {
+                //             System.out.println("SC Error in communicating user join with Registry --> " + e.getMessage());
+                //         }
+                //     }
+                //     case (Requests.LEAVE_ROOM_REQ): {
+                //         // TODO later when the time comes... Not an immediate priority.
+                //     }
+                // }
         }
     }
 
@@ -142,19 +148,39 @@ public class SessionCoordinator extends Worker {
      * NOTE while it isn't completely necessary, we pass the input/output streams in as parameters, as they were already
      * created previously and it makes no sense to re-create the stream objects.
      */
-    public void initializeUser(String alias, Socket socket, String initialMessage, BufferedReader in, PrintWriter out) {
+    public void initializeUser(String alias, Socket socket, WelcomeMessage initialMessage, ObjectInputStream in, ObjectOutputStream out) {
 
-        
-        /**
-         * let the JRW know that everything is getting done,
-         * and do it before creating output/input workers to avoid strange behavior.
-         */
-        try {
-            out.write("OK\n"); 
-            out.flush();
-        } catch (Exception e) {
-            System.out.println("SC Error initializing user while trying to close() --> " + e.getMessage());
+        boolean isHosting = initialMessage.isHosting();
+        if (isHosting) {
+            /**
+             * if isHosting is true, the entity with whom we are communicating is
+             * a ChatUser that expects a proper welcoming DIRECTLY ;) *hint hint*
+             * 
+             * NOTE this code is already being called from within a try-catch.
+             */
+            WelcomeMessage welcoming = new WelcomeMessage(alias, initialMessage.getAssociatedRoomName(), true);
+            try {
+                out.writeObject(welcoming);
+                out.flush();
+            } catch (Exception e) {
+                System.out.println("Error welcoming host of " + initialMessage.getAssociatedRoomName() + " --> " + e.getMessage());
+            }
         }
+        else {
+            /**
+             * if isHosting is false, we are talking to a JoinRoomWorker,
+             * and all they expect in return is a SimpleMessage with the text "OK"
+             */
+            String responseMsgContent = "OK";
+            SimpleMessage responseMsg = new SimpleMessage(alias, responseMsgContent);
+
+            try {
+                out.writeObject(responseMsgContent); 
+                out.flush();
+            } catch (Exception e) {
+                System.out.println(workerID + " Error responding to JoinRequest --> " + e.getMessage());
+            }
+        }     
 
         // initialize a bunch of stuff
         ArrayBlockingQueue<String> incoming = new ArrayBlockingQueue<String>(Constants.MSG_QUEUE_LENGTH,true);
@@ -201,28 +227,27 @@ public class SessionCoordinator extends Worker {
      * @param hostAlias alias of the host user
      */
     public void initializeHost(String hostAlias) {
-        // ChatUser will be attempting to connect to the ServerSocket at this point...
+        // ChatUser will be attempting to connect to the ServerSocket at this point.
         
+        // declare variables.
         Socket socket = null;
+        ObjectInputStream in = null;
+        ObjectOutputStream out = null;
+
+        // build and format the welcome message
+        WelcomeMessage initialMsg = new WelcomeMessage(hostAlias, roomName, true);
         try {
+
             socket = connectionReceiver.accept();
-            // System.out.println("connection accepted");
-
-            // build and format the welcome message
-            String timestampString = "[" + TimeStampGenerator.now() + "]";
-            String welcoming = "Welcome, " + hostAlias + ". You are the host of: " + roomName;
-            String completeWelcomeMessage = Constants.WELCOME_TAG + Constants.DELIM + timestampString + 
-            Constants.DELIM + welcoming + '\n';
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            PrintWriter out = new PrintWriter(socket.getOutputStream());
-
-            initializeUser(hostAlias, socket, completeWelcomeMessage, in, out);
+            in = new ObjectInputStream(socket.getInputStream());
+            out = new ObjectOutputStream(socket.getOutputStream());
 
         } catch (Exception e) {
             System.out.println("SessionCoordinator Error! --> " + e.getMessage());
             e.printStackTrace();
         }
+
+        initializeUser(hostAlias, socket, initialMsg, in, out);
     }
 
 }
