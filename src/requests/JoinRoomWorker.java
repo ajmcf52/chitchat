@@ -79,7 +79,7 @@ public class JoinRoomWorker extends Worker {
             }
             else {
                 SimpleMessage respMsg = (SimpleMessage) response;
-                System.out.println(respMsg.print());
+                System.out.println(respMsg.getContent());
             }
 
             // NOTE it is ChatUser's responsibility to open the socket back up again.

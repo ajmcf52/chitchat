@@ -1,5 +1,7 @@
 package misc;
 
+import messages.Message;
+
 /**
  * collection of user input validation methods.
  */
@@ -49,6 +51,21 @@ public interface ValidateInput {
             }
         }
         return true;
+    }
+
+    /**
+     * simple message validation function for message streamers.
+     * Messages come in as Objects; this function is used to 
+     * frisk and cast said Objects into Messages.
+     * @param obj the Object in question
+     * @return the casted Message
+     * @throws ClassCastException
+     */
+    public static Message validateMessage(Object obj) throws ClassCastException {
+        if (!(obj instanceof Message)) {
+            throw new ClassCastException("BAD CAST");
+        }
+        else return (Message) obj;
     }
 
 }

@@ -28,11 +28,13 @@ public class WelcomeMessage extends Message {
     public boolean isHosting() { return isHost; }
 
     /**
-     * a simple print function.
+     * a simple print function. Contents printed depend on whether or not the
+     * user being greeted is the host of the room or not.
+     * 
      * @return String-based message to be printed.
      */
-    public String print() {
-        return isHost ? "Welcome, " + userJoining + ". You are the host of this room." : 
-        "Welcome, " + userJoining + "! You have joined " + roomJoined + ".";
+    public String getContent() {
+        return isHost ? getFormattedStamp() + " Welcome, " + userJoining + ". You are the host of this room." : 
+        getFormattedStamp() + " Welcome, " + userJoining + ". You have joined " + roomJoined + ".";
     }
 }

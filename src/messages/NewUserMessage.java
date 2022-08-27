@@ -8,6 +8,7 @@ public class NewUserMessage extends Message {
      * @param a name of the new user
      */
     public NewUserMessage(String a) {
+        super();
         alias = a;
     }
 
@@ -19,7 +20,7 @@ public class NewUserMessage extends Message {
      * @return String-based text describing contents of the message.
      */
     @Override
-    public String print() {
-        return alias + " has joined the system.";
+    public String getContent() {
+        return getFormattedStamp() + " " + alias + " has joined the system.";
     }
 }

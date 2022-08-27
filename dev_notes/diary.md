@@ -718,3 +718,22 @@ Body is in need of a really good sleep tonight, so that is what I aim to provide
 Code is on track to being good and workable, it is simply in a state of experiencing large change that is difficult to measure and observe. I will be in a much better spot to report on the changes tomorrow after some food and rest.
 
 2 more hours logged today.
+
+---
+
+## Early Saturday, Good Progress.
+
+### Saturday, August 27th 7:50AM PST
+
+---
+
+Woke up at 5AM this morning to get to the coffee shop by 6am so I could get into a flow before it got busy.
+
+It seemed to pay off nicely. Closing in on 2 hours of development, and I have completely cleaned up the _SessionCoordinator_, all fitted out with the brand-new messaging system that I came up with over the past few days. The code looks a trillion times cleaner; not only will the code be easier to debug, but the logic of _SessionCoordinator_ has been cleaned up as well.
+
+Previously, I was experiencing hangups at various endpoints of the communication system I had concocted. With the way I have laid things out, I suspect the number of hangups to go down drastically; if and when we get some more, I suspect them to be much, much easier to debug.
+
+Things are looking up early on a Saturday. Next on the agenda is 90 minutes of problem-solving. After that, I will be headed to the gym for a work break, eating some food, then back to this project.
+
+Next to-do is cleaning up the Input and Output handlers, which are those classes responsible for actually processing the messages. I suspect this portion will only take 15-30 minutes to clean up. Then, it will be on to re-formatting the Registry, which could take up to an hour. After that, we will be more or less onto
+testing.

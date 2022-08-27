@@ -5,6 +5,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import io.InputWorker;
 import messages.Message;
+import misc.ValidateInput;
 
 import java.util.LinkedList;
 
@@ -36,11 +37,7 @@ public class SessionInputWorker extends InputWorker {
         while (true) {
             try {
                 Object obj = in.readObject();
-                if (!(obj instanceof Message)) {
-                    System.out.println(workerID + " Error: received Object not castable to Message.");
-                    break;
-                }
-                Message msg = (Message) obj;
+                Message msg = ValidateInput.validateMessage(obj);
                 messageQueue.put(msg);
                 
                 /**

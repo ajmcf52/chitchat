@@ -15,6 +15,7 @@ public class NewRoomMessage extends Message {
      * @param room requested name of the room.
      */
     public NewRoomMessage(String host, String room) {
+        super();
         hostAlias = host;
         roomName = room;
     }
@@ -29,8 +30,8 @@ public class NewRoomMessage extends Message {
      * @return informative debugging stuff.
      */
     @Override
-    public String print() {
-        return hostAlias + " is requesting to create a room by the name of " + roomName + ".";
+    public String getContent() {
+        return getFormattedStamp() + " " + hostAlias + " is requesting to create a room by the name of " + roomName + ".";
     }
     
 }

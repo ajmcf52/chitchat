@@ -22,7 +22,7 @@ public class SimpleMessage extends Message {
         text = t;
     }
 
-    // getters
+    // getter for alias
     public String getAssociatedAlias() { return alias; }
 
     /**
@@ -31,8 +31,8 @@ public class SimpleMessage extends Message {
      * @return text of the message
      */
     @Override
-    public String print() {
-        return text;
+    public String getContent() {
+        return getFormattedStamp() + " " + text;
     }
     
 }

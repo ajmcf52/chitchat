@@ -5,6 +5,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import io.InputWorker;
 import messages.Message;
+import misc.ValidateInput;
 
 /**
  * A special type of InputWorker that receives messages
@@ -39,15 +40,10 @@ public class UserInputWorker extends InputWorker {
             Message msg = null;
             try {
                 obj = in.readObject();
-                if (!(obj instanceof Message)) {
-                    System.out.println(workerID + ": Something is wrong here.");
-                    break;
-                }
+                msg = ValidateInput.validateMessage(obj);
             } catch (Exception e) {
                 System.out.println("UserInputWorker Error! --> " + e.getMessage());
             }
-            // if we make it this far, obj is an instance of Message.
-            msg = (Message) obj;
             messageQueue.add(msg);
 
             synchronized (incomingMsgNotifier) {
