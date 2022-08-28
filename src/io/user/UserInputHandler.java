@@ -54,7 +54,7 @@ public class UserInputHandler extends Thread {
         while (true) {
             ArrayList<Message> messages = new ArrayList<>();
             try {
-                synchronized (incomingMessageNotifier) { // notified by UserInputWorker
+                synchronized (incomingMessageNotifier) { // notified by UserInputWorker when there is a message to handle
                     incomingMessageNotifier.wait();
                 }
                 

@@ -47,7 +47,7 @@ public class UserInputWorker extends InputWorker {
             messageQueue.add(msg);
 
             synchronized (incomingMsgNotifier) {
-                incomingMsgNotifier.notify();
+                incomingMsgNotifier.notify(); // sends a signal to the InputHandler that there is a message to be handled.
             }
 
             // check to see if it's time to exit.

@@ -38,7 +38,7 @@ public class UserOutputHandler extends Thread {
         while (isRunning) {
             try {
                 synchronized (eventNotifier) {
-                    eventNotifier.wait();
+                    eventNotifier.wait(); // wait for a ChatWindow "Send" event to fire
                 }
             } catch (Exception e) {
                 System.out.println("UOH Error while waiting for events.. --> " + e.getMessage());
