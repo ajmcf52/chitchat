@@ -1,5 +1,6 @@
 package misc;
 
+import messages.ListRoomsMessage;
 import messages.Message;
 import messages.SimpleMessage;
 
@@ -86,4 +87,13 @@ public interface ValidateInput {
         return (SimpleMessage) obj;
     }
 
+    public static ListRoomsMessage validateListRoomsMessage(Object obj) throws ClassCastException {
+        if (!(obj instanceof ListRoomsMessage)) {
+            ClassCastException e = new ClassCastException("Bad Cast from " + obj.toString() + " to ListRoomsMessage!");
+            e.printStackTrace();
+            throw e;
+        }
+        return (ListRoomsMessage) obj;
+    }
+ 
 }

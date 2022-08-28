@@ -19,14 +19,18 @@ import java.awt.event.MouseListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 
 import main.ApplicationState;
+import messages.ListRoomsMessage;
 import main.AppStateValue;
 import misc.PanelNames;
 import misc.Requests;
+import misc.ValidateInput;
 import net.ChatUser;
 import misc.Constants;
 
@@ -204,46 +208,46 @@ public class RoomSelectPanel extends JPanel {
          * @throws IOException
          * @throws NumberFormatException
          */
-        public void serviceRefreshRequest(BufferedReader in, PrintWriter out) throws IOException, NumberFormatException {
-            // already in a try_catch from where this method was called from...
-            String requestLine = "REFRESH\n";
-            out.write(requestLine);
+        public void serviceRefreshRequest(ObjectInputStream in, ObjectOutputStream out) throws IOException, NumberFormatException, ClassNotFoundException {
+            
+            // NOTE this method is called from within a try/catch.
 
-            String line = in.readLine(); // first line is "BEGIN + <roomCount>"; use this to initialize a temp String[].
-            int roomCount = Integer.parseInt(line.split(" ")[1]);
-            ArrayList<String> temp = new ArrayList<String>(roomCount);
-            while (true) {
-                line = in.readLine();
-                if (line.equals("DONE")) {
-                    break; // once we read "DONE", the full list has been sent.
-                }
-                temp.add(line);
-            }
+            ListRoomsMessage requestMessage = new ListRoomsMessage();
+            out.writeObject(requestMessage);
+            out.flush();
+
+            Object obj = in.readObject();
+            ListRoomsMessage response = ValidateInput.validateListRoomsMessage(obj);
+            ArrayList<String> latestListings = response.getListings();
             /**
              * at this point, we have the current set of rooms; now we can 
              * compare with the local CSV ArrayList and update the table's model accordingly.
              */
-            int i = 0, j = 0, csvLen = csvRoomDataObjs.size(), latestLen = roomCount;
+            int i = 0, j = 0, csvLen = csvRoomDataObjs.size(), latestLen = latestListings.size();
 
             while (i < csvLen && j < latestLen) {
-                if (csvRoomDataObjs.get(i).equals(temp.get(i))) {
+                if (csvRoomDataObjs.get(i).equals(latestListings.get(j))) {
                     i++;
                     j++;
                 }
                 else {
-                    // a mismatch tells us that a room removal has occurred.
+                    /*
+                     * A mismatch tells us that a room removal has occurred.
+                     * We know this, because any additions would be added to the end.
+                     */
+
                     table.removeEntry(i);
                     csvRoomDataObjs.remove(i);
                 }
             }
             // add any newly added rooms caught by the refresh.
             while (j < latestLen) {
-                String[] entry = temp.get(j).split(",");
-                table.addEntry(entry);
-                csvRoomDataObjs.add(temp.get(j));
+                String[] newEntry = latestListings.get(j).split(",");
+                table.addEntry(newEntry);
+                csvRoomDataObjs.add(latestListings.get(j));
                 j++;
             }
-            // algorithm done!
+            // room listings refresh complete.
         }
 
         /**
@@ -251,40 +255,30 @@ public class RoomSelectPanel extends JPanel {
          */
         public void run() {
             Socket socket;
-            BufferedReader in;
-            PrintWriter out;
+            ObjectInputStream in = null;
+            ObjectOutputStream out = null;
 
             isRunning = true;
             try {
                 socket = new Socket(Constants.REGISTRY_IP, Constants.REGISTRY_PORT);
-                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                out = new PrintWriter(socket.getOutputStream());
+                in = new ObjectInputStream(socket.getInputStream());
+                out = new ObjectOutputStream(socket.getOutputStream());
 
-                // send in the request line.
-                String requestLine = Requests.LIST_ROOMS_REQ + '\n';
-                out.write(requestLine);
+                ListRoomsMessage requestMessage = new ListRoomsMessage();
+                out.writeObject(requestMessage);
                 out.flush();
-                /**
-                 * message protocol...
-                 * "BEGIN"
-                 * <lines of room list data, one per line>
-                 * "DONE"
-                 */
-                String line = in.readLine();
-                if (line.equals("BEGIN")) {
-                    System.out.println("Room list stream beginning... So far so good.");
+
+                // expected response is a ListRoomsMessage, equipped with a serialized list of CSV-style room listings.
+                // NOTE format of the CSV-style room listings is outlined closely in ListRoomsMessage.java 
+                Object obj = in.readObject();
+                ListRoomsMessage response = ValidateInput.validateListRoomsMessage(obj);
+                for (String csvListing : response.getListings()) {
+                    String[] listingArgs = csvListing.split(",");
+                    table.addEntry(listingArgs);
+                    csvRoomDataObjs.add(csvListing);
                 }
-                while (true) {
-                    line = in.readLine();
-                    if (line.equals("DONE")) {
-                        break; // if line reads "DONE", break.
-                    }
-                    // otherwise, read the data, feed it into the table, and store in CSV as a backup.
-                    String[] dataArgs = line.split(",");
-                    table.addEntry(dataArgs);
-                    csvRoomDataObjs.add(line);
-                }
-                // principal list fetch complete; wait on user for any Refresh requests.
+
+                // principal list fetch complete; wait on user for additional RoomListing (i.e., Refresh) requests.
                 while (true) {
                     synchronized (workerNotify) {
                         workerNotify.wait();
@@ -296,13 +290,11 @@ public class RoomSelectPanel extends JPanel {
                     serviceRefreshRequest(in, out);
                 }
                 // work done; close streams and exit.
-                out.close();
-                in.close();
-                socket.close();
+                socket.close(); // NOTE this closes both associated streams as well.
 
             }
             catch (Exception e) {
-                System.out.println("RoomSelectPanel Error! --> " + e.getMessage());
+                System.out.println("RoomsListFetcher Error --> " + e.getMessage());
             }
         }
     }

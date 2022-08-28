@@ -10,7 +10,7 @@ import main.AppStateValue;
 import misc.Worker;
 import net.ChatUser;
 import misc.Constants;
-
+import misc.ValidateInput;
 import messages.JoinRoomMessage;
 import messages.SimpleMessage;
 
@@ -21,7 +21,7 @@ import messages.SimpleMessage;
 public class JoinRoomWorker extends Worker {
 
     private String sessionIP; // ip of the SessionCoordinator in charge of the room being joined
-    private int sessionPort; // port "" "" 
+    private int sessionPort; // port number of the session
     private ChatUser userJoining; // alias of the user requesting to join
     private String roomName; // name of the room being joined
     private Object chatUserLock; // used to notify ChatUser when crucial actions have been completed
@@ -69,13 +69,11 @@ public class JoinRoomWorker extends Worker {
             out.writeObject(msg);
             out.flush();
             // read the response (should just read "OK")
-            Object response = in.readObject();
-            if (!(response instanceof SimpleMessage)) {
-                System.out.println("JoinRoomWorker: SimpleMessage OK not received from SC..");
-            }
-            else {
-                SimpleMessage respMsg = (SimpleMessage) response;
-                System.out.println(respMsg.getContent());
+            Object obj = in.readObject();
+            SimpleMessage response = ValidateInput.validateSimpleMessage(obj);
+
+            if (!response.getContent().equals("OK")) {
+                System.out.println("Unexpected Response to JRM --> " + response.getContent());
             }
 
             // NOTE it is ChatUser's responsibility to open the socket back up again.
@@ -86,7 +84,7 @@ public class JoinRoomWorker extends Worker {
             userJoining.setSessionValue(Constants.CHATTING);
             
             synchronized (chatUserLock) {
-                chatUserLock.notify();
+                chatUserLock.notify(); // allows ChatUser to move to the "CHATTING" state in its state machine.
             }
             
 
