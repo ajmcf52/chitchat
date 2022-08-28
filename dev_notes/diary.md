@@ -738,9 +738,18 @@ Things are looking up early on a Saturday. Next on the agenda is 90 minutes of p
 Next to-do is cleaning up the Input and Output handlers, which are those classes responsible for actually processing the messages. I suspect this portion will only take 15-30 minutes to clean up. Then, it will be on to re-formatting the Registry, which could take up to an hour. After that, we will be more or less onto
 testing.
 
-###
+### More Big Progress.
 
-**What got done:**
+Today was pretty productive. I got a couple of multi-hour coding sessions in. We got a ton of stuff done. Tomorrow, I will need to work just as hard and consistent, perhaps even more so.
 
--   reworked the Input/Output handlers for the _ChatUser_ class.
--
+The new messaging system is almost completely worked in; Registry and SessionCoordinator have both been completely re-worked for all the different message types. Room listing fetches and refreshes have been re-worked, as well as user creation, room creation, and joining rooms server-side.
+
+**Tomorrow**, our attention first-thing will be directed toward re-working our last big net-centric entity, the _ChatUser_. I have already made some notes brainstorming as to how I will do it. In fact, the way I have abstracted all the text content away into the _Message_ class should make things much, much simpler.
+
+After re-working _ChatUser_, one of the last things we will need to do (before handling room exit events) will be re-working the Input and Output Handlers for _ChatUser_. It really shouldn't be too hard with the way I have laid things out for myself.
+
+I am looking forward to making a bunch more progress tomorrow.
+
+2 hours logged tonight, 2 hours logged this AM, and another hour logged in the early afternoon. Looking to extend that early afternoon session a bit more. It's difficult to find areas that are both comfortable and quiet; I may work out on the deck for a bit tomorrow, as my room is typically quite stuffy and gross.
+
+Out.

@@ -69,11 +69,11 @@ public class ChatUser extends Thread {
         while (isRunning) {
 
             switch (sessionHostValue) {
-                // entered when this user is not chatting.
+
                 case Constants.NOT_CHATTING: {
                     try {
                         synchronized (chatUserLock) {
-                            chatUserLock.wait();
+                            chatUserLock.wait(); // ChatUser
                         }
                     } catch (Exception e) {
                         System.out.println(alias + " encountered an error while waiting --> " + e.getMessage());
@@ -151,7 +151,7 @@ public class ChatUser extends Thread {
         // perform argument manipulation based on the expected standardized SimpleMessage format.
         String[] msgArgs = uidMessage.getContent().split(";");
         userID = msgArgs[1].substring(1).split(" ")[2]; // substring(1) removes the first " ".
-        
+
         alias = a + "#" + userID; // NOTE this formatting of user alias ensures that every alias is unique.
     }
 

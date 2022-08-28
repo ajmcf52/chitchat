@@ -23,4 +23,5 @@ public class NewUserMessage extends Message {
     public String getContent() {
         return getFormattedStamp() + " " + alias + " has joined the system.";
     }
+
 }

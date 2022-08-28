@@ -16,11 +16,8 @@ import messages.ListRoomsMessage;
 import messages.Message;
 import messages.NewRoomMessage;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
 
 /**
  * This class acts as one of the central units of processing within the Chatter app.
@@ -240,7 +237,7 @@ public class Registry {
             // build and write the SimpleMessage response.
             String responseContent = "OK";
             SimpleMessage response = new SimpleMessage(alias, responseContent);
-            
+
             try {
                 out.writeObject(response);
                 out.flush();
