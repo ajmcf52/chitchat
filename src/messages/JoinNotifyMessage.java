@@ -34,5 +34,4 @@ public class JoinNotifyMessage extends Message {
     public String getContent() {
         return getFormattedStamp() + " " + userThatJoined + " has joined the room.";
     }
-    
 }

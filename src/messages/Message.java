@@ -1,8 +1,11 @@
 package messages;
 
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 import misc.TimeStampGenerator;
+import net.Registry;
 
 /**
  * an abstract serializable class that will be implemented by all

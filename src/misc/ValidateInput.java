@@ -1,6 +1,7 @@
 package misc;
 
 import messages.Message;
+import messages.SimpleMessage;
 
 /**
  * collection of user input validation methods.
@@ -63,9 +64,26 @@ public interface ValidateInput {
      */
     public static Message validateMessage(Object obj) throws ClassCastException {
         if (!(obj instanceof Message)) {
-            throw new ClassCastException("BAD CAST");
+            ClassCastException e = new ClassCastException("Bad Cast from " + obj.toString() + " to Message!");
+            e.printStackTrace();
+            throw e;
         }
-        else return (Message) obj;
+        return (Message) obj;
+    }
+
+    /**
+     * message validation function for SimpleMessages.
+     * @param obj the Object transmitted across the wire that we expect to be a SimpleMessage
+     * @return the casted SimpleMessage
+     * @throws ClassCastException
+     */
+    public static SimpleMessage validateSimpleMessage(Object obj) throws ClassCastException {
+        if (!(obj instanceof SimpleMessage)) {
+            ClassCastException e = new ClassCastException("Bad Cast from " + obj.toString() + " to SimpleMessage!");
+            e.printStackTrace();
+            throw e;
+        }
+        return (SimpleMessage) obj;
     }
 
 }

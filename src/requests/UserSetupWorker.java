@@ -1,20 +1,17 @@
 package requests;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 import misc.Constants;
-import misc.Requests;
+import misc.ValidateInput;
 import net.ChatUser;
 import main.AppStateValue;
 import main.ApplicationState;
 import misc.Worker;
-
 import messages.NewUserMessage;
+import messages.SimpleMessage;
 
 /**
      * This class is responsible for setting up the ChatUser with its properties, namely its alias and UID.
@@ -46,6 +43,9 @@ import messages.NewUserMessage;
 
         /**
          * the UserSetupThread's main course of action.
+         * 
+         * NOTE format of the SimpleMessage response will be:
+         * "OK; UID is <uid>"
          */
         public void run() {
             Socket socket = null;
@@ -53,29 +53,28 @@ import messages.NewUserMessage;
             try {
                 socket = new Socket(Constants.REGISTRY_IP,Constants.REGISTRY_PORT);
                 ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
                 // send the protocol message on one line, then the alias on following line.
                 NewUserMessage msg = new NewUserMessage(alias);
                 out.writeObject(msg);
                 out.flush();
-                String response = in.readLine(); // should be a UID string for the user
-                //System.out.println(response);
+
+                Object obj = in.readObject(); // should be a SimpleMessage containing the UID string for the user
+                SimpleMessage response = ValidateInput.validateSimpleMessage(obj);
                 
                 // initialize the ChatUser's fields.
                 userRef.initializeID(response, alias);
                 // work is done! Prepare for exit, and modify app state accordingly.
-                in.close();
-                out.close();
-                socket.close();
+
+                socket.close(); // NOTE this will close both associated streams.
                 appState.setAppState(AppStateValue.CHOICE_PANEL);
 
-                //notify ChatterApp's thread of execution that ChatUser's initialization is done.
                 synchronized (chatUserLock) {
-                    chatUserLock.notify();
+                    chatUserLock.notify(); // allows ChatUser to go to the top of its state machine & enter ChoicePanel.
                 }
             }
-            catch (IOException e) {
-                System.out.println("UserSetupThread error!! --> " + e.getMessage());
+            catch (Exception e) {
+                System.out.println("UserSetupThread error! --> " + e.getMessage());
             }
         }
     }

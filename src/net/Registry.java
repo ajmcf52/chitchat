@@ -7,19 +7,23 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import misc.Constants;
+import misc.ValidateInput;
 import messages.NewUserMessage;
+import messages.SimpleMessage;
+import messages.Message;
 import messages.NewRoomMessage;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 
 /**
- * This class is responsible for performing many of the miscellaneous tasks required for the Chatter application to work.
+ * This class acts as one of the central units of processing within the Chatter app.
+ * All requests are internally handled by the RequestHandler.
  * 
- * registry functions:
- * I) store user count, providing fresh user ID numbers (UIDs) for new users.
+ * 
  */
 public class Registry {
     private static volatile int userCount = 0;
@@ -85,6 +89,8 @@ public class Registry {
      */
     private static class RequestHandler extends Thread {
         private Socket socket;
+        private ObjectInputStream in;
+        private ObjectOutputStream out;
 
         /**
          * constructor.
@@ -94,86 +100,103 @@ public class Registry {
             socket = sock;
         }
 
+        /**
+         * message handler for NewUserMessages.
+         * @param msg NewUserMessage
+         */
         public void handleMessage(NewUserMessage msg) {
+            String alias = msg.getAlias();
+            int uidNum = -1;
 
+            synchronized (userCountLock) {
+                userCount++;
+                uidNum = userCount;
+            }
+            String uid = Constants.UID_PREFIX + String.valueOf(uidNum);
+            String content = "OK; UID is " + uid;
+            SimpleMessage response = new SimpleMessage(alias, content);
+            try {
+                out.writeObject(response);
+                out.flush();
+            } catch (Exception e) {
+                System.out.println("RRH handleMessage(NUM) error --> " + e.getMessage());
+            }
+        }
+
+        /**
+         * message handler for NewRoomMessages.
+         * @param msg NewRoomMessage
+         */
+        public void handleMessage(NewRoomMessage msg) {
+            String hostAlias = msg.getHost();
+            String roomName = msg.getRoomName();
+            String participantCountStr = "1";
+
+            // determining the session port.
+            // we lock, as other rooms could be being created simultaneously (race condition)
+            int sessionPort = -1;
+            synchronized (sessionCountLock) {
+                sessionPort = Constants.SESSION_PORT_PREFIX + sessionCount;
+            }
+
+            // booting up the SeshCoordinator thread.
+            ServerSocket serverSocket = null;
+            try {
+                serverSocket = new ServerSocket(sessionPort);
+            } catch (Exception e) {
+                System.out.println("handleMessage(NRM) error creating ServerSocket --> " + e.getMessage());
+            }
+            SessionCoordinator seshCoord = new SessionCoordinator(sessionCount, serverSocket, hostAlias, roomName);
+            coordinators.put(roomName, seshCoord);
+            seshCoord.start();
+
+            // more info determination
+            String ipString = serverSocket.getInetAddress().getHostAddress();
+            String portStr = Integer.toString(sessionPort);
+            String sessionInfoContent = ipString + ":" + portStr;
+
+            // putting together some book keeping data values
+            String[] roomListValues = {roomName, hostAlias, participantCountStr, sessionInfoContent};
+            String roomListCsv = "";
+            for (String s : roomListValues)
+                roomListCsv += s + ",";
+            roomListCsv = roomListCsv.substring(0,roomListCsv.length()-1); // trim off the last ","
+            ArrayList<String> roomUserList = new ArrayList<String>();
+            roomUserList.add(hostAlias);
+
+            // putting away the "book keeping" data
+            synchronized (roomListDataLock) {
+                roomListArrayMap.put(roomName, roomListValues);
+                roomListCsvMap.put(roomName, roomListCsv);
+                roomUsers.put(roomName, roomUserList);
+            }
+
+            // send back a SimpleMessage containing the session connect information (ip and port number).
+            String content = "OK; ConnectInfo is " + sessionInfoContent; // NOTE this message format will be used User-side.
+            SimpleMessage response = new SimpleMessage(hostAlias, content);
+
+            try {
+                out.writeObject(response);
+                out.flush();
+                socket.close(); // NOTE this closes both associated streams as well.
+            } catch (Exception e) {
+                System.out.println("handleMessage(NRM) error --> " + e.getMessage());
+            }
         }
 
         public void run() {
             // handle the request!
             try {
-                ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+                in = new ObjectInputStream(socket.getInputStream());
+                out = new ObjectOutputStream(socket.getOutputStream());
 
-                PrintWriter out = new PrintWriter(socket.getOutputStream());
-                //String requestString = in.readLine();
-                Object msg = in.readObject();
+                Object obj = in.readObject();
+                Message msg = ValidateInput.validateMessage(obj);
                 if (msg instanceof NewUserMessage) {
-                    NewUserMessage userMsg = (NewUserMessage) msg;
-                    String alias = userMsg.getAlias();
-                    int uidNum = -1;
-
-                    synchronized (userCountLock) {
-                        userCount++;
-                        uidNum = userCount;
-                    }
-                    String uid = Constants.UID_PREFIX + String.valueOf(uidNum);
-                    out.write(uid + '\n');
-                    out.flush();
-                    out.close();
-                    in.close();
-                    socket.close();
+                    handleMessage((NewUserMessage)msg);
                 }
-                /**
-                 * here we are servicing a new room request. To fulfill this request, we must spawn
-                 * a SessionCoordinator and pass along a ServerSocket to which the host ChatUser will connect to.
-                 */
                 else if (msg instanceof NewRoomMessage) {
-
-                    // basic information determination from the NRM.
-                    NewRoomMessage nrm = (NewRoomMessage) msg;
-                    String hostAlias = nrm.getHost();
-                    String roomName = nrm.getRoomName();
-                    String participantCountStr = "1";
-
-                    // determining the session port.
-                    // we lock, as other rooms could be being created simultaneously (race condition)
-                    int sessionPort = -1;
-                    synchronized (sessionCountLock) {
-                        sessionPort = Constants.SESSION_PORT_PREFIX + sessionCount;
-                    }
-
-                    // booting up the SeshCoordinator thread.
-                    ServerSocket serverSocket = new ServerSocket(sessionPort);
-                    SessionCoordinator seshCoord = new SessionCoordinator(sessionCount, serverSocket, hostAlias, roomName);
-                    coordinators.put(roomName, seshCoord);
-                    seshCoord.start();
-
-                    // more info determination
-                    String ipString = serverSocket.getInetAddress().toString();
-                    String portStr = Integer.toString(sessionPort);
-                    String sessionInfoMsg = ipString + ":" + portStr;
-
-                    // putting together some book keeping data values
-                    String[] roomListValues = {roomName, hostAlias, participantCountStr, sessionInfoMsg};
-                    String roomListCsv = "";
-                    for (String s : roomListValues)
-                        roomListCsv += s + ",";
-                    roomListCsv = roomListCsv.substring(0,roomListCsv.length()-1); // trim off the last ","
-                    ArrayList<String> roomUserList = new ArrayList<String>();
-                    roomUserList.add(hostAlias);
-
-                    // putting away the "book keeping" data
-                    synchronized (roomListDataLock) {
-                        roomListArrayMap.put(roomName, roomListValues);
-                        roomListCsvMap.put(roomName, roomListCsv);
-                        roomUsers.put(roomName, roomUserList);
-                    }
-
-                    // writing the response message for user to connect to SeshCoordinator, and closing.
-                    out.write(sessionInfoMsg + '\n');
-                    out.flush();
-                    out.close();
-                    in.close();
-                    socket.close();
+                    handleMessage((NewRoomMessage)msg);
                 }
 
 

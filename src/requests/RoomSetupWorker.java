@@ -3,11 +3,11 @@ package requests;
 import java.net.Socket;
 
 import misc.Constants;
-import misc.Requests;
+import misc.ValidateInput;
 
-import java.io.PrintWriter;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import net.ChatUser;
@@ -16,6 +16,7 @@ import main.ApplicationState;
 import misc.Worker;
 
 import messages.NewRoomMessage;
+import messages.SimpleMessage;
 
 /**
  * This thread-based class is responsible for communicating with the
@@ -53,39 +54,36 @@ public class RoomSetupWorker extends Worker {
         try {
             socket = new Socket(Constants.REGISTRY_IP, Constants.REGISTRY_PORT);
             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-            BufferedReader in = new BufferedReader(new InputStreamReader((socket.getInputStream())));
+            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
             // write the NewRoomMessage to Registry.
             NewRoomMessage nrm = new NewRoomMessage(chatUser.getAlias(), roomName);
             out.writeObject(nrm);
             out.flush();
 
-            /* Registry should respond with the inet address of the SessionCoordinator's server socket,
-            which the ChatUser will connect to. Once connected to the SessionCoordinator, this will open
-            its channel of communication with the chat session.
+            /* NOTE Registry response is expected to be a SimpleMessage whose content follows
+            the following format:
+
+            "OK; ConnectInfo is IP:port"
             */
 
-            String seshConnectionInfo = in.readLine();
-            String[] ipAndPort = seshConnectionInfo.split(":");
-            String seshIp = ipAndPort[0];
-            int seshPortNum = -1;
-            try {
-                seshPortNum = Integer.valueOf(ipAndPort[1]);
-            } catch (Exception e) {
-                System.out.println("Error in RSW retrieving/casting port num from Registry --> " + e.getMessage());
-            }
-            
-            chatUser.initializeSessionInfo(seshIp, seshPortNum);
+            Object obj = in.readObject();
+            SimpleMessage response = ValidateInput.validateSimpleMessage(obj);
 
-            // work is done! prepare for exit, and modify app state accordingly.
-            in.close();
-            out.close();
-            socket.close();
+            // perform message processing here.
+            String[] msgArgs = response.getContent().split(";");
+            msgArgs = msgArgs[1].substring(1).split(" "); // msgArgs[1] --> " ConnectInfo is IP:port"
+            String[] ipAndPort = msgArgs[2].split(":"); // msgArgs[2] --> "IP:port"
+            String seshIp = ipAndPort[0];
+            int seshPortNum = Integer.valueOf(ipAndPort[1]);
+            
+            chatUser.initializeSessionInfo(seshIp, seshPortNum); // perform ChatUser initialization with the Session.
+
+            socket.close(); // NOTE this closes both associated streams as well.
             appState.setAppState(AppStateValue.CHATTING);
             
-            // notify ChatUser that the work has been done.
             synchronized (chatUserLock) {
-                chatUserLock.notify();
+                chatUserLock.notify(); // allows ChatUser to proceed to the "CHATTING" state in its state machine.
             }
 
         } catch (Exception e) {

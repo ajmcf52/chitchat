@@ -10,6 +10,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import io.OutputWorker;
 import io.user.*;
 import messages.Message;
+import messages.SimpleMessage;
 import misc.Constants;
 import ui.ChatWindow;
 
@@ -140,13 +141,18 @@ public class ChatUser extends Thread {
 
     /**
      * used to initialize the identification (UID and alias) of the user.
-     * @param uid uniquely identifiable user ID string
+     * @param uidMessage A SimpleMessage containing the user's UID within it's content.
      * @param a user alias, not necessarily unique
+     * 
+     * NOTE format of the SimpleMessage's content is: "OK; UID is <uid>"
      */
-    public void initializeID(String uid, String a) {
-        System.out.println("Initializing ChatUser " + userID + "...");
-        userID = uid;
-        alias = a;
+    public void initializeID(SimpleMessage uidMessage, String a) throws IndexOutOfBoundsException, NumberFormatException {
+        
+        // perform argument manipulation based on the expected standardized SimpleMessage format.
+        String[] msgArgs = uidMessage.getContent().split(";");
+        userID = msgArgs[1].substring(1).split(" ")[2]; // substring(1) removes the first " ".
+        
+        alias = a + "#" + userID; // NOTE this formatting of user alias ensures that every alias is unique.
     }
 
     /**

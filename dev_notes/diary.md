@@ -737,3 +737,10 @@ Things are looking up early on a Saturday. Next on the agenda is 90 minutes of p
 
 Next to-do is cleaning up the Input and Output handlers, which are those classes responsible for actually processing the messages. I suspect this portion will only take 15-30 minutes to clean up. Then, it will be on to re-formatting the Registry, which could take up to an hour. After that, we will be more or less onto
 testing.
+
+###
+
+**What got done:**
+
+-   reworked the Input/Output handlers for the _ChatUser_ class.
+-

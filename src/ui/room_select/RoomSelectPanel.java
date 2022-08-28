@@ -145,11 +145,11 @@ public class RoomSelectPanel extends JPanel {
 
         joinButton.addActionListener(e -> {
             int row = table.getSelectedRow();
-            int col = Constants.IP_PORT_TABLE_INDEX;
             if (row == -1) // "Join" when getSelectedRow() == -1, so this should really never happen.
                 return;
-            String ipPortString = (String) table.getModel().getValueAt(row, col);
-            JoinRoomWorker jrw = new JoinRoomWorker(0, ipPortString, userRef, chatUserLock, state);
+            String ipPortString = (String) table.getModel().getValueAt(row, Constants.IP_PORT_TABLE_COLUMN);
+            String roomName = (String) table.getModel().getValueAt(row, Constants.ROOM_NAME_TABLE_COLUMN);
+            JoinRoomWorker jrw = new JoinRoomWorker(ipPortString, userRef, roomName, chatUserLock, state);
             jrw.start();
         });
 

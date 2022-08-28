@@ -17,8 +17,9 @@ public final class Constants {
     public static final int KC_RETURN = 10;
     public static final String UID_PREFIX = "U0";
     public static final String SID_PREFIX = "S0";
-    public static final int GUEST_COUNT_TABLE_INDEX = 2;
-    public static final int IP_PORT_TABLE_INDEX = 3;
+    public static final int ROOM_NAME_TABLE_COLUMN = 0;
+    public static final int GUEST_COUNT_TABLE_COLUMN = 2;
+    public static final int IP_PORT_TABLE_COLUMN = 3;
 
     /** [RecordSeparator] special ASCII character, impossible to type. Great delimiter. 
      * 

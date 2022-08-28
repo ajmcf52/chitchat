@@ -1,10 +1,7 @@
 package requests;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 
@@ -12,7 +9,6 @@ import main.ApplicationState;
 import main.AppStateValue;
 import misc.Worker;
 import net.ChatUser;
-import misc.Requests;
 import misc.Constants;
 
 import messages.JoinRoomMessage;
@@ -68,7 +64,7 @@ public class JoinRoomWorker extends Worker {
             socket = new Socket(InetAddress.getByName(sessionIP), sessionPort);
             ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-            // send the initial request message, "JOIN_ROOM_REQUEST <alias of user requesting to join>\n"
+
             JoinRoomMessage msg = new JoinRoomMessage(userJoining.getAlias(), roomName);
             out.writeObject(msg);
             out.flush();
@@ -84,8 +80,6 @@ public class JoinRoomWorker extends Worker {
 
             // NOTE it is ChatUser's responsibility to open the socket back up again.
             userJoining.initializeSessionInfo(sessionIP, sessionPort);
-            in.close();
-            out.close();
             socket.close();
 
             appState.setAppState(AppStateValue.CHATTING);
