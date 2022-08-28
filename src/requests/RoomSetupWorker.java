@@ -75,7 +75,7 @@ public class RoomSetupWorker extends Worker {
             String seshIp = ipAndPort[0];
             int seshPortNum = Integer.valueOf(ipAndPort[1]);
             
-            chatUser.initializeSessionInfo(seshIp, seshPortNum); // perform ChatUser initialization with the Session.
+            chatUser.initSessionInfo(seshIp, seshPortNum); // perform ChatUser initialization with the Session.
 
             socket.close(); // NOTE this closes both associated streams as well.
             appState.setAppState(AppStateValue.CHATTING);

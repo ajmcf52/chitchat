@@ -1,9 +1,7 @@
 package net;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.lang.Thread;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -23,7 +21,7 @@ public class ChatUser extends Thread {
     private String sessionInetAddress; // inet address of a chat session's server socket.
     private int sessionPort; // port of the chat session's server socket.
     private Socket sessionSocket; // socket for the session.
-    private int sessionHostValue; // 1 -> host of session; 0 -> non-host, but still in a session; -1 -> neither.
+    private int sessionStateValue; // 0 --> not chatting, 1 --> chatting
 
     private volatile boolean isRunning; // used to indicate when this thread should shut down.
     private final Object runLock = new Object(); // lock object for accessing run flag
@@ -31,14 +29,14 @@ public class ChatUser extends Thread {
     private final static Object outgoingMsgNotifier = new Object(); // ChatUser notifies this to tell OutputWorker there is a new message to send.
     private final static Object incomingMsgNotifier = new Object(); // UserInputWorker notifies this to tell UserInputHandler that there is a new message to receive.
 
-    /**
-     * worker responsible for reading incoming messages from the SessionCoordinator.
-     * when a message is received 
-     */
+
     private UserInputWorker inputWorker; // receives incoming messages and passes them to the handler.
     private OutputWorker outputWorker; // sends outgoing messages to SeshCoordinator.
     private UserInputHandler inputHandler; //receives new messages from UIW and handles them accordingly.
-    private ChatWindow chatWindowRef; 
+    private ChatWindow chatWindowRef; // a reference object to the front-facing chat window.
+
+    private ObjectInputStream in; // input stream
+    private ObjectOutputStream out; // output stream
 
     /**
      * default constructor for ChatUser.
@@ -50,7 +48,7 @@ public class ChatUser extends Thread {
         sessionInetAddress = "";
         sessionPort = -1;
         sessionSocket = null;
-        sessionHostValue = -1;
+        sessionStateValue = -1;
         isRunning = false;
         chatUserLock = cul;
 
@@ -67,33 +65,29 @@ public class ChatUser extends Thread {
         isRunning = true;
 
         while (isRunning) {
-
-            switch (sessionHostValue) {
+            switch (sessionStateValue) { // NOTE this ChatUser state machine runs inside another, more complete state machine.
 
                 case Constants.NOT_CHATTING: {
                     try {
                         synchronized (chatUserLock) {
-                            chatUserLock.wait(); // ChatUser
+                            chatUserLock.wait(); // Woken up when the time is ready to start doing something else.
                         }
                     } catch (Exception e) {
                         System.out.println(alias + " encountered an error while waiting --> " + e.getMessage());
                     }
                 }
-                // entered right away for non-host chatters (host enters after setup)
                 case Constants.CHATTING: {
-                    if (alias.equals("bob")) {
-                        System.out.println("lets go bobby boy");
-                    }
-                    BufferedReader in = null;
-                    PrintWriter out = null;
                     try {
-                        in = new BufferedReader(new InputStreamReader(sessionSocket.getInputStream()));
-                        out = new PrintWriter(sessionSocket.getOutputStream());
+                        if (sessionSocket == null) { // if socket is still null, initialize it.
+                            sessionSocket = new Socket(sessionInetAddress, sessionPort);
+                        }
+                        in = new ObjectInputStream(sessionSocket.getInputStream());
+                        out = new ObjectOutputStream(sessionSocket.getOutputStream());
                     } catch (Exception e) {
-                        System.out.println("Error in ChatUser I/O! --> " + e.getMessage());
+                        System.out.println(alias + ": Error building stream objects. --> " + e.getMessage());
                     }
         
-                    ArrayBlockingQueue<String> msgQueue = new ArrayBlockingQueue<String>(Constants.MSG_QUEUE_LENGTH, true);
+                    ArrayBlockingQueue<Message> msgQueue = new ArrayBlockingQueue<Message>(Constants.MSG_QUEUE_LENGTH, true);
                     inputHandler = new UserInputHandler(chatWindowRef, msgQueue, incomingMsgNotifier);
                     inputWorker = new UserInputWorker(0, in, msgQueue, incomingMsgNotifier);
                     inputWorker.start();
@@ -104,33 +98,11 @@ public class ChatUser extends Thread {
 
                     try {
                         synchronized (chatUserLock) {
-                            chatUserLock.wait();
+                            chatUserLock.wait(); // waiting to do something other than chat.
                         }
                     } catch (Exception e) {
                         System.out.println(alias + " encountered an error while waiting --> " + e.getMessage());
                     }
-                }
-                // entered for setting up session communcation channels
-                case Constants.SOCKET_SETUP: {
-                    if (sessionInetAddress == "") {
-                        System.out.println("ChatUser cannot proceed, no session address to connect to!");
-                        return;
-                    }
-                    if (sessionInetAddress.startsWith("0.0.0.0")) {
-                        sessionInetAddress = "localhost";
-                    }
-
-                    try {
-                        sessionSocket = new Socket(sessionInetAddress, sessionPort); // connecting to SessionCoordinator here.
-                    } catch (Exception e) {
-                        System.out.println("Error in ChatUser I/O! --> " + e.getMessage());
-                        // e.printStackTrace();
-                    }
-                    /**
-                     * now we can move to chat setup.
-                     */
-                    this.setSessionValue(Constants.CHATTING);
-                    break;
                 }
                 default:
                     System.out.println("This shouldn't execute, ever..");
@@ -162,8 +134,10 @@ public class ChatUser extends Thread {
      * @param seshInetAddr inet address of the SessionCoordinator we must connect to participate in a given ChatSession.
      * @param seshPort port of the SessionCoordinator we are connecting to.
      */
-    public void initializeSessionInfo(String seshInetAddr, int seshPort) {
-        sessionInetAddress = seshInetAddr;
+    public void initSessionInfo(String seshInetAddr, int seshPort) {
+        
+        // if the given address is 0.0.0.0, just use localhost instead.
+        sessionInetAddress = seshInetAddr.startsWith("0.0.0.0") ? "localhost" : seshInetAddr;
         sessionPort = seshPort;
     }
 
@@ -179,10 +153,13 @@ public class ChatUser extends Thread {
     /**
      * initializer for the session Socket of which this user is joining.
      * @param seshSock Socket connecting this user to the session they are joining.
+     * @deprecated this method is no longer used; instead, we call initSessionInfo()
+     * directly in other parts of the code, and ChatUser's state machine takes care
+     * of all Socket instantiation.
      */
     public void initializeSessionSocket(Socket seshSock) {
         sessionSocket = seshSock;
-        initializeSessionInfo(sessionSocket.getInetAddress().toString(), seshSock.getLocalPort());
+        initSessionInfo(sessionSocket.getInetAddress().toString(), seshSock.getLocalPort());
     }
 
     /**
@@ -216,7 +193,7 @@ public class ChatUser extends Thread {
         if (value < -1 || value > 1) {
             throw new IllegalArgumentException("SessionHostValue must be between -1 and 1 inclusive.");
         }
-        sessionHostValue = value;
+        sessionStateValue = value;
     }
 
     /**

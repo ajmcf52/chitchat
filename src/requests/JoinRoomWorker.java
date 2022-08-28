@@ -77,7 +77,7 @@ public class JoinRoomWorker extends Worker {
             }
 
             // NOTE it is ChatUser's responsibility to open the socket back up again.
-            userJoining.initializeSessionInfo(sessionIP, sessionPort);
+            userJoining.initSessionInfo(sessionIP, sessionPort);
             socket.close();
 
             appState.setAppState(AppStateValue.CHATTING);

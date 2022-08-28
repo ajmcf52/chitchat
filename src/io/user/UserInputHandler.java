@@ -5,7 +5,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import messages.Message;
 import ui.ChatWindow;
-import misc.Constants;
 
 /**
  * This class is responsible for handling newly received
