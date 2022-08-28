@@ -23,9 +23,6 @@ public class SimpleMessage extends Message {
         text = t;
     }
 
-    // getter for alias
-    public String getAssociatedAlias() { return alias; }
-
     /**
      * simple print function for accessing
      * the articulated meaning of this message.
@@ -34,6 +31,12 @@ public class SimpleMessage extends Message {
     @Override
     public String getContent() {
         return getFormattedStamp() + " " + alias + ": " + text;
+    }
+
+    // getter for alias
+    @Override
+    public String getAssociatedSenderAlias() {
+        return alias;
     }
     
 }

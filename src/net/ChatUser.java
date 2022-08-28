@@ -81,20 +81,35 @@ public class ChatUser extends Thread {
                         if (sessionSocket == null) { // if socket is still null, initialize it.
                             sessionSocket = new Socket(sessionInetAddress, sessionPort);
                         }
-                        in = new ObjectInputStream(sessionSocket.getInputStream());
+                        /**
+                         * NOTE the order in which these constructors are called is very important!
+                         * output streams must always be constructed before input streams when dealing
+                         * with Object[Input|Output]Streams.
+                         * 
+                         * This link here sums it up perfectly: 
+                         * https://stackoverflow.com/questions/14110986/new-objectinputstream-blocks
+                         * 
+                         * In reference to the Javadocs, When a new ObjectInputStream is instantiated,
+                         * the first thing it tries to do is read a header from the ObjectOutputStream
+                         * at the other end. So if both sides attempt to create their ObjectInputStreams
+                         * before their ObjectOutputStreams, deadlock is inevitable...
+                         */
                         out = new ObjectOutputStream(sessionSocket.getOutputStream());
+                        in = new ObjectInputStream(sessionSocket.getInputStream());
+                        
                     } catch (Exception e) {
                         System.out.println(alias + ": Error building stream objects. --> " + e.getMessage());
                     }
         
                     ArrayBlockingQueue<Message> msgQueue = new ArrayBlockingQueue<Message>(Constants.MSG_QUEUE_LENGTH, true);
-                    inputHandler = new UserInputHandler(chatWindowRef, msgQueue, incomingMsgNotifier);
-                    inputWorker = new UserInputWorker(0, in, msgQueue, incomingMsgNotifier);
-                    inputWorker.start();
-                    inputHandler.start();
-                    
                     outputWorker = new OutputWorker(userID, out, msgQueue, outgoingMsgNotifier);
                     outputWorker.start();
+                    inputHandler = new UserInputHandler(chatWindowRef, msgQueue, incomingMsgNotifier);
+                    int workerIdNum = Integer.valueOf(userID.charAt(userID.length() - 1)) - Constants.ASCII_NUM_DIFF;
+                    inputWorker = new UserInputWorker(workerIdNum, in, msgQueue, incomingMsgNotifier);
+                    inputWorker.start();
+                    inputHandler.start();
+                
 
                     try {
                         synchronized (chatUserLock) {

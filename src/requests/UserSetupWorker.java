@@ -52,6 +52,7 @@ import messages.SimpleMessage;
 
             try {
                 socket = new Socket(Constants.REGISTRY_IP,Constants.REGISTRY_PORT);
+                // NOTE order of constructor calls is crucial here! Reference ChatUser.java for more details.
                 ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
                 ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
                 // send the protocol message on one line, then the alias on following line.

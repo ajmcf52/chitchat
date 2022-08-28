@@ -34,4 +34,14 @@ public class JoinNotifyMessage extends Message {
     public String getContent() {
         return getFormattedStamp() + " " + userThatJoined + " has joined the room.";
     }
+
+    /**
+     * given that this class is a tad special, as the sending of Message types
+     * are typically triggered by a SeshCoordinator, there is no associated
+     * sender alias.
+     */
+    @Override
+    public String getAssociatedSenderAlias() {
+        return "";
+    }
 }

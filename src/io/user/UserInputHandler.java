@@ -100,14 +100,20 @@ public class UserInputHandler extends Thread {
      * @param msg the incoming message.
      */
     public void handleMessage(Message msg) {
+
+        // NOTE we only want to receive this message in cases where we didn't send it!
+        if (chatWindowRef.getAssociatedAlias() != msg.getAssociatedSenderAlias()) {
+            /**
+            * the way we have set up the Message class, the text we would want to display
+            * for all possible Message types that a ChatUser can possibly receive will be
+            * directly attainable by calling the getContent() method.
+            */
+            
+            chatWindowRef.addLineToFeed(msg.getContent());
+        }
+
         
-        /**
-         * the way we have set up the Message class, the text we would want to display
-         * for all possible Message types that a ChatUser can possibly receive will be
-         * directly attainable by calling the getContent() method.
-         */
         
-        chatWindowRef.addLineToFeed(msg.getContent());
         
         
         

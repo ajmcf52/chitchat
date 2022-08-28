@@ -68,9 +68,9 @@ public class MessageRouter extends Worker {
                 // forward the messages and notify the appropriate OutputWorker.
                 int numUsers = outgoingMessageQueues.size();
                 for (int i = 0; i < numUsers; i++) {
-                    if (task == i) {
-                        continue; // we don't want to send the message back where it came from.
-                    }
+                    // if (task == i) {
+                    //     continue; // we don't want to send the message back where it came from.
+                    // }
                         
                     ArrayBlockingQueue<Message> outgoing = outgoingMessageQueues.get(i);
                     outgoing.addAll(messagesToFwd);

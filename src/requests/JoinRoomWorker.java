@@ -62,8 +62,9 @@ public class JoinRoomWorker extends Worker {
         try {
 
             socket = new Socket(InetAddress.getByName(sessionIP), sessionPort);
-            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+            // NOTE order of constructor calls is crucial here! Reference ChatUser.java for more details.
             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
             JoinRoomMessage msg = new JoinRoomMessage(userJoining.getAlias(), roomName);
             out.writeObject(msg);
@@ -72,13 +73,20 @@ public class JoinRoomWorker extends Worker {
             Object obj = in.readObject();
             SimpleMessage response = ValidateInput.validateSimpleMessage(obj);
 
-            if (!response.getContent().equals("OK")) {
+            /**
+             * NOTE format of SimpleMessage content is:
+             * [timestamp] <associated sender alias>: <text>
+             * 
+             * we only want the text. Line 82 below does exactly that.
+             */
+            String responseContentOfInterest = response.getContent().split(": ")[1];
+            if (!responseContentOfInterest.equals("OK")) {
                 System.out.println("Unexpected Response to JRM --> " + response.getContent());
             }
 
             // NOTE it is ChatUser's responsibility to open the socket back up again.
             userJoining.initSessionInfo(sessionIP, sessionPort);
-            socket.close();
+            //socket.close();
 
             appState.setAppState(AppStateValue.CHATTING);
             userJoining.setSessionValue(Constants.CHATTING);

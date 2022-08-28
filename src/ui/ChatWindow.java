@@ -295,4 +295,11 @@ public class ChatWindow extends JFrame {
         chatTextField.setText("");
         return chatText;
     }
+
+    /**
+     * Getter for the associated ChatUser's alias.
+     * Used to confirming which messages should be received or discarded.
+     * @return the associated ChatUser's alias
+     */
+    public String getAssociatedAlias() { return chatUser.getAlias(); }
 }

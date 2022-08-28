@@ -51,6 +51,7 @@ public class RoomSetupWorker extends Worker {
         Socket socket = null;
         try {
             socket = new Socket(Constants.REGISTRY_IP, Constants.REGISTRY_PORT);
+            // NOTE order of constructor calls is crucial here! Reference ChatUser.java for more details.
             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
@@ -77,8 +78,9 @@ public class RoomSetupWorker extends Worker {
             
             chatUser.initSessionInfo(seshIp, seshPortNum); // perform ChatUser initialization with the Session.
 
-            socket.close(); // NOTE this closes both associated streams as well.
+            // socket.close(); // NOTE this closes both associated streams as well.
             appState.setAppState(AppStateValue.CHATTING);
+            chatUser.setSessionValue(Constants.CHATTING);
             
             synchronized (chatUserLock) {
                 chatUserLock.notify(); // allows ChatUser to proceed to the "CHATTING" state in its state machine.

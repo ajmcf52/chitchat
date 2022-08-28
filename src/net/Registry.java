@@ -105,7 +105,7 @@ public class Registry {
          * @param msg NewUserMessage
          */
         public void handleMessage(NewUserMessage msg) {
-            String alias = msg.getAlias();
+            String alias = msg.getAssociatedSenderAlias();
             int uidNum = -1;
 
             synchronized (userCountLock) {
@@ -182,6 +182,7 @@ public class Registry {
             } catch (Exception e) {
                 System.out.println("handleMessage(NRM) error --> " + e.getMessage());
             }
+            sessionCount++;
         }
         
         /**
@@ -213,12 +214,12 @@ public class Registry {
         public void handleMessage(JoinRoomMessage msg) throws NumberFormatException {
             String roomName = msg.getRoom();
             String alias = msg.getUserJoining();
-
+            int participantCount = -1;
             synchronized (roomListDataLock) {
 
                 // update room listing array (incrementing participant count by 1)
                 String[] roomListingArray = roomListArrayMap.get(roomName);
-                int participantCount = Integer.parseInt(roomListingArray[Constants.GUEST_COUNT_TABLE_COLUMN]);
+                participantCount = Integer.parseInt(roomListingArray[Constants.GUEST_COUNT_TABLE_COLUMN]);
                 participantCount++;
                 roomListingArray[Constants.GUEST_COUNT_TABLE_COLUMN] = Integer.toString(participantCount);
                 roomListArrayMap.put(roomName, roomListingArray);
@@ -235,7 +236,7 @@ public class Registry {
             }
 
             // build and write the SimpleMessage response.
-            String responseContent = "OK";
+            String responseContent = "OK; " + participantCount + " users now chatting.";
             SimpleMessage response = new SimpleMessage(alias, responseContent);
 
             try {
@@ -251,8 +252,9 @@ public class Registry {
         public void run() {
             // handle the request!
             try {
-                in = new ObjectInputStream(socket.getInputStream());
+                // NOTE order of constructor calls is crucial here! Reference ChatUser.java for more details.
                 out = new ObjectOutputStream(socket.getOutputStream());
+                in = new ObjectInputStream(socket.getInputStream());
 
                 Object obj = in.readObject();
                 Message msg = ValidateInput.validateMessage(obj);

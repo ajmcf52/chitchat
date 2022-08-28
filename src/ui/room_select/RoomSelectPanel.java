@@ -261,8 +261,9 @@ public class RoomSelectPanel extends JPanel {
             isRunning = true;
             try {
                 socket = new Socket(Constants.REGISTRY_IP, Constants.REGISTRY_PORT);
-                in = new ObjectInputStream(socket.getInputStream());
+                // NOTE order of constructor calls is crucial here! Reference ChatUser.java for more details.
                 out = new ObjectOutputStream(socket.getOutputStream());
+                in = new ObjectInputStream(socket.getInputStream());
 
                 ListRoomsMessage requestMessage = new ListRoomsMessage();
                 out.writeObject(requestMessage);

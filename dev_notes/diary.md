@@ -765,3 +765,7 @@ Out.
 After tweaking the _ChatUser_ state machine, I realized that the I/O handlers and workers for _ChatUser_ had already previously been adopted completely to take on the more recent messaging system that I proposed a few days ago.
 
 That being said, it appears we are pretty much at the point where we can start testing our code, and seeing if we can get the basic functionality fulfilled. I suspect that, if we are to come across any errors, that they will be much easier to track down this time around with my newly introduced approach to sending and receiving application-wide messages.
+
+### 10:22AM PST
+
+I have made a lot of progress this AM, though it is time to go to church. Currently, the _UserInputWorker_ for Bob (i.e., the Joining User) is blocking at line 42, where _readObject()_ is called. When we come back later today, we will look at **why** this line in particular is blocking.

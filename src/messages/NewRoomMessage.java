@@ -33,5 +33,10 @@ public class NewRoomMessage extends Message {
     public String getContent() {
         return getFormattedStamp() + " " + hostAlias + " is requesting to create a room by the name of " + roomName + ".";
     }
+
+    @Override
+    public String getAssociatedSenderAlias() {
+        return getHost();
+    }
     
 }

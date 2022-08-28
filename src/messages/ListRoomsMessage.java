@@ -44,5 +44,15 @@ public class ListRoomsMessage extends Message {
         }
         return result;
     }
+
+    /**
+     * don't ever see a reason for this method to be used.
+     * Simply here to make the compiler happy and to abide by
+     * the laws of abstract methods.
+     */
+    @Override
+    public String getAssociatedSenderAlias() {
+        return "";
+    }
     
 }

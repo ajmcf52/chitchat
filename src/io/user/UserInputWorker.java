@@ -40,6 +40,8 @@ public class UserInputWorker extends InputWorker {
             Message msg = null;
             try {
                 obj = in.readObject();
+                if (workerID.endsWith("1"))
+                    System.out.println();
                 msg = ValidateInput.validateMessage(obj);
             } catch (Exception e) {
                 System.out.println("UserInputWorker Error! --> " + e.getMessage());

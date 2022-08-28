@@ -117,8 +117,10 @@ public class SessionCoordinator extends Worker {
                  * see what they want.
                  */
                 socket = connectionReceiver.accept();
-                in = new ObjectInputStream(socket.getInputStream());
+                // NOTE order of constructor calls is crucial here! Reference ChatUser.java for more details.
                 out = new ObjectOutputStream(socket.getOutputStream());
+                in = new ObjectInputStream(socket.getInputStream());
+                obj = in.readObject();
                 msg = ValidateInput.validateMessage(obj);
 
             } catch (Exception e) {
@@ -135,8 +137,9 @@ public class SessionCoordinator extends Worker {
                 
                 try {
                     rSocket = new Socket(Constants.REGISTRY_IP, Constants.REGISTRY_PORT);
-                    rIn = new ObjectInputStream(rSocket.getInputStream());
+                    // NOTE order of constructor calls is crucial here! Reference ChatUser.java for more details.
                     rOut = new ObjectOutputStream(rSocket.getOutputStream());
+                    rIn = new ObjectInputStream(rSocket.getInputStream());
 
                     // simply forward the join request.
                     rOut.writeObject(jrm);
@@ -284,8 +287,8 @@ public class SessionCoordinator extends Worker {
         }
             
         // fire up worker threads for the user that just joined.
-        inputWorkers.get(participantCount).start();
         outputWorkers.get(participantCount).start();
+        inputWorkers.get(participantCount).start();
         messageRouters.get(participantCount).start();
 
         participantCount++;

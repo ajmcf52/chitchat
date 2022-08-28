@@ -1,11 +1,8 @@
 package messages;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 import misc.TimeStampGenerator;
-import net.Registry;
 
 /**
  * an abstract serializable class that will be implemented by all
@@ -33,4 +30,11 @@ public abstract class Message implements Serializable {
      * @return associated String-based message to be printed.
      */
     public abstract String getContent();
+
+    /**
+     * Getter for the associated alias of this Message's sender.
+     * There will be some cases where this returns "". For example,
+     * @return associated message sender's alias
+     */
+    public abstract String getAssociatedSenderAlias();
 }

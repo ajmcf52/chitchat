@@ -28,5 +28,10 @@ public class JoinRoomMessage extends Message {
     public String getContent() {
         return getFormattedStamp() + " " + userAlias + " is requesting to join " + roomName + ".";
     }
+
+    @Override
+    public String getAssociatedSenderAlias() {
+        return getUserJoining();
+    }
     
 }

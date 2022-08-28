@@ -8,7 +8,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
-import java.awt.BorderLayout;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;

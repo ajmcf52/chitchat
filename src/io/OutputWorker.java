@@ -44,6 +44,9 @@ public class OutputWorker extends Worker {
         
         while (true) {
             try {
+                if (workerID.endsWith("S1")) {
+                    System.out.println();
+                }
                 synchronized (outgoingMsgNotifier) {
                     outgoingMsgNotifier.wait();
                 }

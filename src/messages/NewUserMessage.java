@@ -12,7 +12,7 @@ public class NewUserMessage extends Message {
         alias = a;
     }
 
-    // getter for user alias.
+    // getter for alias
     public String getAlias() { return alias; }
 
     /**
@@ -22,6 +22,14 @@ public class NewUserMessage extends Message {
     @Override
     public String getContent() {
         return getFormattedStamp() + " " + alias + " has joined the system.";
+    }
+
+    /**
+     * getter for alias.
+     */
+    @Override
+    public String getAssociatedSenderAlias() {
+        return getAlias();
     }
 
 }

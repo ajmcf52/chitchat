@@ -24,7 +24,7 @@ public class WelcomeMessage extends Message {
     }
 
     // getters
-    public String getAssociatedAlias() { return userJoining; }
+    public String getAssociatedReceivingAlias() { return userJoining; }
     public String getAssociatedRoomName() { return roomJoined; }
     public boolean isHosting() { return isHost; }
 
@@ -37,5 +37,15 @@ public class WelcomeMessage extends Message {
     public String getContent() {
         return isHost ? getFormattedStamp() + " Welcome, " + userJoining + ". You are the host of this room." : 
         getFormattedStamp() + " Welcome, " + userJoining + ". You have joined " + roomJoined + ".";
+    }
+
+    /**
+     * NOTE sender alias here should not be userJoining, as technically,
+     * the sender of this WelcomeMessage is SeshCoordinator; the RECEIVER is
+     * userJoining. Hence, returning an empty string works just fine here.
+     */
+    @Override
+    public String getAssociatedSenderAlias() {
+        return "";
     }
 }
