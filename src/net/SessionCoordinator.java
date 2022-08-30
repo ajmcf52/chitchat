@@ -43,10 +43,10 @@ public class SessionCoordinator extends Worker {
 
     private ServerSocket connectionReceiver; // socket used to receive new connections to the chat session.
     private int participantCount; // number of users in the chat room.
-    private int serverPort; // port on which this server is listening.
     private String roomName; // id of the session this coordinator is in charge of.
     private String hostAlias; // host alias String.
 
+    private ArrayList<String> participantList; // names of all the users currently in the chat session
     private HashMap<String, Integer> aliasWorkerNumberMappings; // maps alias Strings to the ID number allocated to workers responsible for said user.
 
     /**
@@ -67,10 +67,10 @@ public class SessionCoordinator extends Worker {
         inputWorkers = new ArrayList<SessionInputWorker>();
         outputWorkers = new ArrayList<OutputWorker>();
         messageRouters = new ArrayList<MessageRouter>();
-        serverPort = connectionReceiver.getLocalPort();
         participantCount = 0;
         roomName = nameOfRoom;
         hostAlias = hostAli;
+        participantList = new ArrayList<String>();
         aliasWorkerNumberMappings = new HashMap<String,Integer>();
     }
 
@@ -262,30 +262,37 @@ public class SessionCoordinator extends Worker {
              * In this case, we send a WelcomeMessage to the user that just joined (not host-centric),
              * as well as a JoinNotifyMessage to all others in the chat.
              */
-            welcoming = new WelcomeMessage(alias, roomName, false);
-            JoinNotifyMessage joinNotify = null;
-            ArrayBlockingQueue<Message> q = null;
-            // NOTE we apply the same bypass hack as above right here.
-            for (int i = 0; i < incomingMessageQueues.size() - 1; i++) {
-                q = incomingMessageQueues.get(i);
-            
-                joinNotify = new JoinNotifyMessage(alias, roomName);
-                q.add(joinNotify);
-            
-                // in either case, queue up the task for the message to be sent.
-                try {
-                    taskQueue.put(i);
-                } catch (Exception e) {
-                    System.out.println(workerID + " interrupted while queuing task --> " + e.getMessage());
-                }
-            }
-
-            q.add(welcoming); // the last user to join is the one we are welcoming.
+            welcoming = new WelcomeMessage(alias, roomName, false, participantList);
+            JoinNotifyMessage joinNotify = new JoinNotifyMessage(alias, roomName);
+            ArrayBlockingQueue<Message> q = incomingMessageQueues.get(participantCount);
+            q.add(joinNotify);
+            q.add(welcoming);
             try {
                 taskQueue.put(participantCount);
             } catch (Exception e) {
-                System.out.println(workerID + " interrupted while queuing task --> " + e.getMessage());
-            }      
+                System.out.println(workerID + " error placing tasking into Q --> " + e.getMessage());
+            }
+            // // NOTE we apply the same bypass hack as above right here.
+            // for (int i = 0; i < incomingMessageQueues.size() - 1; i++) {
+            //     q = incomingMessageQueues.get(i);
+            
+            //     joinNotify = new JoinNotifyMessage(alias, roomName);
+            //     q.add(joinNotify);
+            
+            //     // in either case, queue up the task for the message to be sent.
+            //     try {
+            //         taskQueue.put(i);
+            //     } catch (Exception e) {
+            //         System.out.println(workerID + " interrupted while queuing task --> " + e.getMessage());
+            //     }
+            // }
+
+            // q.add(welcoming); // the last user to join is the one we are welcoming.
+            // try {
+            //     taskQueue.put(participantCount);
+            // } catch (Exception e) {
+            //     System.out.println(workerID + " interrupted while queuing task --> " + e.getMessage());
+            // }      
         }
             
         // fire up worker threads for the user that just joined.
@@ -293,6 +300,7 @@ public class SessionCoordinator extends Worker {
         inputWorkers.get(participantCount).start();
         messageRouters.get(participantCount).start();
 
+        participantList.add(alias);
         participantCount++;
     }
 
@@ -322,4 +330,11 @@ public class SessionCoordinator extends Worker {
         initializeUser(hostAlias, socket, true, in, out);
     }
 
+    /**
+     * getter for participant list.
+     * @return participant list
+     */
+    public ArrayList<String> getParticipants() {
+        return participantList;
+    }
 }

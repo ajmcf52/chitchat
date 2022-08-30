@@ -67,17 +67,35 @@ public class MessageRouter extends Worker {
 
                 // forward the messages and notify the appropriate OutputWorker.
                 int numUsers = outgoingMessageQueues.size();
-                for (int i = 0; i < numUsers; i++) {
-                    // if (task == i) {
-                    //     continue; // we don't want to send the message back where it came from.
-                    // }
-                        
-                    ArrayBlockingQueue<Message> outgoing = outgoingMessageQueues.get(i);
-                    outgoing.addAll(messagesToFwd);
-                    synchronized (newMessageNotifiers.get(i)) {
-                        newMessageNotifiers.get(i).notify();
+                for (Message msg : messagesToFwd) {
+                    if (msg.isSingleShot()) {
+                        /**
+                         * in this case, we only send the Message to the one
+                         * queue, associated by task number.
+                         */
+                        outgoingMessageQueues.get(task).add(msg);
+                        synchronized (newMessageNotifiers.get(task)) {
+                            newMessageNotifiers.get(task).notify();
+                        }
+                    }
+                    else {
+                        /**
+                         * in this case we put the Message into everyone's
+                         * queue EXCEPT for the one queue, associated by task number.
+                         */
+                        for (int i = 0; i < numUsers; i++) {
+                            if (task == i)
+                                continue;
+                            ArrayBlockingQueue<Message> outgoing = outgoingMessageQueues.get(i);
+                            outgoing.add(msg);
+                            
+                            synchronized (newMessageNotifiers.get(i)) {
+                                newMessageNotifiers.get(i).notify();
+                            }
+                        }
                     }
                 }
+                
                 
             } catch (Exception e) {
                 System.out.println(workerID + " Error! --> " + e.getMessage());

@@ -830,3 +830,16 @@ _I spent several days previously trying to figure this one out, and had even tho
 -   Joining a room after having previously exited another
 
 Once these bullets are tackled, our app will more or less be finished.
+
+### 2:03PM PST
+
+This has been one of our most productive days so far in the entire two months of development.
+
+Not only did I address a major bug that had been holding me back for 2-3 days, but I've also managed to tackle 2-3 more issues:
+
+-   Welcome & JoinNotify messages now both correctly add the appropriate names to the list of participants in the chat. This was accomplished by not only adding calls _addParticipantName(String)_ in _UserInputHandler_, but also adding an ArrayList<String> field to WelcomeMessages detailing the current list of participants in the chat, which seems to be crucial thing to communicate to newly joined users of a chat.
+-   A more sophisticated message-routing protocol was developed based on _isSingleShot()_ (reference **Message.java** for more details).
+
+That's it for now. Getting to the last few things on the list here.
+
+Out.
