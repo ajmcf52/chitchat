@@ -769,3 +769,64 @@ That being said, it appears we are pretty much at the point where we can start t
 ### 10:22AM PST
 
 I have made a lot of progress this AM, though it is time to go to church. Currently, the _UserInputWorker_ for Bob (i.e., the Joining User) is blocking at line 42, where _readObject()_ is called. When we come back later today, we will look at **why** this line in particular is blocking.
+
+---
+
+## Major Achievement (with kinks)
+
+### Tuesday, August 30th 7:51AM PST
+
+---
+
+So after rougly 2-3 days of throwing myself at the previously mentioned issue of bob's _UserInputWorker.readObject()_ incessantly blocking when the _OutputWorker_ at the other end had definitely written and flushed the welcome message at the other end, combing through the StackOverflow archives for people with similar issues, I came to the conclusion that I had **overengineered my solution**. In other words, I had made things more complicated then they needed to be.
+
+Essentially, this was my problem-solving approach: I knew that the first Socket connection between _SessionCoordinator_ and the room host (i.e., Alice) was clean & mean. No issues whatsoever there. This incessant read-blocking issue has _strictly_ been a problem with **joining a pre-existing chat room**; joining a room is handled by _JoinRoomWorker_, whereas setting up a room as the host is handled by _RoomSetupWorker_.
+
+The difference? RSW passes connection info along to _ChatUser_ (i.e., IP and port number), giving CU the responsibility of making that initial connection themselves with the SC, **whereas** JRW was actually **first** making the connection with SC, doing some work, _and then_ passing connection info along to the _ChatUser_ that was joining (i.e., Bob). I tried several variations of the connection information pass-off to Bob:
+
+-   passing the already-connected Socket to Bob, using _initSessionSocket(Socket)_ to do so, then getting Bob to try and use said Socket.
+-   getting JRW to close the Socket, pass the session connection information off to Bob using _initSessionInformation(sessionIP,sessionPort)_, and getting Bob to create their own Socket using said information.
+-   repeating the previous step, but omitting to close the Socket that JRW used.
+-   ... and probably a few other variations that I have slipped my mind.
+
+_None of these worked!_
+
+After going home frustrated a few nights in a row with little to no progress, I realized walking from my car after having parked... _If a system isn't working, try simplifying the system_. I realized that I had likely overengineered my proposed solution, and that I was introducing considerably more complexity into the app than what was truly necessary.
+
+So what did I need to simplify? Well, room creation + the host joining their own room seemed to be working perfectly fine. It was non-hosts joining pre-existing rooms that needed to be simplified.
+
+So, what did I do? Well, I moved essentially 98% JRW's workload into _ChatUser_, giving CU the autonomy of setting up the initial connection with SessionCoordinator on their own. This, of course, required some modification to the overall state machine within _ChatterApp.main()_; I created a new state, "JOINING*ROOM", where the ChatUser thread can be started, then made sure that the \_chatUser.start()* in the "CHATTING" code chunk would only fire for room hosts.
+
+This introduced one other slight problem into the mixture; _ChatWindow_ was being initialized inside the "CHATTING" code block, _before_ ChatUser's thread was being started. Now that I had introduced the "JOINING_ROOM" state for non-hosts where the ChatUser thread can be started from as well, I had to introduce a mechanism to keep non-hosts from messing with the ChatWindow **before** initialization.
+
+I could have just copied the window initialization code and had it in two places, but seeing as how that would violate DRY, I decided to try some concurrency "magic" with wait()/notify().
+
+I introduced a new field variable in _ChatterApp.java_ called _mainAppNotifier_; this notifier would act as a two-way communication mechanism for ChatUsers and their respective ChatterApps. In other words, _ChatUser_ would **wait** before opening up any of its communication pathways with the SessionCoordinator, _until_ it had been notified from main(); I strategically placed this notify() so that it occurs both a) after ChatWindow initialization, and b) after both _ChatUser.start()_ calls (inside "CHATTING" for hosts and "JOINING_ROOM" for non-hosts).
+
+Instead of dealing with more complications of context switching, I decided to eliminate the "JOINING_ROOM" state, putting hosts and non-hosts through the same line of processing, further simplifying my program. Sure, maybe this less closely approximates what is happening inside the application, but I would argue that program functionality far outweighs the desire to mirror the application's code with what is "happening" in an abstract sense.
+
+Sure, maybe a non-host ChatUser that enters the "CHATTING" state code block isn't technically chatting right away, but then again, neither is the host! Both user types must perform their own forms of initial setup to prepare themselves for the process of sending and receiving messages.
+
+As it stands, not only have I been able to get Bob successfully joining Alice's room (which is confirmed by Bob receiving a proper WelcomeMessage from the SessionCoordinator), but **Bob and Alice are successfully sending and receiving messages to and from one another!!!** This is a MASSIVE win. While it took me a few days longer than I would have liked, I am ecstatic that I finally got things working.
+
+Now... We have a few kinks and bugs to iron out. Most of them should be relatively easy, with one or two that may prove to be a tad more difficult:
+
+-   Welcome and JoinNotify messages should add participant names to the participant list (EASY)
+
+_This one will literally just involve strategically adding a few method calls in the UserInputHandler method where incoming messages are handled. Pretty straightforward._
+
+-   Avoid sending messages to unintended receivers (i.e., the sender of a message should not receive their own message) (EASY/MODERATE)
+
+_This one will be a tad more difficult, particularly in the sense that there is an easy way to solve it (send duplicate messages and, at the UserInputHandler, discard all messages whose sender matches the associated user alias of that ChatterApp process), or a more moderately difficult way of solving it (modify SessionCoordinator's message routing protocol to be slightly more sophisticated). In the end, going with the moderate approach will be far more scalable as we will avoid using up CPU time on sending unwanted messages. It may take a tiny bit more time to figure out, as I will need to sketch some thoughts down on paper, but I believe it will be worth the extra bit of time in the end._
+
+-   Get text updating in the Chat Feed without needing to click on the window (HARD)
+
+_I spent several days previously trying to figure this one out, and had even thought I had come up with a solution, albeit a bit of a hacky one. Now, I'm realizing that it doesn't seem to work in all cases. Depending on how much this trouble this one gives me after I've tackled the other ones, I may even decide to leave it until after I have implemented the rest of the application functionality; namely room exits, host changes, and room re-joining._
+
+**After this**
+
+-   Room exits
+-   Host changes (triggered by host exits)
+-   Joining a room after having previously exited another
+
+Once these bullets are tackled, our app will more or less be finished.

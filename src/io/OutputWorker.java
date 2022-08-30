@@ -47,11 +47,17 @@ public class OutputWorker extends Worker {
                 if (workerID.endsWith("S1")) {
                     System.out.println();
                 }
-                synchronized (outgoingMsgNotifier) {
-                    outgoingMsgNotifier.wait();
-                }
+                // check the message queue before waiting (messages + notify can fire pre-wait)
                 ArrayList<Message> toSend = new ArrayList<Message>();
-                messageQueue.drainTo(toSend);
+                if (messageQueue.size() > 0) {
+                    messageQueue.drainTo(toSend);
+                }
+                else {
+                    synchronized (outgoingMsgNotifier) {
+                        outgoingMsgNotifier.wait();
+                    }
+                }
+                
                 for (Object msg : toSend) {
                     out.writeObject(msg);
                 }

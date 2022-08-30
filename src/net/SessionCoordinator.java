@@ -264,26 +264,28 @@ public class SessionCoordinator extends Worker {
              */
             welcoming = new WelcomeMessage(alias, roomName, false);
             JoinNotifyMessage joinNotify = null;
-
+            ArrayBlockingQueue<Message> q = null;
             // NOTE we apply the same bypass hack as above right here.
-            for (int i = 0; i < incomingMessageQueues.size(); i++) {
-                ArrayBlockingQueue<Message> q = incomingMessageQueues.get(i);
-                if (i == participantCount) {
-                    q.add(welcoming); // the last user to join is the one we are welcoming.
-                }
-                else {
-                    joinNotify = new JoinNotifyMessage(alias, roomName);
-                    q.add(joinNotify);
-                }
-
+            for (int i = 0; i < incomingMessageQueues.size() - 1; i++) {
+                q = incomingMessageQueues.get(i);
+            
+                joinNotify = new JoinNotifyMessage(alias, roomName);
+                q.add(joinNotify);
+            
                 // in either case, queue up the task for the message to be sent.
                 try {
                     taskQueue.put(i);
                 } catch (Exception e) {
                     System.out.println(workerID + " interrupted while queuing task --> " + e.getMessage());
                 }
-
             }
+
+            q.add(welcoming); // the last user to join is the one we are welcoming.
+            try {
+                taskQueue.put(participantCount);
+            } catch (Exception e) {
+                System.out.println(workerID + " interrupted while queuing task --> " + e.getMessage());
+            }      
         }
             
         // fire up worker threads for the user that just joined.

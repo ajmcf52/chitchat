@@ -1,6 +1,7 @@
 package misc;
 
 /**
+ * @deprecated the nature of all app requests are now embedded within Message subclasses.
  * this class contains a complete set of all
  * the potential requests that the Registry 
  * can expect to receive at any given time.

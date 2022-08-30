@@ -1,19 +1,8 @@
 package requests;
-
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.InetAddress;
-import java.net.Socket;
-
 import main.ApplicationState;
 import main.AppStateValue;
 import misc.Worker;
 import net.ChatUser;
-import misc.Constants;
-import misc.ValidateInput;
-import messages.JoinRoomMessage;
-import messages.SimpleMessage;
-
 /**
  * this class performs the leg work of getting  
  * a user into another user's chat room.
@@ -54,50 +43,16 @@ public class JoinRoomWorker extends Worker {
     }
 
     /**
-     * this thread's main line of execution
+     * this thread's main line of execution.
      */
     public void run() {
-        Socket socket = null;
 
-        try {
-
-            socket = new Socket(InetAddress.getByName(sessionIP), sessionPort);
-            // NOTE order of constructor calls is crucial here! Reference ChatUser.java for more details.
-            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
-
-            JoinRoomMessage msg = new JoinRoomMessage(userJoining.getAlias(), roomName);
-            out.writeObject(msg);
-            out.flush();
-            // read the response (should just read "OK")
-            Object obj = in.readObject();
-            SimpleMessage response = ValidateInput.validateSimpleMessage(obj);
-
-            /**
-             * NOTE format of SimpleMessage content is:
-             * [timestamp] <associated sender alias>: <text>
-             * 
-             * we only want the text. Line 82 below does exactly that.
-             */
-            String responseContentOfInterest = response.getContent().split(": ")[1];
-            if (!responseContentOfInterest.equals("OK")) {
-                System.out.println("Unexpected Response to JRM --> " + response.getContent());
-            }
-
-            // NOTE it is ChatUser's responsibility to open the socket back up again.
-            userJoining.initSessionInfo(sessionIP, sessionPort);
-            //socket.close();
-
-            appState.setAppState(AppStateValue.CHATTING);
-            userJoining.setSessionValue(Constants.CHATTING);
+        userJoining.initSessionInfo(sessionIP, sessionPort, roomName);
+        appState.setAppState(AppStateValue.CHATTING);
             
-            synchronized (chatUserLock) {
-                chatUserLock.notify(); // allows ChatUser to move to the "CHATTING" state in its state machine.
-            }
-            
-
-        } catch (Exception e) {
-            System.out.println(workerID + " Error! --> " + e.getMessage());
+        synchronized (chatUserLock) {
+            chatUserLock.notify(); // allows ChatUser to move to the "CHATTING" state in its state machine.
         }
+            
     }
 }

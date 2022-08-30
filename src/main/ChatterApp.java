@@ -38,8 +38,8 @@ public class ChatterApp {
         // This will eventually be initialized by UserSetupThread via LoginPanel's EvtHandler.
         ApplicationState appState = new ApplicationState();
         Object chatUserLock = new Object();
-        Object chatLeaveNotifier = new Object();
-        ChatUser chatUser = new ChatUser(chatUserLock);
+        Object mainAppNotifier = new Object();
+        ChatUser chatUser = new ChatUser(chatUserLock, mainAppNotifier, appState);
         ChatWindow chatWindow = null;
 
         // create all of our application panels.
@@ -66,6 +66,9 @@ public class ChatterApp {
              * enter here if we are at the login panel.
              */
             System.out.println("state: " + appState.getAppState().name());
+            if (chatUser.getAlias().startsWith("bob")) {
+                System.out.println();
+            }
             if (appState.getAppState() == AppStateValue.LOGIN_PANEL) {
                 try {
                     /*
@@ -121,11 +124,12 @@ public class ChatterApp {
                 chatWindow = new ChatWindow("Unassigned Chat", chatUser);
                 chatWindow.addLineToFeed("Connecting to SessionCoordinator...");
                 chatUser.initializeChatRoomRef(chatWindow);
+                
                 chatUser.start();
 
                 try {
-                    synchronized (chatLeaveNotifier) {
-                        chatLeaveNotifier.wait();
+                    synchronized (mainAppNotifier) {
+                        mainAppNotifier.wait();
                     }
                 } catch (Exception e) {
                     System.out.println("ChatterApp Error!--> " + e.getMessage());

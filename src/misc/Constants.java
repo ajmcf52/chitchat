@@ -33,7 +33,6 @@ public final class Constants {
      */
     public static final String DELIM = Character.toString((char)0x1E); 
     public static final int SPACE_ASCII = 32;
-    public static final int ASCII_NUM_DIFF = 48; // example: ASCII value of '1' is 49.
     public static final int TILDE_ASCII = 126;
     public static final int MIN_USER_INPUT_LENGTH = 2;
     public static final int MAX_USER_INPUT_LENGTH = 16;

@@ -1,6 +1,7 @@
 package io.user;
 
 import java.io.ObjectInputStream;
+import java.net.Socket;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import io.InputWorker;
@@ -15,18 +16,19 @@ import misc.ValidateInput;
 public class UserInputWorker extends InputWorker {
     
     private Object incomingMsgNotifier; // used to notify UIH that there are newly received messages to process
-
+    private Socket socket; // for informational purposes.
     /**
      * constructor for UIW.
      * @param workerNum unique number assigned to this worker within its class
      * @param input reader used to read in messages
      * @param msgQueue where newly received messages are placed
      * @param incomingNotifier used to notify the UserInputHandler when there are newly received messages to process.
-     * 
+     * @param s client socket
      */
-    public UserInputWorker(int workerNum, ObjectInputStream input, ArrayBlockingQueue<Message> msgQueue, Object incomingNotifier) {
+    public UserInputWorker(int workerNum, ObjectInputStream input, ArrayBlockingQueue<Message> msgQueue, Object incomingNotifier, Socket s) {
         super("UIW-" + Integer.toString(workerNum), input, msgQueue);
         incomingMsgNotifier = incomingNotifier;
+        socket = s;
     }
 
     /**
@@ -39,9 +41,12 @@ public class UserInputWorker extends InputWorker {
             Object obj = null;
             Message msg = null;
             try {
-                obj = in.readObject();
-                if (workerID.endsWith("1"))
+                if (workerID.endsWith("2")) {
                     System.out.println();
+                }
+                    
+                obj = in.readObject();
+                
                 msg = ValidateInput.validateMessage(obj);
             } catch (Exception e) {
                 System.out.println("UserInputWorker Error! --> " + e.getMessage());

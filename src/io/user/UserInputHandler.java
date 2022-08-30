@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import messages.Message;
+import messages.WelcomeMessage;
 import ui.ChatWindow;
 
 /**
@@ -100,22 +101,17 @@ public class UserInputHandler extends Thread {
      * @param msg the incoming message.
      */
     public void handleMessage(Message msg) {
-
+        System.out.println();
         // NOTE we only want to receive this message in cases where we didn't send it!
-        if (chatWindowRef.getAssociatedAlias() != msg.getAssociatedSenderAlias()) {
-            /**
-            * the way we have set up the Message class, the text we would want to display
-            * for all possible Message types that a ChatUser can possibly receive will be
-            * directly attainable by calling the getContent() method.
-            */
-            
-            chatWindowRef.addLineToFeed(msg.getContent());
+        if (msg instanceof WelcomeMessage) {
+            WelcomeMessage wm = (WelcomeMessage) msg;
+            if (!chatWindowRef.getAssociatedAlias().equals(wm.getAssociatedReceivingAlias())) {
+                return;
+            }
+            chatWindowRef.setTitle("CHATTER --- " + wm.getAssociatedRoomName());
+
         }
 
-        
-        
-        
-        
-        
+        chatWindowRef.addLineToFeed(msg.getContent());
     }
 }
