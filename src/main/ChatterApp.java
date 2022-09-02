@@ -9,33 +9,35 @@ import ui.ChoicePanel;
 import net.ChatUser;
 import ui.ChatWindow;
 import ui.RoomNamePanel;
+
 /**
  * main entry point for the chatter application.
  */
 public class ChatterApp {
 
     public static void main(String[] args) {
-        //System.out.println("Hello World!");
+        // System.out.println("Hello World!");
 
         /**
-         * TODO come up with a system that allows a user to input a port number into the program
-         * that will be used for the ChatUser.
+         * TODO come up with a system that allows a user to input a port number into the
+         * program that will be used for the ChatUser.
          * 
-         * a. first version, we will declare the port locally here.
-         * b. second version, we will make use of command line arguments.
-         * c. third (and probably final) version will make use of a config text file, 
-         * that will be read to gather the chat client's port number.
+         * a. first version, we will declare the port locally here. b. second version,
+         * we will make use of command line arguments. c. third (and probably final)
+         * version will make use of a config text file, that will be read to gather the
+         * chat client's port number.
          * 
-         * Bear in mind, too, that we will want to come up with a system that
-         * keeps generating port numbers randomly until agiven port number works
-         * for creating the ChatUser's socket. If we iron this out well enough, we
-         * may not even need a method of having a user-supplied port number; the 
-         * program itself can take care of that.
+         * Bear in mind, too, that we will want to come up with a system that keeps
+         * generating port numbers randomly until agiven port number works for creating
+         * the ChatUser's socket. If we iron this out well enough, we may not even need
+         * a method of having a user-supplied port number; the program itself can take
+         * care of that.
          */
 
         // variables!!
-        // Passing in a null ChatUser. 
-        // This will eventually be initialized by UserSetupThread via LoginPanel's EvtHandler.
+        // Passing in a null ChatUser.
+        // This will eventually be initialized by UserSetupThread via LoginPanel's
+        // EvtHandler.
         ApplicationState appState = new ApplicationState();
         Object chatUserLock = new Object();
         Object mainAppNotifier = new Object();
@@ -59,7 +61,7 @@ public class ChatterApp {
         MainWindow mainWindow = new MainWindow(appPanels);
         boolean isRunning = true;
 
-        // appState.setAppState(AppStateValue.CHATTING);
+        appState.setAppState(AppStateValue.CHATTING);
 
         while (isRunning) {
             /**
@@ -72,22 +74,19 @@ public class ChatterApp {
             if (appState.getAppState() == AppStateValue.LOGIN_PANEL) {
                 try {
                     /*
-                     * user will progress past this wait() after
-                     * their alias has been entered and set up on
-                     * the back-end with the registry.
+                     * user will progress past this wait() after their alias has been entered and
+                     * set up on the back-end with the registry.
                      */
                     synchronized (chatUserLock) {
                         chatUserLock.wait();
                     }
-                }
-                catch (InterruptedException e) {
+                } catch (InterruptedException e) {
                     System.out.println("ChatterApp error! --> " + e.getMessage());
                 }
                 System.out.println("ChatUser alias -->" + chatUser.getAlias());
                 try {
                     Thread.sleep(2500);
-                }
-                catch (InterruptedException e) {
+                } catch (InterruptedException e) {
                     System.out.println("ChatterApp thread snooze interrupted between LP and CP");
                 }
             }
@@ -96,21 +95,19 @@ public class ChatterApp {
              */
             else if (appState.getAppState() == AppStateValue.CHOICE_PANEL) {
                 /**
-                 * TODO add a "Back" button on the choice screen,
-                 * which allows a person to go back and choose a new
-                 * screen name. 
+                 * TODO add a "Back" button on the choice screen, which allows a person to go
+                 * back and choose a new screen name.
                  */
                 mainWindow.showChoicePanel();
                 try {
                     /*
-                     * user will progress past this wait() after
-                     * a button has been pressed on the ChoicePanel.
+                     * user will progress past this wait() after a button has been pressed on the
+                     * ChoicePanel.
                      */
                     synchronized (chatUserLock) {
                         chatUserLock.wait();
                     }
-                }
-                catch (InterruptedException e) {
+                } catch (InterruptedException e) {
                     System.out.println("ChatterApp error! --> " + e.getMessage());
                 }
             }
@@ -118,22 +115,29 @@ public class ChatterApp {
              * enter here if we have opened a chat window.
              */
             else if (appState.getAppState() == AppStateValue.CHATTING) {
-                // connect to the SeshCoordinator, set up the communication pathways, and begin chatting.
+                // connect to the SeshCoordinator, set up the communication pathways, and begin
+                // chatting.
                 System.out.println("Chatting");
                 mainWindow.setVisible(false);
                 chatWindow = new ChatWindow("UNASSIGNED", chatUser);
                 chatWindow.addLineToFeed("Connecting to SessionCoordinator...");
                 chatUser.initializeChatRoomRef(chatWindow);
-                
+
                 chatUser.start();
 
                 try {
                     synchronized (mainAppNotifier) {
-                        mainAppNotifier.wait();
+                        mainAppNotifier.wait(); // main() waits here for an exit notification.
                     }
                 } catch (Exception e) {
                     System.out.println("ChatterApp Error!--> " + e.getMessage());
                 }
+                /**
+                 * getting here means we have exited a room.
+                 */
+                chatWindow.setVisible(false);
+                mainWindow.setVisible(true);
+                chatWindow.dispose();
             }
 
             else if (appState.getAppState() == AppStateValue.ROOM_SELECT) {

@@ -1,14 +1,14 @@
 package net;
 
+import io.OutputWorker;
+import io.user.*;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.concurrent.ArrayBlockingQueue;
-
-import io.OutputWorker;
-import io.user.*;
 import main.AppStateValue;
 import main.ApplicationState;
+import messages.ExitRoomMessage;
 import messages.JoinRoomMessage;
 import messages.Message;
 import messages.SimpleMessage;
@@ -20,24 +20,34 @@ import ui.ChatWindow;
  * this class represents a thread-based ChatUser within the Chatter application.
  */
 public class ChatUser extends Thread {
+
     private String userID; // number assigned to this user.
     private String alias; // user-chosen screen name; userID is attached at the end to ensure uniqueness.
     private String sessionIP; // ip address of a chat session's server socket.
     private int sessionPort; // port of the chat session's server socket.
     private Socket sessionSocket; // socket for the session.
     private boolean isHost; // true if hosting, false if not
-    private String roomName; // name of the room that a) this user is currently in OR b) trying to join.
+    private boolean isChatting; // true if currently in a chat (or joining one), false otherwise
+    private String roomName; // name of the room that this user is currently in or trying to join (can be "")
 
     private volatile boolean isRunning; // used to indicate when this thread should shut down.
     private final Object runLock = new Object(); // lock object for accessing run flag
     private Object chatUserLock; // notified by outside forces to communicate with this user.
     private Object mainAppNotifier; // used to notify main() of changes in state.
-    private final static Object outgoingMsgNotifier = new Object(); // ChatUser notifies this to tell OutputWorker there is a new message to send.
-    private final static Object incomingMsgNotifier = new Object(); // UserInputWorker notifies this to tell UserInputHandler that there is a new message to receive.
+
+    /*
+     * Used as a comms mechanism between UserOutputHandler and OutputWorker.
+     */
+    private static final Object outgoingMsgNotifier = new Object();
+
+    /*
+     * Used as a comms mechanism between UserInputWorker & UserInputHandler.
+     */
+    private static final Object incomingMsgNotifier = new Object();
 
     private UserInputWorker inputWorker; // receives incoming messages and passes them to the handler.
     private OutputWorker outputWorker; // sends outgoing messages to SeshCoordinator.
-    private UserInputHandler inputHandler; //receives new messages from UIW and handles them accordingly.
+    private UserInputHandler inputHandler; // receives new messages from UIW and handles them accordingly.
     private ChatWindow chatWindowRef; // a reference object to the front-facing chat window.
 
     private ObjectInputStream in; // input stream
@@ -47,8 +57,9 @@ public class ChatUser extends Thread {
 
     /**
      * default constructor for ChatUser.
-     * @param cul chat user lock
-     * @param man AKA, main App Notifier
+     * 
+     * @param cul   chat user lock
+     * @param man   AKA, main App Notifier
      * @param state state of the application. Used to influence main() control flow.
      */
     public ChatUser(Object cul, Object man, ApplicationState state) {
@@ -70,37 +81,32 @@ public class ChatUser extends Thread {
 
         appState = state;
     }
-    /**
-     * NOTE sessionIP, sessionPort, and roomName are all initialized
-     * by outside forces:
-     * - In the case of joining a chat room, these fields are initialized by a JoinRoomWorker.
-     * - In the case of starting a new room, these fields are initialized by a RoomSetupWorker.
-     */
 
     /**
-     * the ChatUser's main course of action.
+     * This method is called to join a chat room. The fields involved performing the
+     * actual joining of the room (namely, the room name, host ip, & port) are all
+     * initialized by JoinRoomWorker, a Thread worker that gets fired up in
+     * RoomSelectPanel.java
      */
-    public void run() {
-        isRunning = true;
-        ObjectOutputStream out = null;
-        ObjectInputStream in = null;
+    public void joinRoom() {
+        try {
+            sessionSocket = new Socket(sessionIP, sessionPort);
 
-        /**
-         * We enter here in the case that this 
-         * ChatUser is joining a chat session in-progress.
-         */
-        if (!isHost) {
-            JoinRoomMessage msg = new JoinRoomMessage(alias, roomName);
-            
-            try {
+            /**
+             * NOTE the order in which these constructors are called is important. See here
+             * for more info:
+             * https://stackoverflow.com/questions/14110986/new-objectinputstream-blocks
+             */
+            out = new ObjectOutputStream(sessionSocket.getOutputStream());
+            in = new ObjectInputStream(sessionSocket.getInputStream());
 
-                sessionSocket = new Socket(sessionIP, sessionPort);
+            if (!isHost) {
+                /**
+                 * if we aren't the host of the room we're joining, ChatUser needs to perform a
+                 * quick exchange with the SessionCoordinator to secure the room join.
+                 */
 
-                // NOTE order of constructor calls is crucial here! Reference ChatUser.java for more details.
-                out = new ObjectOutputStream(sessionSocket.getOutputStream());
-                in = new ObjectInputStream(sessionSocket.getInputStream());
-
-                
+                JoinRoomMessage msg = new JoinRoomMessage(alias, roomName);
                 out.writeObject(msg);
                 out.flush();
                 // read the response (should just read "OK")
@@ -108,74 +114,59 @@ public class ChatUser extends Thread {
                 SimpleMessage response = ValidateInput.validateSimpleMessage(obj);
 
                 /**
-                 * NOTE format of SimpleMessage content is:
-                 * [timestamp] <associated sender alias>: <text>
-                 * 
-                 * we only want the text. The code directly below does exactly that.
+                 * NOTE format of SimpleMessage content is: [timestamp] <associated sender
+                 * alias>: <text> we only want the text. The code directly below does exactly
+                 * that.
                  */
                 String responseContentOfInterest = response.getContent().split(": ")[1];
                 if (!responseContentOfInterest.equals("OK")) {
                     System.out.println("Unexpected Response to JRM --> " + response.getContent());
-                }          
-
-            } 
-            catch (Exception e) {
-                System.out.println(alias + " Error --> " + e.getMessage());
+                }
             }
-        }
-        /**
-         * enter here if the user is, in fact, the room's designated host.
-         */
-        else {
-            try {
-                if (alias.startsWith("bob"))
-                    System.out.println("");
 
-                sessionSocket = new Socket(sessionIP, sessionPort);
-                
-            /**
-             * NOTE the order in which these constructors are called is very important!
-             * output streams must always be constructed before input streams when dealing
-             * with Object[Input|Output]Streams.
-             * 
-             * This link here sums it up perfectly: 
-             * https://stackoverflow.com/questions/14110986/new-objectinputstream-blocks
-             * 
-             * In reference to the Javadocs, When a new ObjectInputStream is instantiated,
-             * the first thing it tries to do is read a header from the ObjectOutputStream
-             * at the other end. So if both sides attempt to create their ObjectInputStreams
-             * before their ObjectOutputStreams, deadlock is inevitable...
-             */
-                out = new ObjectOutputStream(sessionSocket.getOutputStream());
-                in = new ObjectInputStream(sessionSocket.getInputStream());
-                        
-            } 
-            catch (Exception e) {
-                System.out.println(alias + ": Error building stream objects. --> " + e.getMessage());
-                e.printStackTrace();
-            }
+        } catch (Exception e) {
+            System.out.println(alias + " Error --> " + e.getMessage());
         }
+
+    }
+
+    /**
+     * NOTE sessionIP, sessionPort, and roomName are all initialized by outside
+     * forces: - In the case of joining a chat room, these fields are initialized by
+     * a JoinRoomWorker. - In the case of starting a new room, these fields are
+     * initialized by a RoomSetupWorker.
+     */
+
+    /**
+     * the ChatUser's main course of action.
+     */
+    public void run() {
+        isRunning = true;
 
         while (isRunning) {
-            /*
-            this wait() call is intended to give ChatterApp.main() a chance to execute the CHATTING state,
-            which involves setting up the ChatWindow.
+            out = null;
+            in = null;
 
-            If this code starts executing before ChatWindow is initialized, our workers will try adding
-            line feeds to a null window.
+            if (isChatting) {
+                joinRoom();
+
+                ArrayBlockingQueue<Message> msgQueue = new ArrayBlockingQueue<Message>(Constants.MSG_QUEUE_LENGTH,
+                                true);
+                outputWorker = new OutputWorker(userID, out, msgQueue, outgoingMsgNotifier);
+                outputWorker.start();
+                inputHandler = new UserInputHandler(chatWindowRef, msgQueue, incomingMsgNotifier, mainAppNotifier,
+                                appState);
+
+                // i.e., pulls 1 from "Alice#U01"
+                int workerIdNum = Integer.parseInt(alias.split("#U")[1]);
+                inputWorker = new UserInputWorker(workerIdNum, in, msgQueue, incomingMsgNotifier, sessionSocket);
+                inputWorker.start();
+                inputHandler.start();
+            }
+            /**
+             * In states of chatting & non-chatting, ChatUser just sits around waiting while
+             * dispatched threads do all the work.
              */
-
-            ArrayBlockingQueue<Message> msgQueue = new ArrayBlockingQueue<Message>(Constants.MSG_QUEUE_LENGTH, true);
-            outputWorker = new OutputWorker(userID, out, msgQueue, outgoingMsgNotifier);
-            outputWorker.start();
-            inputHandler = new UserInputHandler(chatWindowRef, msgQueue, incomingMsgNotifier);
-
-            // i.e., pulls 1 from "Alice#U01"
-            int workerIdNum = Integer.parseInt(alias.split("#U")[1]);
-            inputWorker = new UserInputWorker(workerIdNum, in, msgQueue, incomingMsgNotifier, sessionSocket);
-            inputWorker.start();
-            inputHandler.start();
-                
             try {
                 synchronized (chatUserLock) {
                     chatUserLock.wait(); // waiting to do something other than chat.
@@ -183,21 +174,25 @@ public class ChatUser extends Thread {
             } catch (Exception e) {
                 System.out.println(alias + " encountered an error while waiting --> " + e.getMessage());
             }
+
+            // TODO think about adding worker thread cleanup here.
         }
     }
-    // TODO figure out the control flow of leaving a room and joining another room.
-
 
     /**
      * used to initialize the identification (UID and alias) of the user.
-     * @param uidMessage A SimpleMessage containing the user's UID within it's content.
-     * @param a user alias, not necessarily unique
      * 
-     * NOTE format of the SimpleMessage's content is: "OK; UID is <uid>"
+     * @param uidMessage A SimpleMessage containing the user's UID within it's
+     *                       content.
+     * @param a          user alias, not necessarily unique
+     *
+     *                       NOTE format of the SimpleMessage's content is: "OK; UID
+     *                       is <uid>"
      */
-    public void initializeID(SimpleMessage uidMessage, String a) throws IndexOutOfBoundsException, NumberFormatException {
-        
-        // perform argument manipulation based on the expected standardized SimpleMessage format.
+    public void initializeID(SimpleMessage uidMessage, String a)
+                    throws IndexOutOfBoundsException, NumberFormatException {
+        // perform argument manipulation based on the expected standardized
+        // SimpleMessage format.
         String[] msgArgs = uidMessage.getContent().split(";");
         userID = msgArgs[1].substring(1).split(" ")[2]; // substring(1) removes the first " ".
 
@@ -205,15 +200,15 @@ public class ChatUser extends Thread {
     }
 
     /**
-     * JoinRoomWorker calls this method to setup information that
-     * will be used to connect with the SessionCoordinator for the sake
-     * of entering and participating in a chat session.
+     * JoinRoomWorker calls this method to setup information that will be used to
+     * connect with the SessionCoordinator for the sake of entering and
+     * participating in a chat session.
+     * 
      * @param seshInetAddr inet address we are connecting to
-     * @param seshPort port of the SessionCoordinator we are connecting to
-     * @param nameOfRoom name of the room being joined
+     * @param seshPort     port of the SessionCoordinator we are connecting to
+     * @param nameOfRoom   name of the room being joined
      */
     public void initSessionInfo(String seshInetAddr, int seshPort, String nameOfRoom) {
-        
         // if the given address is 0.0.0.0, just use localhost instead.
         sessionIP = seshInetAddr.startsWith("0.0.0.0") ? "localhost" : seshInetAddr;
         sessionPort = seshPort;
@@ -221,8 +216,9 @@ public class ChatUser extends Thread {
     }
 
     /**
-     * Initializer method for setting up a chat room reference object.
-     * This is in place so the ChatUser thread 
+     * Initializer method for setting up a chat room reference object. This is in
+     * place so the ChatUser thread
+     * 
      * @param chatWindow
      */
     public void initializeChatRoomRef(ChatWindow chatWindow) {
@@ -231,6 +227,7 @@ public class ChatUser extends Thread {
 
     /**
      * initializer for the session Socket of which this user is joining.
+     * 
      * @param seshSock Socket connecting this user to the session they are joining.
      * @deprecated initSessionInfo() should be used instead.
      */
@@ -241,24 +238,43 @@ public class ChatUser extends Thread {
 
     /**
      * getter for userID.
+     * 
      * @return userID
      */
-    public String getUID() { return userID; }
+    public String getUID() {
+        return userID;
+    }
+
+    /**
+     * getter for roomName.
+     * 
+     * @return name of the room that this user is in or in the process of joining.
+     */
+    public String getCurrentRoomName() {
+        return roomName;
+    }
 
     /**
      * setter for isHost.
+     * 
      * @param hosting hosting boolean value
      */
-    public void setHost(boolean hosting) { isHost = hosting; }
+    public void setHost(boolean hosting) {
+        isHost = hosting;
+    }
 
     /**
      * getter for isHost
+     * 
      * @return true if hosting, false otherwise
      */
-    public boolean isHosting() { return isHost; }
+    public boolean isHosting() {
+        return isHost;
+    }
 
     /**
      * setter for alias.
+     * 
      * @param a - ChatUser's new alias
      */
     public void setAlias(String a) {
@@ -269,9 +285,12 @@ public class ChatUser extends Thread {
 
     /**
      * getter for alias.
+     * 
      * @return ChatUser alias
      */
-    public String getAlias() { return alias; }
+    public String getAlias() {
+        return alias;
+    }
 
     /**
      * method used by an outside source to signal a shutdown to this user.
@@ -284,9 +303,18 @@ public class ChatUser extends Thread {
 
     /**
      * triggers the sending of a message to be seen by other users in the chat.
+     * 
      * @param msg message to be sent, timestamp and all.
      */
     public void pushOutgoingMessage(Message msg) {
         outputWorker.triggerMessageSend(msg);
+    }
+
+    /**
+     * Called by ExitRoomWorker to mark this ChatUser as having officially left the
+     * chat. Important call for control flow above.
+     */
+    public void markChatRoomLeft() {
+        isChatting = false;
     }
 }

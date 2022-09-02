@@ -843,3 +843,28 @@ Not only did I address a major bug that had been holding me back for 2-3 days, b
 That's it for now. Getting to the last few things on the list here.
 
 Out.
+
+---
+
+## Slow & Steady.
+
+### Thursday, September 1st 4:49PM PST 2022
+
+---
+
+I was extremely tired today and didn't feel like coding at all. Even yesterday, I was pretty tired. That's what happens when you wake up between 3-4am to get to work early so you can get off early to code while it's still light out. Such is life.
+
+Despite not really being into it mentally, I still made some progress. The code output has been slow, as the actual code has been more touch-and-go.
+
+At this point, 98% of the application is built; I simply need to add a few methods here and there to put the finishing touches in place.
+
+For instance, *ExitRoomMessage* and *ExitRoomWorker* were both completed today. Super small classes. The "Exit" button in *ChatWindow* spawns and starts an ERW, which takes in a *ChatUser* reference to initialize itself. In its start() method, all it does is create an ERM and push said message into *ChatUser's* outgoing message queue. The reasoning behind creating a thread worker to carry out 4-5 lines of code is to eliminate any potential hangup that could occur as a result of event listening, which would be more likely to occur if the task to be carried out by the thread was a more time-intensive procedure. ERW also calls *markChatRoomLeft()*, which simply flips *ChatUser's* **isChatting** flag to false. This is important as, when ChatUser is notified out of it's wait() call, we want to make sure it doesn't try to initialize a chat again unless it is truly time to do so.
+
+As one would expect, *UserInputHandler* takes care of message reception, and so an extra conditional block to take care of the ERM response was also written today. In here, all we do is change the application state to point at ChoicePanel, followed by a notify() call to main().
+
+In *ChatterApp.main()*, following the wait that we are notifying out of, we flip ChatWindow's visibility to false, after which we MainWindow's visibility back to **true** and call **dispose()** on ChatWindow to be sure we release any resources that were being used.
+
+**For Next Time:**
+
+- Implement SessionCoordinator's response to ChatUser's exit request, which will lead us into implementing Registry's response to the exit request as well (i.e., book keeping)
+- Add in some thread cleanup on the side of *ChatUser*.
