@@ -51,6 +51,8 @@ public class MessageRouter extends Worker {
      * this thread's main line of execution.
      */
     public void run() {
+        turnOn();
+
         while (true) {
             Integer task = null;
             try {
@@ -93,6 +95,13 @@ public class MessageRouter extends Worker {
                 }
             } catch (Exception e) {
                 System.out.println(workerID + " Error! --> " + e.getMessage());
+            }
+
+            synchronized (runLock) {
+                if (!isRunning) {
+                    proclaimShutdown();
+                    break;
+                }
             }
         }
     }

@@ -868,3 +868,28 @@ In *ChatterApp.main()*, following the wait that we are notifying out of, we flip
 
 - Implement SessionCoordinator's response to ChatUser's exit request, which will lead us into implementing Registry's response to the exit request as well (i.e., book keeping)
 - Add in some thread cleanup on the side of *ChatUser*.
+
+
+---
+
+## Good Day of Development
+
+### Saturday, September 3rd 12:55PM PST 2022
+
+---
+
+Today has been a "so far, so good" kind of vibe. In the 2.5 hours that I spent programming this morning, 90 of those minutes having been spent working on this project (as I spent 60 minutes doing some problem-solving, Leetcode style), the output has been relatively fruitful.
+
+Last time, my efforts were directed mostly at taking care of the *ChatUser* side of things with respect to getting a user out of the chat room. Today, the focus was purely on *SessionCoordinator's* role in getting said user out of the chat room.
+
+Without having tested any of the code, I'd say I'm about 90-95% done SC's side of things with respect to getting a user out of the chat room. The last thing I need to add, as far as I can tell, is addition of another Message implementation, *HostChangeMessage*, strictly in cases where the person leaving the room is the host. In cases such as these, we want to make a host change; essentially we will assign this role to the next user that had joined right after the host, which will be easy to tell, as users are added to SC's user list in the order in which they joined.
+
+After adding in this "host change" code, SC's side of things for handling room exits will be practically done.
+
+From there, the last piece will be *Registry's* side of handling room exits, which will be comparably light (SC's load is the heaviest and most involved out of the 3 entities considered in this ordeal). For the Registry regarding room exits, we are really just concerned with book keeping. The goal on this end is to have participant counts and room existence up-to-date, so anyone looking at rooms to join is able to see the most up-to-date version.
+
+That considered, we will want to add some validation code somewhere that ensure that the room a user attempts to join is actually a valid room, and not just a ghost room the user is seeing because they're looking at an invalid rooms list (which can happen if the user doesn't refresh the list for a while). We will get to this after the Registry and SC sides of things are taken care of.
+
+After having a coffee chat with a friend and a gym break, we will be back to the grind for another 2-3 hours of coding later in the afternoon/evening. Until then!
+
+Yeti, out.
