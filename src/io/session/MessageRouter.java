@@ -1,6 +1,8 @@
 package io.session;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.concurrent.ArrayBlockingQueue;
 import messages.Message;
 import misc.Worker;
@@ -24,9 +26,10 @@ import misc.Worker;
 public class MessageRouter extends Worker {
 
     private ArrayBlockingQueue<Integer> taskQueue; // where ID numbers representing tasks are placed
-    private ArrayList<ArrayBlockingQueue<Message>> incomingMessageQueues; // list of incoming message queues
-    private ArrayList<ArrayBlockingQueue<Message>> outgoingMessageQueues; // list of outgoing message queues
-    private ArrayList<Object> newMessageNotifiers; // list of objects to notify on when there are messages to be sent.
+    private HashMap<Integer, ArrayBlockingQueue<Message>> incomingMsgQueueMap; // list of incoming message queues
+    private HashMap<Integer, ArrayBlockingQueue<Message>> outgoingMsgQueueMap; // list of outgoing message queues
+    private HashMap<Integer, Object> newMessageNotifierMap; // list of objects to notify on for messages to be sent.
+    private HashSet<Integer> activeWorkerIDs; // a set of the worker IDs corresponding to active ChatUsers.
 
     /**
      * constructor for BW.
@@ -38,13 +41,16 @@ public class MessageRouter extends Worker {
      * @param notifiers list of objects to notify on when there are messages to be
      *                      sent
      */
-    public MessageRouter(int workerNumber, ArrayBlockingQueue<Integer> tasks, ArrayList<ArrayBlockingQueue<Message>> in,
-                    ArrayList<ArrayBlockingQueue<Message>> out, ArrayList<Object> notifiers) {
+    public MessageRouter(int workerNumber, ArrayBlockingQueue<Integer> tasks,
+                    HashMap<Integer, ArrayBlockingQueue<Message>> in, HashMap<Integer, ArrayBlockingQueue<Message>> out,
+                    HashMap<Integer, Object> notifiers) {
         super("MR-" + Integer.toString(workerNumber));
         taskQueue = tasks;
-        incomingMessageQueues = in;
-        outgoingMessageQueues = out;
-        newMessageNotifiers = notifiers;
+        incomingMsgQueueMap = in;
+        outgoingMsgQueueMap = out;
+        newMessageNotifierMap = notifiers;
+        activeWorkerIDs = new HashSet<>();
+        activeWorkerIDs.add(0); // operating on the assumption that the host is active.
     }
 
     /**
@@ -60,35 +66,34 @@ public class MessageRouter extends Worker {
                 // execute the task (i.e., forward the messages)
 
                 ArrayList<Message> messagesToFwd = new ArrayList<Message>();
-                ArrayBlockingQueue<Message> msgQueue = incomingMessageQueues.get(task);
+                ArrayBlockingQueue<Message> msgQueue = incomingMsgQueueMap.get(task);
                 // retrieve the messages to be forwarded
                 msgQueue.drainTo(messagesToFwd);
 
-                // forward the messages and notify the appropriate OutputWorker.
-                int numUsers = outgoingMessageQueues.size();
+                // forward the messages and notify the appropriate OutputWorker(s)
                 for (Message msg : messagesToFwd) {
                     if (msg.isSingleShot()) {
                         /**
                          * in this case, we only send the Message to the one queue, associated by task
                          * number.
                          */
-                        outgoingMessageQueues.get(task).add(msg);
-                        synchronized (newMessageNotifiers.get(task)) {
-                            newMessageNotifiers.get(task).notify();
+                        outgoingMsgQueueMap.get(task).add(msg);
+                        synchronized (newMessageNotifierMap.get(task)) {
+                            newMessageNotifierMap.get(task).notify();
                         }
                     } else {
                         /**
                          * in this case we put the Message into everyone's queue EXCEPT for the one
                          * queue, associated by task number.
                          */
-                        for (int i = 0; i < numUsers; i++) {
+                        for (Integer i : activeWorkerIDs) {
                             if (task == i)
                                 continue;
-                            ArrayBlockingQueue<Message> outgoing = outgoingMessageQueues.get(i);
+                            ArrayBlockingQueue<Message> outgoing = outgoingMsgQueueMap.get(i);
                             outgoing.add(msg);
 
-                            synchronized (newMessageNotifiers.get(i)) {
-                                newMessageNotifiers.get(i).notify();
+                            synchronized (newMessageNotifierMap.get(i)) {
+                                newMessageNotifierMap.get(i).notify();
                             }
                         }
                     }

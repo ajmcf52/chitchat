@@ -10,6 +10,7 @@ import io.session.MessageRouter;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
@@ -32,24 +33,25 @@ public class SessionCoordinator extends Worker {
 
     private static final int BACKLOG = 20;
 
-    private static ArrayList<ArrayBlockingQueue<Message>> incomingMessageQueues; // incoming message queues
-    private static ArrayList<ArrayBlockingQueue<Message>> outgoingMessageQueues; // outgoing message queues
+    private static HashMap<Integer, ArrayBlockingQueue<Message>> incomingMsgQueueMap;
+    private static HashMap<Integer, ArrayBlockingQueue<Message>> outgoingMsgQueueMap; // outgoing message queues
     private static ArrayBlockingQueue<Integer> taskQueue; // the singular task queue
 
     private ArrayList<Socket> chatRoomUserSockets; // sockets of all the users in the given chat room.
-    private static ArrayList<Object> newMessageNotifiers; // waited on by OutputWorkers for new messages
+    private static HashMap<Integer, Object> newMessageNotifiers; // waited on by OutputWorkers for new messages
 
-    private ArrayList<SessionInputWorker> inputWorkers; // thread-based workers responsible for reading in new messages.
-    private ArrayList<OutputWorker> outputWorkers; // thread-based workers responsible for writing outgoing messages.
-    private ArrayList<MessageRouter> messageRouters; // thread-based workers responsible for forwarding messages (in to
-                                                     // out)
+    private HashMap<Integer, SessionInputWorker> inputWorkers; // workers responsible for reading in new messages.
+    private HashMap<Integer, OutputWorker> outputWorkers; // workers responsible for writing outgoing messages.
+    private HashMap<Integer, MessageRouter> messageRouters; // workers responsible for forwarding messages (in -> out)
 
     private ServerSocket connectionReceiver; // socket used to receive new connections to the chat session.
     private int participantCount; // number of users in the chat room.
+    private int nextWorkerID; // value of the next worker ID number
     private String roomName; // id of the session this coordinator is in charge of.
     private String hostAlias; // host alias String.
 
     private ArrayList<String> participantList; // names of all the users currently in the chat session
+    private HashSet<Integer> activeWorkerIDs; // worker IDs corresponding to users currently in the chat.
     private HashMap<String, Integer> aliasWorkerNumberMappings; // maps alias Strings to the ID number allocated to
                                                                 // workers responsible for said user.
 
@@ -65,18 +67,20 @@ public class SessionCoordinator extends Worker {
     public SessionCoordinator(int workerNum, ServerSocket serveSock, String hostAli, String nameOfRoom) {
         super("SC-" + Integer.toString(workerNum));
         connectionReceiver = serveSock;
-        incomingMessageQueues = new ArrayList<ArrayBlockingQueue<Message>>();
-        outgoingMessageQueues = new ArrayList<ArrayBlockingQueue<Message>>();
+        incomingMsgQueueMap = new HashMap<Integer, ArrayBlockingQueue<Message>>();
+        outgoingMsgQueueMap = new HashMap<Integer, ArrayBlockingQueue<Message>>();
         taskQueue = new ArrayBlockingQueue<Integer>(BACKLOG, true);
         chatRoomUserSockets = new ArrayList<Socket>();
-        newMessageNotifiers = new ArrayList<Object>();
-        inputWorkers = new ArrayList<SessionInputWorker>();
-        outputWorkers = new ArrayList<OutputWorker>();
-        messageRouters = new ArrayList<MessageRouter>();
+        newMessageNotifiers = new HashMap<Integer, Object>();
+        inputWorkers = new HashMap<Integer, SessionInputWorker>();
+        outputWorkers = new HashMap<Integer, OutputWorker>();
+        messageRouters = new HashMap<Integer, MessageRouter>();
         participantCount = 0;
+        nextWorkerID = 0;
         roomName = nameOfRoom;
         hostAlias = hostAli;
         participantList = new ArrayList<String>();
+        activeWorkerIDs = new HashSet<>();
         aliasWorkerNumberMappings = new HashMap<String, Integer>();
     }
 
@@ -176,14 +180,16 @@ public class SessionCoordinator extends Worker {
                 ExitRoomMessage erm = (ExitRoomMessage) msg;
 
                 int workerNum = 0; // NOTE if we don't enter, we just remove host's workers.
-                ArrayBlockingQueue<Message> q = incomingMessageQueues.get(workerNum);
+                ArrayBlockingQueue<Message> q = incomingMsgQueueMap.get(workerNum);
                 String alias = erm.getExitingUser();
 
                 // if there is more than one user, notify others of the exit.
                 if (participantCount > 1) {
+                    workerNum = aliasWorkerNumberMappings.get(alias);
+                    q = incomingMsgQueueMap.get(workerNum);
+
                     String roomName = erm.getAssociatedRoom();
                     ExitNotifyMessage enm = new ExitNotifyMessage(alias, roomName);
-                    workerNum = aliasWorkerNumberMappings.get(alias);
                     q.add(enm);
                 }
 
@@ -212,7 +218,7 @@ public class SessionCoordinator extends Worker {
                     System.out.println(workerID + " error closing socket-" + workerNum + " --> " + e.getMessage());
                 }
 
-                incomingMessageQueues.remove(workerNum);
+                incomingMsgQueueMap.remove(workerNum);
                 outgoingMessageQueues.remove(workerNum);
                 newMessageNotifiers.remove(workerNum);
 
@@ -340,30 +346,33 @@ public class SessionCoordinator extends Worker {
             }
         }
 
+        int workerIdNumber = nextWorkerID++;
+
         /**
          * in any case, we need to initialize some field variables to open up some
          * communications pathways, both for hosts and non-hosts alike.
          */
         ArrayBlockingQueue<Message> incoming = new ArrayBlockingQueue<Message>(Constants.MSG_QUEUE_LENGTH, true);
         ArrayBlockingQueue<Message> outgoing = new ArrayBlockingQueue<Message>(Constants.MSG_QUEUE_LENGTH, true);
-        newMessageNotifiers.add(new Object());
+        newMessageNotifiers.put(workerIdNumber, new Object());
 
-        SessionInputWorker inputWorker = new SessionInputWorker(participantCount, in, incoming, taskQueue);
-        String workerCode = "S" + Integer.toString(participantCount);
+        SessionInputWorker inputWorker = new SessionInputWorker(workerIdNumber, in, incoming, taskQueue);
+        String workerCode = "S" + Integer.toString(workerIdNumber);
 
         OutputWorker outputWorker = new OutputWorker(workerCode, out, outgoing,
-                        newMessageNotifiers.get(participantCount));
-        MessageRouter messageRouter = new MessageRouter(participantCount, taskQueue, incomingMessageQueues,
-                        outgoingMessageQueues, newMessageNotifiers);
+                        newMessageNotifiers.get(workerIdNumber));
+        MessageRouter messageRouter = new MessageRouter(workerIdNumber, taskQueue, incomingMsgQueueMap,
+                        outgoingMsgQueueMap, newMessageNotifiers);
 
         // perform book-keeping
-        incomingMessageQueues.add(incoming);
-        outgoingMessageQueues.add(outgoing);
+        incomingMsgQueueMap.put(workerIdNumber, incoming);
+        outgoingMsgQueueMap.put(workerIdNumber, outgoing);
         chatRoomUserSockets.add(socket);
-        inputWorkers.add(inputWorker);
-        outputWorkers.add(outputWorker);
-        messageRouters.add(messageRouter);
-        aliasWorkerNumberMappings.put(alias, participantCount);
+        inputWorkers.put(workerIdNumber, inputWorker);
+        outputWorkers.put(workerIdNumber, outputWorker);
+        messageRouters.put(workerIdNumber, messageRouter);
+        activeWorkerIDs.add(workerIdNumber);
+        aliasWorkerNumberMappings.put(alias, workerIdNumber);
 
         WelcomeMessage welcoming = null;
         if (isHosting) {
@@ -379,7 +388,7 @@ public class SessionCoordinator extends Worker {
             incoming.add(welcoming);
             boolean taskQueued = false;
             while (true) {
-                taskQueued = taskQueue.add(participantCount);
+                taskQueued = taskQueue.add(workerIdNumber);
                 if (taskQueued)
                     break;
                 else {
@@ -398,11 +407,11 @@ public class SessionCoordinator extends Worker {
              */
             welcoming = new WelcomeMessage(alias, roomName, false, participantList);
             JoinNotifyMessage joinNotify = new JoinNotifyMessage(alias, roomName);
-            ArrayBlockingQueue<Message> q = incomingMessageQueues.get(participantCount);
+            ArrayBlockingQueue<Message> q = incomingMsgQueueMap.get(workerIdNumber);
             q.add(joinNotify);
             q.add(welcoming);
             try {
-                taskQueue.put(participantCount);
+                taskQueue.put(workerIdNumber);
             } catch (Exception e) {
                 System.out.println(workerID + " error placing tasking into Q --> " + e.getMessage());
             }
@@ -417,9 +426,9 @@ public class SessionCoordinator extends Worker {
         }
 
         // fire up worker threads for the user that just joined.
-        outputWorkers.get(participantCount).start();
-        inputWorkers.get(participantCount).start();
-        messageRouters.get(participantCount).start();
+        outputWorkers.get(workerIdNumber).start();
+        inputWorkers.get(workerIdNumber).start();
+        messageRouters.get(workerIdNumber).start();
 
         participantList.add(alias);
         participantCount++;

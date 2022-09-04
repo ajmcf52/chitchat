@@ -893,3 +893,22 @@ That considered, we will want to add some validation code somewhere that ensure 
 After having a coffee chat with a friend and a gym break, we will be back to the grind for another 2-3 hours of coding later in the afternoon/evening. Until then!
 
 Yeti, out.
+
+### 5:40PM PST
+
+Much more tired than I would have bargained for on a Saturday evening. I also have to pick up my mother from the airport, still have to go to the gym, and would like to pick up a baked chicken from Superstore after the gym; the past two weeks, they have been out of baked chickens by the time I get there.. **Sigh**. I really only got another hour of dev time in this evening,
+and a decent chunk of it was spent with my having my eyes closed. But it wasn't all wasted time.
+
+I realized that a big part of the way I had laid out my *SessionCoordinator* logic for adding and, particularly, removing users, based on *participantCount*, really opened me up for unexpected and undesirable behavior in the future.
+
+Worker ID numbers are a crucial component of the communication pipeline established by the Coordinator. Essentially, we use a single integer value to map a user within a given chat room to every other communication entity within that chat room. And thus, these worker ID numbers **must** be unique.
+
+With each new user that I had joining a *SessionCoordinator's* chat room, I was assigning workerID numbers based on participant count. This operates on the assumption that no one has left the room. Upon further examination, this has proven to be a poor assumption to operate on. Given that I have yet to test and operate my code having users join and leave rooms to enter other rooms, the poor state of this assumption and the unpredictable behavior that would result had yet to be experienced. Essentially, by being introspective and reflective on the nature of my code, I have effectively nipped a major system flaw in the bud before it even came to fruition to rear its ugly head.
+
+Let's go over a quick example to illustrate the flaw in my previous line of thinking. Say Alice, Bob and Charlie are all in a room chatting. Bob leaves. Participant count goes from 3 to 2. After Bob leaves, Dennis joins. The system assigns a workerID number to Dennis (and his associated workers) based on participant count, which means his workerID number would be 2. But Charlie's worker ID number is 2. These numbers **have** to be unique, as task numbers are received in the system as to indicate which incoming message queues have messages to be forwarded by the MessageRouter. 
+
+**And so**, The *SessionInputWorker* for Dennis would put up a task according to the worker ID number that had been assigned to it (i.e., 2), and the Router that picks up this task would be wildly confused when it went to Charlie's incoming message queue and found nothing (or maybe it did find something to forward). **Either way**, messages sent by Dennis would go completely missed by the system.
+
+**Now**, to avoid these mishaps, we keep an additional variable in *SessionCoordinator* called *nextWorkerID*. With each new user that joins the chat room, this number first assigned to the user that joins, and is then incremented. It does not get decremented when users leave, as is the case with *participantCount*. With this in mind, the host worker ID won't always be 0 either.
+
+Next time, we will have to spend another hour or two refining the *SessionCoordinator* code to accomodate the changes noted above to have the program operate as expected with users coming and going.
