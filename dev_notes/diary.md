@@ -912,3 +912,25 @@ Let's go over a quick example to illustrate the flaw in my previous line of thin
 **Now**, to avoid these mishaps, we keep an additional variable in *SessionCoordinator* called *nextWorkerID*. With each new user that joins the chat room, this number first assigned to the user that joins, and is then incremented. It does not get decremented when users leave, as is the case with *participantCount*. With this in mind, the host worker ID won't always be 0 either.
 
 Next time, we will have to spend another hour or two refining the *SessionCoordinator* code to accomodate the changes noted above to have the program operate as expected with users coming and going.
+
+---
+
+## Adversity.
+
+### Tuesday, September 6th 3:43PM PST 2022
+
+---
+
+This past weekend, I had high expectations for myself. I went in with the intention of finishing the project entirely. However, one thing led to another, and it didn't get done. In fact, my productivity flopped quite hard.
+
+I spent a good deal of time today reflecting and journalling about why I thought this to be the case. I came to what I think to be a pretty sound conclusion. Essentially, by proposing grand expectations for myself without actually putting a pragmatic plan in place as to how I would be spending my time for the weekend, particularly with respect to other responsibilities, I essentially set myself up for failure, as I left the certainty of my completing my objectives completely in the void.
+
+Grand expectations are totally fine. However, if big goals are left just as they are without adequate time spent planning how those goals are going to be achieved, then uncertainty and anxiety go through the roof, the mind is left to wander and conjure up all sorts of reasons and irrational lines of thought as to why something can or can't be done, and a person is left to the whims of their own mind's devices.
+
+It is my belief that humans are naturally anxious and paranoid beings. If a person is not anxious or paranoid, it is likely because that person has either systematized a way of keeping their anxieties at bay (i.e., exercising regularly, meditating, journaling), or they have gotten adequately good at temporarily fooling themselves into being disillusioned that they aren't, in fact, feeling any kind of anxiety whatsoever. Experiencing anxiety and failure are a part of the human experience; it's how we deal with these things that can make or break our success in the journey of life.
+
+### Code...
+
+Turns out brushing up the *SessionCoordinator* class didn't take nearly as long as I thought it would. Looking back, I definitely gave myself much more time than I thought I would need; I try to do this as much as I can, as I have gotten so used to doing the opposite (i.e., giving myself less time for a task than is pragmatically required).
+
+Picking up from the bullets we left on Thursday, or next task at hand is programming the Registry response to the SessionCoordinator notifying them that a ChatUser is leaving a particular room. After that, we are to proceed in circling back to *ChatUser* so we can articulate some thread clean up.
