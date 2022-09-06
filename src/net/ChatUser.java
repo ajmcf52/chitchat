@@ -169,13 +169,34 @@ public class ChatUser extends Thread {
              */
             try {
                 synchronized (chatUserLock) {
-                    chatUserLock.wait(); // waiting to do something other than chat.
+                    chatUserLock.wait();
                 }
             } catch (Exception e) {
                 System.out.println(alias + " encountered an error while waiting --> " + e.getMessage());
             }
 
-            // TODO think about adding worker thread cleanup here.
+            /**
+             * if this is true but we have been notified, it means we have left our current
+             * chat. Upon joining another chat, we will restart our workers.
+             */
+            if (isChatting) {
+                inputWorker.turnOff();
+                inputWorker.interrupt();
+                inputHandler.turnOff();
+                inputHandler.interrupt();
+                outputWorker.turnOff();
+                outputWorker.interrupt();
+
+                try {
+                    inputWorker.join();
+                    inputHandler.join();
+                    outputWorker.join();
+                } catch (Exception e) {
+                    System.out.println(alias + " join() error with worker threads on chat exit --> " + e.getMessage());
+                }
+
+                isChatting = false;
+            }
         }
     }
 

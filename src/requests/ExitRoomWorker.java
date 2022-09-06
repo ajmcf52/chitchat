@@ -25,6 +25,5 @@ public class ExitRoomWorker extends Thread {
         String alias = userRef.getAlias();
         ExitRoomMessage erm = new ExitRoomMessage(alias, roomName);
         userRef.pushOutgoingMessage(erm);
-        userRef.markChatRoomLeft();
     }
 }

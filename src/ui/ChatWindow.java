@@ -332,4 +332,18 @@ public class ChatWindow extends JFrame {
     public String getAssociatedAlias() {
         return chatUser.getAlias();
     }
+
+    /**
+     * called as a way of shutting down all workers associated with the given
+     * ChatWindow, which there is really only one (UserOutputHandler).
+     */
+    public void shutDown() {
+        outputHandler.turnOff();
+        outputHandler.interrupt();
+        try {
+            outputHandler.join();
+        } catch (Exception e) {
+            System.out.println("ChatWindow error on join() UOH --> " + e.getMessage());
+        }
+    }
 }

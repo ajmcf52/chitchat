@@ -934,3 +934,15 @@ It is my belief that humans are naturally anxious and paranoid beings. If a pers
 Turns out brushing up the *SessionCoordinator* class didn't take nearly as long as I thought it would. Looking back, I definitely gave myself much more time than I thought I would need; I try to do this as much as I can, as I have gotten so used to doing the opposite (i.e., giving myself less time for a task than is pragmatically required).
 
 Picking up from the bullets we left on Thursday, or next task at hand is programming the Registry response to the SessionCoordinator notifying them that a ChatUser is leaving a particular room. After that, we are to proceed in circling back to *ChatUser* so we can articulate some thread clean up.
+
+### 4:47PM PST
+
+Fortunately, the last bits of code that I have had to put together have been pretty short bits of code and have been pretty straightforward to articulate.
+
+I probably mentioned this earlier, but in reflecting on the behavior of my program, there is a room for unexpected behavior and/or crashes regarding the RoomSelectionPanel. Essentially,  between the time that the user presses "Refresh" and the point in time where they select a room and click "Join", the room they selected could have been closed. This can lead to ArrayIndexOutOfBoundsExceptions, as well as other undesirable behavior, such as joining a room that wasn't even selected in the first place.
+
+This fix might take a tiny bit of time to put together; however, it is more than possible to reason together. The first thing we have to do is, upon observing a user select a room, we save the name of the room that they have selected. Then, for every time the "Join" button is pressed, we save the index of the current selection, then we force a Refresh request and do a few checks. First, is the selected index still valid? If it is, does the room at the corresponding index in the recently fetched list match up with the room name we saved earlier during selection? If both of these come out to be true, then we can proceed with the room join. 
+
+If either are false, we have to find another way of seeking out the room that the user wanted to join in the first place. Linear search is an obvious first thing to do; for the sake of correctness, we will probably just do a linear search for now. However, for dealing with a larger number of rooms, we could easily add another Message type, such as RoomQueryMessage, where we query the Registry about the existence of a particular room. Registry has HashMaps keyed on room names, thus the lookup on that end is O(1); we would just have to deal with the extra network I/O time of sending and receiving, which all in all could be worse.
+
+Things to think about and implement for next time.

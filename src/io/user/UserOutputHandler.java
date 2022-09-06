@@ -14,13 +14,16 @@ public class UserOutputHandler extends Thread {
     private ChatWindow chatWindowRef; // reference window for updating chat feed.
     private Object eventNotifier; // UOH waits on this for various events to pop up for it to handle
     private volatile boolean isRunning; // flag used to signal a shut down
-    private final Object runLock = new Object(); // lock object used to externally signal a shut down while avoiding race conditions
+    private final Object runLock = new Object(); // lock object used to externally signal a shut down while avoiding
+                                                 // race conditions
 
     /**
      * constructor for UOH.
-     * @param user reference to the user attached to the chat window.
-     * @param notifier object used to notify this worker of events needing to be handled.
-    */
+     * 
+     * @param user     reference to the user attached to the chat window.
+     * @param notifier object used to notify this worker of events needing to be
+     *                     handled.
+     */
     public UserOutputHandler(Object notifier, ChatUser user, ChatWindow chatWindow) {
         chatUser = user;
         chatWindowRef = chatWindow;
@@ -63,10 +66,9 @@ public class UserOutputHandler extends Thread {
         }
     }
 
-
-        /**
-         * method used to externally signal a shut down to this worker.
-         */
+    /**
+     * method used to externally signal a shut down to this worker.
+     */
     public void turnOff() {
         synchronized (runLock) {
             isRunning = false;

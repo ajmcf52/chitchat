@@ -19,6 +19,7 @@ public class ExitRoomMessage extends Message {
      * @param room name of the room being exited
      */
     public ExitRoomMessage(String user, String room) {
+        super();
         userExiting = user;
         roomName = room;
         markSingleShot(); // NOTE this message type will never be broadcast.

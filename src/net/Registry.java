@@ -11,6 +11,7 @@ import misc.Constants;
 import misc.ValidateInput;
 import messages.NewUserMessage;
 import messages.SimpleMessage;
+import messages.ExitRoomMessage;
 import messages.JoinRoomMessage;
 import messages.ListRoomsMessage;
 import messages.Message;
@@ -20,8 +21,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 /**
- * This class acts as one of the central units of processing within the Chatter app.
- * All requests are internally handled by the RequestHandler.
+ * This class acts as one of the central units of processing within the Chatter
+ * app. All requests are internally handled by the RequestHandler.
  * 
  * 
  */
@@ -33,31 +34,33 @@ public class Registry {
     private static Object sessionCountLock = new Object();
 
     /**
-     * Map of data array objects representing all the current
-     * chat rooms that are open and available to be joined.
-     * Entries are keyed on room names, which are unique.
+     * Map of data array objects representing all the current chat rooms that are
+     * open and available to be joined. Entries are keyed on room names, which are
+     * unique.
      */
-    private static HashMap<String,String[]> roomListArrayMap;
-    // Same as above, but in single-string CSV format. (for ease of sending across the net)
-    private static HashMap<String,String> roomListCsvMap;
+    private static HashMap<String, String[]> roomListArrayMap;
+    // Same as above, but in single-string CSV format. (for ease of sending across
+    // the net)
+    private static HashMap<String, String> roomListCsvMap;
     // map for tracking users in each of the rooms.
     private static HashMap<String, HashSet<String>> roomUsers;
     // for race conditions in accessing hashmaps above.
-    private static Object roomListDataLock = new Object(); 
-    
-    private static HashMap<String,SessionCoordinator> coordinators; // threadpool of coordinators (key -> room name)
+    private static Object roomListDataLock = new Object();
+
+    private static HashMap<String, SessionCoordinator> coordinators; // threadpool of coordinators (key -> room name)
 
     public static void main(String[] args) {
         // initialize room data list
-        roomListArrayMap = new HashMap<String,String[]>();
-        roomListCsvMap = new HashMap<String,String>();
+        roomListArrayMap = new HashMap<String, String[]>();
+        roomListCsvMap = new HashMap<String, String>();
         roomUsers = new HashMap<String, HashSet<String>>();
-        coordinators = new HashMap<String,SessionCoordinator>();
+        coordinators = new HashMap<String, SessionCoordinator>();
 
         try {
-            //System.out.println("UCL --> " + userCountLock.toString());
+            // System.out.println("UCL --> " + userCountLock.toString());
             Socket socket; // socket variable for accepted connections.
-            ServerSocket serverSocket = new ServerSocket(Constants.REGISTRY_PORT); // the server socket; accepts connections.
+            ServerSocket serverSocket = new ServerSocket(Constants.REGISTRY_PORT); // the server socket; accepts
+                                                                                   // connections.
 
             System.out.println("Server Registry listening on port" + Constants.REGISTRY_PORT);
             running = true;
@@ -71,21 +74,23 @@ public class Registry {
             if (!serverSocket.isClosed()) {
                 serverSocket.close();
             }
-            
+
         } catch (IOException e) {
             System.out.println("Registry IO Error!! --> " + e.getMessage());
         }
     }
 
     /**
-     * the purpose of this thread-based class is to be instantiated whenever the Registry receives a new incoming connection.
-     * the resulting Socket for that connection is passed off to this RequestHandler.
+     * the purpose of this thread-based class is to be instantiated whenever the
+     * Registry receives a new incoming connection. the resulting Socket for that
+     * connection is passed off to this RequestHandler.
      * 
-     * The nature of the desired request (determined by the first message received via the Socket) will determine the 
-     * RequestHandler's course of action.
+     * The nature of the desired request (determined by the first message received
+     * via the Socket) will determine the RequestHandler's course of action.
      * 
-     * I) For NewUserRequests, the current course of action is to send back a UID for said user. 
-     * Down the line, the Registry will keep static storage of all users logged in to Chatter.
+     * I) For NewUserRequests, the current course of action is to send back a UID
+     * for said user. Down the line, the Registry will keep static storage of all
+     * users logged in to Chatter.
      */
     private static class RequestHandler extends Thread {
         private Socket socket;
@@ -94,6 +99,7 @@ public class Registry {
 
         /**
          * constructor.
+         * 
          * @param sock - connection socket to be used for servicing a request.
          */
         public RequestHandler(Socket sock) {
@@ -102,6 +108,7 @@ public class Registry {
 
         /**
          * message handler for NewUserMessages.
+         * 
          * @param msg NewUserMessage
          */
         public void handleMessage(NewUserMessage msg) {
@@ -125,6 +132,7 @@ public class Registry {
 
         /**
          * message handler for NewRoomMessages.
+         * 
          * @param msg NewRoomMessage
          */
         public void handleMessage(NewRoomMessage msg) {
@@ -133,7 +141,8 @@ public class Registry {
             String participantCountStr = "1";
 
             // determining the session port.
-            // we lock, as other rooms could be being created simultaneously (race condition)
+            // we lock, as other rooms could be being created simultaneously (race
+            // condition)
             int sessionPort = -1;
             synchronized (sessionCountLock) {
                 sessionPort = Constants.SESSION_PORT_PREFIX + sessionCount;
@@ -156,11 +165,11 @@ public class Registry {
             String sessionInfoContent = ipString + ":" + portStr;
 
             // putting together some book keeping data values
-            String[] roomListValues = {roomName, hostAlias, participantCountStr, sessionInfoContent};
+            String[] roomListValues = { roomName, hostAlias, participantCountStr, sessionInfoContent };
             String roomListCsv = "";
             for (String s : roomListValues)
                 roomListCsv += s + ",";
-            roomListCsv = roomListCsv.substring(0,roomListCsv.length()-1); // trim off the last ","
+            roomListCsv = roomListCsv.substring(0, roomListCsv.length() - 1); // trim off the last ","
             HashSet<String> roomUserSet = new HashSet<String>();
             roomUserSet.add(hostAlias);
 
@@ -171,8 +180,10 @@ public class Registry {
                 roomUsers.put(roomName, roomUserSet);
             }
 
-            // send back a SimpleMessage containing the session connect information (ip and port number).
-            String content = "OK; ConnectInfo is " + sessionInfoContent; // NOTE this message format will be used User-side.
+            // send back a SimpleMessage containing the session connect information (ip and
+            // port number).
+            String content = "OK; ConnectInfo is " + sessionInfoContent; // NOTE this message format will be used
+                                                                         // User-side.
             SimpleMessage response = new SimpleMessage(hostAlias, content);
 
             try {
@@ -184,9 +195,10 @@ public class Registry {
             }
             sessionCount++;
         }
-        
+
         /**
          * message handler function for LRMs.
+         * 
          * @param msg the ListRoomsMessage to handle
          */
         public void handleMessage(ListRoomsMessage msg) {
@@ -206,10 +218,12 @@ public class Registry {
 
         /**
          * message handler for JRMs.
+         * 
          * @param msg the JoinRoomMessage to be handled
          * 
-         * NOTE JRMs are actually initially sent to SessionCoordinators;
-         * they are simply forwarded to the Registry for the sake of book keeping.
+         *                NOTE JRMs are actually initially sent to SessionCoordinators;
+         *                they are simply forwarded to the Registry for the sake of book
+         *                keeping.
          */
         public void handleMessage(JoinRoomMessage msg) throws NumberFormatException {
             String roomName = msg.getRoom();
@@ -224,13 +238,14 @@ public class Registry {
                 roomListingArray[Constants.GUEST_COUNT_TABLE_COLUMN] = Integer.toString(participantCount);
                 roomListArrayMap.put(roomName, roomListingArray);
 
-                // update room listing CSV (simply using the array we just updated to re-format CSV version)
+                // update room listing CSV (simply using the array we just updated to re-format
+                // CSV version)
                 String roomListingCsv = "";
                 for (String arg : roomListingArray)
                     roomListingCsv += arg;
-                roomListingCsv = roomListingCsv.substring(0,roomListingCsv.length() - 1); // remove last ","
+                roomListingCsv = roomListingCsv.substring(0, roomListingCsv.length() - 1); // remove last ","
                 roomListCsvMap.put(roomName, roomListingCsv);
-                
+
                 // update set of room users
                 roomUsers.get(roomName).add(alias);
             }
@@ -246,13 +261,58 @@ public class Registry {
             } catch (Exception e) {
                 System.out.println("handleMessage(JRM) error --> " + e.getMessage());
             }
-                    
+        }
+
+        /**
+         * Handler method for catering to ExitRoomMessages. Note that these messages are
+         * sent by ExitRoomWorkers to SessionCoordinators, who then forward them here.
+         * ERMs are forwarded to the Registry for the sake of book-keeping.
+         * 
+         * @param msg ERM to be handled
+         * @throws NumberFormatException
+         */
+        public void handleMessage(ExitRoomMessage msg) throws NumberFormatException {
+            String alias = msg.getExitingUser();
+            String roomName = msg.getAssociatedRoom();
+            int participantCount = -1;
+
+            synchronized (roomListDataLock) {
+                String[] roomListingArray = roomListArrayMap.get(roomName);
+                participantCount = Integer.parseInt(roomListingArray[Constants.GUEST_COUNT_TABLE_COLUMN]);
+                participantCount--;
+                if (participantCount == 0) {
+                    roomListArrayMap.remove(roomName);
+                    roomListCsvMap.remove(roomName);
+                    roomUsers.remove(roomName);
+                } else {
+                    roomListingArray[Constants.GUEST_COUNT_TABLE_COLUMN] = Integer.toString(participantCount);
+                    String csvString = "";
+                    for (String arg : roomListingArray) {
+                        csvString += arg + ",";
+                    }
+                    csvString = csvString.substring(0, csvString.length() - 1);
+                    roomListCsvMap.put(roomName, csvString);
+                    roomUsers.get(roomName).remove(alias);
+                }
+
+                String responseContent = "OK; " + participantCount + " users now chatting.";
+                SimpleMessage response = new SimpleMessage(alias, responseContent);
+
+                try {
+                    out.writeObject(response);
+                    out.flush();
+                    socket.close(); // NOTE this closes both associated streams as well.
+                } catch (Exception e) {
+                    System.out.println("handleMessage(JRM) error --> " + e.getMessage());
+                }
+            }
         }
 
         public void run() {
             // handle the request!
             try {
-                // NOTE order of constructor calls is crucial here! Reference ChatUser.java for more details.
+                // NOTE order of constructor calls is crucial here! Reference ChatUser.java for
+                // more details.
                 out = new ObjectOutputStream(socket.getOutputStream());
                 in = new ObjectInputStream(socket.getInputStream());
 
@@ -262,22 +322,21 @@ public class Registry {
                 /**
                  * NOTE this style of programming is obviously far from ideal and violates DRY.
                  * 
-                 * That said, I made a point of wanting to finish this project in 2 months, and so
-                 * I am sacrificing some code quality here so I can push to get things done on time.
+                 * That said, I made a point of wanting to finish this project in 2 months, and
+                 * so I am sacrificing some code quality here so I can push to get things done
+                 * on time.
                  */
                 if (msg instanceof NewUserMessage) {
-                    handleMessage((NewUserMessage)msg);
-                }
-                else if (msg instanceof NewRoomMessage) {
-                    handleMessage((NewRoomMessage)msg);
-                }
-                else if (msg instanceof ListRoomsMessage) {
-                    handleMessage((ListRoomsMessage)msg);
-                }
-                else if (msg instanceof JoinRoomMessage) {
-                    handleMessage((JoinRoomMessage)msg);
-                }
-                else {
+                    handleMessage((NewUserMessage) msg);
+                } else if (msg instanceof NewRoomMessage) {
+                    handleMessage((NewRoomMessage) msg);
+                } else if (msg instanceof ListRoomsMessage) {
+                    handleMessage((ListRoomsMessage) msg);
+                } else if (msg instanceof JoinRoomMessage) {
+                    handleMessage((JoinRoomMessage) msg);
+                } else if (msg instanceof ExitRoomMessage) {
+                    handleMessage((ExitRoomMessage) msg);
+                } else {
                     System.out.println("Unexpected Object Type Received by RequestHandler.. That's not good.");
                 }
 

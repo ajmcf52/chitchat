@@ -62,7 +62,7 @@ public class UserInputHandler extends Thread {
      * this worker's main line of execution.
      */
     public void run() {
-        switchOn();
+        turnOn();
 
         while (true) {
             ArrayList<Message> messages = new ArrayList<>();
@@ -94,7 +94,7 @@ public class UserInputHandler extends Thread {
     /**
      * used to switch on this thread worker.
      */
-    public void switchOn() {
+    public void turnOn() {
         synchronized (runLock) {
             isRunning = true;
         }
@@ -103,7 +103,7 @@ public class UserInputHandler extends Thread {
     /**
      * used to switch off this thread worker.
      */
-    public void switchOff() {
+    public void turnOff() {
         synchronized (runLock) {
             isRunning = false;
         }

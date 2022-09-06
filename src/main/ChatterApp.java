@@ -125,9 +125,9 @@ public class ChatterApp {
 
                 chatUser.start();
 
-                try {
+                try { // main() waits here for an exit notification (delivered by UserInputHandler)
                     synchronized (mainAppNotifier) {
-                        mainAppNotifier.wait(); // main() waits here for an exit notification.
+                        mainAppNotifier.wait();
                     }
                 } catch (Exception e) {
                     System.out.println("ChatterApp Error!--> " + e.getMessage());
@@ -137,7 +137,14 @@ public class ChatterApp {
                  */
                 chatWindow.setVisible(false);
                 mainWindow.setVisible(true);
+
+                chatWindow.shutDown();
                 chatWindow.dispose();
+
+                // notify ChatUser that they are safe to exit their state of Chatting.
+                synchronized (chatUserLock) {
+                    chatUserLock.notify();
+                }
             }
 
             else if (appState.getAppState() == AppStateValue.ROOM_SELECT) {
