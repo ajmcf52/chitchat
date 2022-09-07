@@ -435,7 +435,7 @@ public class SessionCoordinator extends Worker {
              * the user that just joined (not host-centric), as well as a JoinNotifyMessage
              * to all others in the chat.
              */
-            welcoming = new WelcomeMessage(alias, roomName, false, participantList);
+            welcoming = new WelcomeMessage(alias, roomName, isHosting, participantList);
             JoinNotifyMessage joinNotify = new JoinNotifyMessage(alias, roomName);
             ArrayBlockingQueue<Message> q = incomingMsgQueueMap.get(routingIdNumber);
             q.add(joinNotify);

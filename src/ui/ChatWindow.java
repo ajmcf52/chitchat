@@ -39,6 +39,8 @@ public class ChatWindow extends JFrame {
     private static final int CHAT_TEXTBOX_WIDTH = 100; // width of chat textbox
     // private static final int CHAT_TEXTBOX_HEIGHT = 14;
     private static final String CHAT_PLACEHOLDER_STR = "Enter message here...";
+    private static final int CHAT_WINDOW_WIDTH = 600;
+    private static final int CHAT_WINDOW_HEIGHT = 400;
 
     private String sessionID; // id unique to this session.
     private JPanel chatPanel; // panel of the chat window.
@@ -81,7 +83,7 @@ public class ChatWindow extends JFrame {
         // participantListString = "";
         sessionID = sid;
         this.setTitle("CHAT SESSION - " + sessionID);
-        this.setSize(400, 400);
+        this.setSize(CHAT_WINDOW_WIDTH, CHAT_WINDOW_HEIGHT);
         this.setLocationRelativeTo(null);
         this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // NOTE important to not exit on close.
 

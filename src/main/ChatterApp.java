@@ -61,8 +61,6 @@ public class ChatterApp {
         MainWindow mainWindow = new MainWindow(appPanels);
         boolean isRunning = true;
 
-        appState.setAppState(AppStateValue.CHATTING);
-
         while (isRunning) {
             /**
              * enter here if we are at the login panel.

@@ -946,3 +946,21 @@ This fix might take a tiny bit of time to put together; however, it is more than
 If either are false, we have to find another way of seeking out the room that the user wanted to join in the first place. Linear search is an obvious first thing to do; for the sake of correctness, we will probably just do a linear search for now. However, for dealing with a larger number of rooms, we could easily add another Message type, such as RoomQueryMessage, where we query the Registry about the existence of a particular room. Registry has HashMaps keyed on room names, thus the lookup on that end is O(1); we would just have to deal with the extra network I/O time of sending and receiving, which all in all could be worse.
 
 Things to think about and implement for next time.
+
+---
+
+## Tons of Progress Being Made. So, so close.
+
+### Wednesday, September 7th 4:50PM PST 2022
+
+---
+
+We are getting so, so close to the end of the timeline here.
+
+I've implemented pretty much the last of the features. All the coding at this point is mostly touch-ups.
+
+Currently, I am trucking through adding a built-in mechanism to the room joining process that will stop a user from trying to join a room that doesn't exist. This could happen if, between the time a user selects a room from the room list and hits "Join", all users in said room take their leave. This is an edge case behavior that I would likely have a hard time reproducing in a test environment and would really only come up in live use case situations, and if it did, the app would either crash or produce unpredictable behavior. This fix will be one of the last few patches we add on to Chatter, and we are just about complete with the code for it.
+
+Once this is done (which it will most certainly by the time my next session is over), I will spend an hour or so testing the app, maybe even with 3-4 users. I probably won't test it much beyond this (at least for now). After this, my **last** patch will be to add in some thread pools for *MessageRouter* and *RequestHandler*. This, again, will be a move to make the app more scalable for a larger user base. Realistically, we don't need a *MessageRouter* for every new user. By working with a pool of MessageRouters, we can avoid a large number of startup and shutdown times for users joining and leaving roomms. We can achieve a similar optimization with the *Registry* by working with a pool of *RequestHandlers* instead of spinning up a thread for every new request; instead, we could come up with a relatively rudimentary thread pool protocol that shrinks and expands based on simple flow parameters. This will be our last programmming task.
+
+All done for now. Time for the gym.

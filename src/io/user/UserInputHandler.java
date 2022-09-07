@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
 import main.AppStateValue;
 import main.ApplicationState;
+import messages.ExitNotifyMessage;
 import messages.ExitRoomMessage;
 import messages.JoinNotifyMessage;
 import messages.Message;
@@ -136,12 +137,10 @@ public class UserInputHandler extends Thread {
                 chatWindowRef.addParticipantName(p);
             }
             chatWindowRef.addParticipantName(wm.getAssociatedReceivingAlias());
-            chatWindowRef.addLineToFeed(wm.getContent());
 
         } else if (msg instanceof JoinNotifyMessage) {
             JoinNotifyMessage jnm = (JoinNotifyMessage) msg;
             chatWindowRef.addParticipantName(jnm.getUserJoined());
-            chatWindowRef.addLineToFeed(jnm.getContent());
 
         } else if (msg instanceof ExitRoomMessage) {
             /**
@@ -158,6 +157,10 @@ public class UserInputHandler extends Thread {
             synchronized (mainAppNotifier) {
                 mainAppNotifier.notify(); // This tells main() that it can proceed to the next state.
             }
+        } else if (msg instanceof ExitNotifyMessage) {
+            ExitNotifyMessage enm = (ExitNotifyMessage) msg;
+            String userLeaving = enm.getUserLeaving();
+            chatWindowRef.removeParticipantName(userLeaving);
         }
 
         chatWindowRef.addLineToFeed(msg.getContent());

@@ -142,6 +142,7 @@ public class ChatUser extends Thread {
      */
     public void run() {
         isRunning = true;
+        isChatting = true;
 
         while (isRunning) {
             out = null;
