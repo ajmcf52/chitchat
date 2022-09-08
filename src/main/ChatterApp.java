@@ -47,7 +47,7 @@ public class ChatterApp {
         // create all of our application panels.
         LoginPanel loginPanel = new LoginPanel(chatUser, chatUserLock, appState);
         ChoicePanel choicePanel = new ChoicePanel(chatUser, chatUserLock, appState);
-        RoomSelectPanel roomSelectPanel = new RoomSelectPanel(appState, chatUser, chatUserLock);
+        RoomSelectPanel roomSelectPanel = new RoomSelectPanel(appState, chatUser, mainAppNotifier);
         RoomNamePanel roomNamePanel = new RoomNamePanel(chatUser, chatUserLock, appState);
 
         int numPanels = 4;
@@ -148,8 +148,8 @@ public class ChatterApp {
             else if (appState.getAppState() == AppStateValue.ROOM_SELECT) {
                 mainWindow.showRoomSelectPanel(roomSelectPanel);
                 try {
-                    synchronized (chatUserLock) {
-                        chatUserLock.wait();
+                    synchronized (mainAppNotifier) {
+                        mainAppNotifier.wait();
                     }
                 } catch (Exception e) {
                     System.out.println("CU Error during ROOM_SELECT --> " + e.getMessage());

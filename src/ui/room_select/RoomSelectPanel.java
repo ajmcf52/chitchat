@@ -27,6 +27,7 @@ import main.ApplicationState;
 import messages.ListRoomsMessage;
 import main.AppStateValue;
 import misc.PanelNames;
+import misc.SharedValidateNotifier;
 import misc.ValidateInput;
 import net.ChatUser;
 import misc.Constants;
@@ -51,19 +52,22 @@ public class RoomSelectPanel extends JPanel {
 
     private RoomsListFetcher roomsListFetcher; // thread-based worker used to fetch the list of rooms
     private ChatUser userRef; // reference to the chat user object
-    private Object chatUserLock; // lock object for communicating synchronous events with the user
+    private Object mainAppNotifier; // used to notify main() in ChatterApp.java
 
     private static String selectedRoomName; // for confirming that a room being joined still exists
+    private static String selectedConnectInfo; // used to establish connection (JoinRoomWorker)
     private static Object preJoinNotifier; // for notifying that a pre-join refresh is complete
+
+    private static SharedValidateNotifier svn; // used for room validation
 
     /**
      * constructor for RSP
      * 
-     * @param state    the application's internal state
-     * @param user     the chat user (i.e., Bob)
-     * @param userLock lock used to communicate crucial events with the user
+     * @param state   the application's internal state
+     * @param user    the chat user (i.e., Bob)
+     * @param appLock AKA main app notifier
      */
-    public RoomSelectPanel(ApplicationState state, ChatUser user, Object userLock) {
+    public RoomSelectPanel(ApplicationState state, ChatUser user, Object appLock) {
         this.setName(PanelNames.ROOM_SELECT_PANEL);
         appState = state;
         // fire up the RoomsListFetcher as quickly as possible to get our table
@@ -71,11 +75,13 @@ public class RoomSelectPanel extends JPanel {
         table = new RoomSelectTable();
         workerNotifier = new Object();
         preJoinNotifier = new Object();
+        svn = new SharedValidateNotifier();
 
-        roomsListFetcher = new RoomsListFetcher(workerNotifier, preJoinNotifier);
+        roomsListFetcher = new RoomsListFetcher(workerNotifier, preJoinNotifier, svn);
         userRef = user;
-        chatUserLock = userLock;
+        mainAppNotifier = appLock;
         selectedRoomName = "";
+        selectedConnectInfo = "";
 
         tablePane = new JScrollPane();
         backButton = new JButton("Back");
@@ -131,9 +137,17 @@ public class RoomSelectPanel extends JPanel {
         this.addMouseListener(listener);
         table.addMouseListener(listener);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+
+            /**
+             * crucial method in making sure that selected values are set statically for all
+             * RSP entities to observe.
+             * 
+             * @param e
+             */
             public void valueChanged(ListSelectionEvent e) {
                 int selectionIndexRow = e.getFirstIndex();
                 selectedRoomName = (String) table.getValueAt(selectionIndexRow, Constants.ROOM_NAME_TABLE_COLUMN);
+                selectedConnectInfo = (String) table.getValueAt(selectionIndexRow, Constants.IP_PORT_TABLE_COLUMN);
                 joinButton.setEnabled(true);
             }
         });
@@ -153,7 +167,10 @@ public class RoomSelectPanel extends JPanel {
         });
 
         joinButton.addActionListener(e -> {
-            attemptRoomJoin();
+            int selectedRowNumber = table.getSelectedRow();
+            String selectedRoomName = (String) table.getModel().getValueAt(selectedRowNumber,
+                            Constants.ROOM_NAME_TABLE_COLUMN);
+            attemptRoomJoin(selectedRoomName);
         });
 
         backButton.addActionListener(e -> {
@@ -173,31 +190,40 @@ public class RoomSelectPanel extends JPanel {
         roomsListFetcher.start();
     }
 
-    public void attemptRoomJoin() {
-        boolean roomFound = false;
-        Object workCompleteNotifier = new Object();
-        String ipPortString = "";
-        PreJoinWorker pjw = new PreJoinWorker(workCompleteNotifier, ipPortString, roomFound);
+    /**
+     * validation method for ensuring that the selected room indeed exists before we
+     * attempt to join. Achieved with a quick pre-join refresh and simple room name
+     * comparison.
+     * 
+     * @param selectedRoomName name of the room selected in the room list
+     */
+    public void attemptRoomJoin(String selectedRoomName) {
+        String ipPortString = selectedConnectInfo;
 
-        pjw.start();
-
-        synchronized (workCompleteNotifier) {
+        synchronized (svn) {
+            svn.toggleRequest();
+        }
+        synchronized (workerNotifier) {
+            workerNotifier.notify();
             try {
-                workCompleteNotifier.wait();
+                workerNotifier.wait();
             } catch (Exception e) {
-                System.out.println("RSP Error waiting on PJW --> " + e.getMessage());
+                System.out.println("RSP error waiting on RLF --> " + e.getMessage());
             }
         }
 
         // if we haven't found the room, alert the user and abort room joining.
-        if (!roomFound) {
-            // TODO spawn a popup window with the room alert.
-            String dialogMessage = "The room selected is no longer in existence.";
-            JOptionPane.showMessageDialog(null, dialogMessage, "Room Disbanded", JOptionPane.WARNING_MESSAGE);
-            return;
+        synchronized (svn) {
+            if (!svn.readSuccessful()) {
+                // TODO spawn a popup window with the room alert.
+                String dialogMessage = "The room selected is no longer in existence.";
+                JOptionPane.showMessageDialog(null, dialogMessage, "Room Disbanded", JOptionPane.WARNING_MESSAGE);
+                svn.reset();
+                return;
+            }
+            svn.reset();
         }
-
-        JoinRoomWorker jrw = new JoinRoomWorker(ipPortString, userRef, selectedRoomName, chatUserLock, appState);
+        JoinRoomWorker jrw = new JoinRoomWorker(ipPortString, userRef, selectedRoomName, mainAppNotifier, appState);
         jrw.start();
     }
 
@@ -211,79 +237,89 @@ public class RoomSelectPanel extends JPanel {
      * This thread is responsible for handling that edge case as gracefully as
      * possible.
      */
-    private static class PreJoinWorker extends Thread {
+    // private static class PreJoinWorker extends Thread {
 
-        private Object workCompleteNotifier; // notifies on this when the job is done. (i.e., search complete)
-        private String ipPortString; // connection information set for JRW by this worker.
-        private boolean roomConfirmed; // set to true if the requested room was found, false otherwise.
+    // private Object workCompleteNotifier; // notifies on this when the job is
+    // done. (i.e., search complete)
+    // private String ipPortString; // connection information set for JRW by this
+    // worker.
+    // private boolean roomConfirmed; // set to true if the requested room was
+    // found, false otherwise.
 
-        /**
-         * constructor for PJW.
-         * 
-         * @param wcn        to notify main thread of execution when the search is
-         *                       complete.
-         * @param ipPortStr  to set the ip & port for JoinRoomWorker (if search goes
-         *                       well)
-         * @param roomExists flag set by this worker to indicate a good search
-         */
-        public PreJoinWorker(Object wcn, String ipPortStr, boolean roomExists) {
-            workCompleteNotifier = wcn;
-            ipPortString = ipPortStr;
-            roomConfirmed = roomExists;
-        }
+    // /**
+    // * constructor for PJW.
+    // *
+    // * @param wcn to notify main thread of execution when the search is
+    // * complete.
+    // * @param ipPortStr to set the ip & port for JoinRoomWorker (if search goes
+    // * well)
+    // * @param roomExists flag set by this worker to indicate a good search
+    // */
+    // public PreJoinWorker(Object wcn, String ipPortStr, boolean roomExists) {
+    // workCompleteNotifier = wcn;
+    // ipPortString = ipPortStr;
+    // roomConfirmed = roomExists;
+    // }
 
-        public void run() {
-            int row = table.getSelectedRow();
-            if (row == -1) // "Join" when getSelectedRow() == -1, so this should really never happen.
-                return;
-            /**
-             * before attempting to join a room, we want to make sure that the name of the
-             * room that corresponds with the row last selected matches up with, ideally,
-             * the index currently selected; if they don't match, this means that one or
-             * more rooms created before (or even the room itself) has been disbanded. We
-             * know this because the removal of any room created before it would result in
-             * that room being moved up the list of rooms (while the removal of the
-             * room-of-interest itself would result in us not even being able to find it).
-             */
+    // public void run() {
+    // int row = table.getSelectedRow();
+    // if (row == -1) // "Join" when getSelectedRow() == -1, so this should really
+    // never happen.
+    // return;
+    // /**
+    // * before attempting to join a room, we want to make sure that the name of the
+    // * room that corresponds with the row last selected matches up with, ideally,
+    // * the index currently selected; if they don't match, this means that one or
+    // * more rooms created before (or even the room itself) has been disbanded. We
+    // * know this because the removal of any room created before it would result in
+    // * that room being moved up the list of rooms (while the removal of the
+    // * room-of-interest itself would result in us not even being able to find it).
+    // */
 
-            // allow the RoomsListFetcher to do its job (refresh the listing table)
-            synchronized (workerNotifier) {
-                workerNotifier.notify();
-            }
-            try { // wait for the refresh to complete
-                synchronized (preJoinNotifier) {
-                    preJoinNotifier.wait();
-                }
-            } catch (Exception err) {
-                System.out.println("PJW Error in waiting for prejoin refresh --> " + err.getMessage());
-            }
+    // // allow the RoomsListFetcher to do its job (refresh the listing table)
+    // synchronized (workerNotifier) {
+    // workerNotifier.notify();
+    // }
+    // try { // wait for the refresh to complete
+    // synchronized (preJoinNotifier) {
+    // preJoinNotifier.wait();
+    // }
+    // } catch (Exception err) {
+    // System.out.println("PJW Error in waiting for prejoin refresh --> " +
+    // err.getMessage());
+    // }
 
-            // Post-refresh, the values in the table are up-to-date.
-            ipPortString = (String) table.getModel().getValueAt(row, Constants.IP_PORT_TABLE_COLUMN);
-            String roomName = (String) table.getModel().getValueAt(row, Constants.ROOM_NAME_TABLE_COLUMN);
+    // // Post-refresh, the values in the table are up-to-date.
+    // ipPortString = (String) table.getModel().getValueAt(row,
+    // Constants.IP_PORT_TABLE_COLUMN);
+    // String roomName = (String) table.getModel().getValueAt(row,
+    // Constants.ROOM_NAME_TABLE_COLUMN);
 
-            // if the room name selected before joining doesn't match up-to-date room name
-            // at that row, perform backward linear scan.
-            if (!selectedRoomName.equals(roomName)) {
-                int i = row - 1;
-                while (i >= 0 && !roomConfirmed) {
-                    roomName = (String) table.getModel().getValueAt(i, Constants.ROOM_NAME_TABLE_COLUMN);
-                    if (roomName.equals(selectedRoomName)) {
-                        ipPortString = (String) table.getModel().getValueAt(i, Constants.IP_PORT_TABLE_COLUMN);
-                        roomConfirmed = true;
-                        break;
-                    }
-                }
-            } else {
-                roomConfirmed = true;
-            }
+    // // if the room name selected before joining doesn't match up-to-date room
+    // name
+    // // at that row, perform a backward linear search.
+    // if (!selectedRoomName.equals(roomName)) {
+    // int i = row - 1;
+    // while (i >= 0 && !roomConfirmed) {
+    // roomName = (String) table.getModel().getValueAt(i,
+    // Constants.ROOM_NAME_TABLE_COLUMN);
+    // if (roomName.equals(selectedRoomName)) {
+    // ipPortString = (String) table.getModel().getValueAt(i,
+    // Constants.IP_PORT_TABLE_COLUMN);
+    // roomConfirmed = true;
+    // break;
+    // }
+    // }
+    // } else {
+    // roomConfirmed = true;
+    // }
 
-            // indicate, for good or for worse, that the search has completed.
-            synchronized (workCompleteNotifier) {
-                workCompleteNotifier.notify();
-            }
-        }
-    }
+    // // indicate, for good or for worse, that the search has completed.
+    // synchronized (workCompleteNotifier) {
+    // workCompleteNotifier.notify();
+    // }
+    // }
+    // }
 
     /**
      * this class is responsible for fetching rooms list data from the Registry,
@@ -293,20 +329,30 @@ public class RoomSelectPanel extends JPanel {
     private static class RoomsListFetcher extends Thread {
         private volatile boolean isRunning; // flag used to signal when work is complete
         private Object workerNotify; // notified on for critical tasks or exit signals
-        private Object preJoinNotifier; // notify on this when refreshes are complete
         private ArrayList<String> csvRoomDataObjs; // used for a point of reference when refreshing
+
+        private Socket socket; // socket used for Registry communication
+        private ObjectInputStream in; // input stream
+        private ObjectOutputStream out; // output stream
+
+        private SharedValidateNotifier svn; // shared validation notifier
 
         /**
          * constructor for RLF.
          * 
-         * @param rn  the object by which we will wait for refresh requests
-         * @param pjn pre join notifier (notify on this post-refresh)
+         * @param rn    the object by which we will wait for refresh requests
+         * @param pjn   pre join notifier (notify on this post-refresh)
+         * @param svn__ shared validation notifier
          */
-        public RoomsListFetcher(Object rn, Object pjn) {
+        public RoomsListFetcher(Object rn, Object pjn, SharedValidateNotifier svn__) {
             isRunning = false;
             workerNotify = rn;
             preJoinNotifier = pjn;
             csvRoomDataObjs = new ArrayList<String>();
+            socket = null;
+            in = null;
+            out = null;
+            svn = svn__;
         }
 
         /**
@@ -325,15 +371,24 @@ public class RoomSelectPanel extends JPanel {
          * @throws IOException
          * @throws NumberFormatException
          */
-        public void serviceRefreshRequest() throws IOException, NumberFormatException, ClassNotFoundException {
+        public void serviceRefreshRequest() {
 
+            Object obj = null;
             // NOTE this method is called from within a try/catch.
+            try {
+                socket = new Socket(Constants.REGISTRY_IP, Constants.REGISTRY_PORT);
+                out = new ObjectOutputStream(socket.getOutputStream());
+                in = new ObjectInputStream(socket.getInputStream());
 
-            ListRoomsMessage requestMessage = new ListRoomsMessage();
-            out.writeObject(requestMessage);
-            out.flush();
+                ListRoomsMessage requestMessage = new ListRoomsMessage();
+                out.writeObject(requestMessage);
+                out.flush();
+                obj = in.readObject();
 
-            Object obj = in.readObject();
+            } catch (Exception e) {
+                System.out.println("RLF Error in communicating with Registry --> " + e.getMessage());
+            }
+
             ListRoomsMessage response = ValidateInput.validateListRoomsMessage(obj);
             ArrayList<String> latestListings = response.getListings();
             /**
@@ -364,16 +419,31 @@ public class RoomSelectPanel extends JPanel {
                 j++;
             }
             // room listings refresh complete.
+
+            synchronized (svn) {
+                if (svn.readRequested()) {
+                    i = table.getSelectedRow();
+                    while (i >= 0) {
+                        String roomName = (String) table.getModel().getValueAt(i, Constants.ROOM_NAME_TABLE_COLUMN);
+                        if (selectedRoomName.equals(roomName)) {
+                            svn.markAsSuccessful();
+                            break;
+                        }
+                        i--;
+                    }
+                    synchronized (workerNotifier) {
+                        workerNotifier.notify();
+                    }
+                }
+            }
+
         }
 
         /**
          * this thread's main line of execution.
          */
         public void run() {
-            Socket socket = null;
             Object obj = null;
-            ObjectInputStream in = null;
-            ObjectOutputStream out = null;
 
             isRunning = true;
             try {
@@ -406,7 +476,6 @@ public class RoomSelectPanel extends JPanel {
             // principal list fetch complete; wait on user for additional RoomListing (i.e.,
             // Refresh) requests.
             while (true) {
-
                 try {
                     synchronized (workerNotify) {
                         workerNotify.wait();
@@ -418,15 +487,12 @@ public class RoomSelectPanel extends JPanel {
                     break; // work is done, time to break.
                 }
                 // otherwise, we can rightfully assume user is requesting a refresh.
-                try {
-                    serviceRefreshRequest();
-                } catch (Exception e) {
-                    System.out.println("RLF error servicing refresh request --> " + e.getMessage());
-                }
+                serviceRefreshRequest();
+
                 // tell RSP's main line of execution that the refresh is complete
-                synchronized (preJoinNotifier) {
-                    preJoinNotifier.notify();
-                }
+                // synchronized (preJoinNotifier) {
+                // preJoinNotifier.notify();
+                // }
             }
             // work done; close streams and exit.
             try {
@@ -467,6 +533,7 @@ public class RoomSelectPanel extends JPanel {
                 table.clearSelection();
                 joinButton.setEnabled(false);
                 selectedRoomName = "";
+                selectedConnectInfo = "";
             }
 
         }

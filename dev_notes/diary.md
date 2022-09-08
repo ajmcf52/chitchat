@@ -964,3 +964,21 @@ Currently, I am trucking through adding a built-in mechanism to the room joining
 Once this is done (which it will most certainly by the time my next session is over), I will spend an hour or so testing the app, maybe even with 3-4 users. I probably won't test it much beyond this (at least for now). After this, my **last** patch will be to add in some thread pools for *MessageRouter* and *RequestHandler*. This, again, will be a move to make the app more scalable for a larger user base. Realistically, we don't need a *MessageRouter* for every new user. By working with a pool of MessageRouters, we can avoid a large number of startup and shutdown times for users joining and leaving roomms. We can achieve a similar optimization with the *Registry* by working with a pool of *RequestHandlers* instead of spinning up a thread for every new request; instead, we could come up with a relatively rudimentary thread pool protocol that shrinks and expands based on simple flow parameters. This will be our last programmming task.
 
 All done for now. Time for the gym.
+
+---
+
+## Features are practically done.
+
+### Thursday, September 8th 4:40PM PST 2022
+
+---
+
+I finished building the room pre-join validation mechanism today. It wasn't quite as trivial as I initially thought it would be. The approach I had spent 1-2 hours brainstorming and building yesterday turned out to have introduced unnecessary complexity (3 entities and 3 objects being waited/notified on), which as it turned out, really left the execution of my code up to runtime optimization. In other words, I was hitting deadlocks.
+
+What did I do? Well, drawing on my previous learning experience from earlier on in the project, I had two options: further complicate the abstraction to make it work, or simplify and change the approach completely. I chose the latter.
+
+Instead of going with three entities (*RoomSelectPanel*, *RoomsListFetcher*, and *PreJoinWorker*), I opted to only use the first two in tandem with a shared validation object consisting of a few flags. Essentially, before waking up the RLF for a refresh, the RSP thread would toggle a "room validation request" on this shared object. Post-refresh, RLF essentially checks this object every time, and if it comes up true, it performs a few extra steps. That shared object is also how the result of the validation is communicated. Additionally, waiting and notifying between just the two entities instead of three proves to be a heck of a lot more predictable, so far at least.
+
+Now, the validation mechanism seems to work. And by that, I mean I can get Bob into Alice's room with the validation mechanism in place and nothing breaks (lol). The next step tomorrow in testing will be to see if the validation mechanism actually works to detect a room that no longer exists and properly notifies the user joining.We also have another bug that seems to occur inconsistently where a user's name (sometimes) will be duplicated in its own participants list upon joining a chat. To address this, we will see if we can opt to use some kind of ordered HashSet for the participant list model instead of an ArrayList. Whether or not this will be possible is completely unknown; we will find out tomorrow.
+
+Good amount of progress for the day. Excellent level of focus and output. Feeling good.

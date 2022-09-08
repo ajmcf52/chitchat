@@ -135,6 +135,7 @@ public class UserInputHandler extends Thread {
              */
             for (String p : wm.getParticipants()) {
                 chatWindowRef.addParticipantName(p);
+                System.out.println("existing participant --> " + p);
             }
             chatWindowRef.addParticipantName(wm.getAssociatedReceivingAlias());
 
