@@ -64,25 +64,26 @@ public class UserInputHandler extends Thread {
      */
     public void run() {
         turnOn();
-
+        ArrayList<Message> messages = new ArrayList<>();
         while (true) {
-            ArrayList<Message> messages = new ArrayList<>();
-            // wait until notified by UserInputWorker that there are messages to handle.
-            try {
-                synchronized (incomingMessageNotifier) {
-                    incomingMessageNotifier.wait();
-                }
-                messageQueue.drainTo(messages);
 
-            } catch (Exception e) {
-                System.out.println("UIH Error! --> " + e.getMessage());
+            // only wait() if we don't have messages to process!
+            if (messageQueue.size() == 0) {
+                try {
+                    synchronized (incomingMessageNotifier) {
+                        incomingMessageNotifier.wait();
+                    }
+                } catch (Exception e) {
+                    System.out.println("UIH Error! --> " + e.getMessage());
+                }
             }
+            messageQueue.drainTo(messages);
 
             // handle each and every single message.
             for (Message msg : messages) {
                 handleMessage(msg);
             }
-
+            messages.clear();
             // check if it is time to exit.
             synchronized (runLock) {
                 if (!isRunning) {

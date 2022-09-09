@@ -1,5 +1,9 @@
 package requests;
 
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
+
 import messages.ExitRoomMessage;
 import net.ChatUser;
 
@@ -24,6 +28,21 @@ public class ExitRoomWorker extends Thread {
         String roomName = userRef.getCurrentRoomName();
         String alias = userRef.getAlias();
         ExitRoomMessage erm = new ExitRoomMessage(alias, roomName);
-        userRef.pushOutgoingMessage(erm);
+        // userRef.pushOutgoingMessage(erm);
+        Socket socket = null;
+        ObjectInputStream in = null;
+        ObjectOutputStream out = null;
+        String sessionIP = userRef.getSessionIP();
+        int sessionPort = userRef.getSessionPort();
+        try {
+            socket = new Socket(sessionIP, sessionPort);
+            out = new ObjectOutputStream(socket.getOutputStream());
+            in = new ObjectInputStream(socket.getInputStream());
+            out.writeObject(erm);
+            out.flush();
+            socket.close();
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
     }
 }

@@ -53,14 +53,13 @@ public class OutputWorker extends Worker {
 
         while (true) {
             try {
-                if (workerID.endsWith("S1")) {
-                    System.out.println();
-                }
                 // check the message queue before waiting (messages + notify can fire pre-wait)
                 ArrayList<Message> toSend = new ArrayList<Message>();
-                if (messageQueue.size() > 0) {
+                while (true) {
                     messageQueue.drainTo(toSend);
-                } else {
+                    if (toSend.size() > 0) {
+                        break;
+                    }
                     synchronized (outgoingMsgNotifier) {
                         outgoingMsgNotifier.wait();
                     }

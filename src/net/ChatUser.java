@@ -163,6 +163,7 @@ public class ChatUser extends Thread {
                 inputWorker = new UserInputWorker(workerIdNum, in, msgQueue, incomingMsgNotifier, sessionSocket);
                 inputWorker.start();
                 inputHandler.start();
+
             }
             /**
              * In states of chatting & non-chatting, ChatUser just sits around waiting while
@@ -338,5 +339,23 @@ public class ChatUser extends Thread {
      */
     public void markChatRoomLeft() {
         isChatting = false;
+    }
+
+    /**
+     * getter for session IP
+     * 
+     * @return the session IP address
+     */
+    public String getSessionIP() {
+        return sessionIP;
+    }
+
+    /**
+     * getter for session port
+     * 
+     * @return the session port
+     */
+    public int getSessionPort() {
+        return sessionPort;
     }
 }
