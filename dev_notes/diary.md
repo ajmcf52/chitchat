@@ -982,3 +982,39 @@ Instead of going with three entities (*RoomSelectPanel*, *RoomsListFetcher*, and
 Now, the validation mechanism seems to work. And by that, I mean I can get Bob into Alice's room with the validation mechanism in place and nothing breaks (lol). The next step tomorrow in testing will be to see if the validation mechanism actually works to detect a room that no longer exists and properly notifies the user joining.We also have another bug that seems to occur inconsistently where a user's name (sometimes) will be duplicated in its own participants list upon joining a chat. To address this, we will see if we can opt to use some kind of ordered HashSet for the participant list model instead of an ArrayList. Whether or not this will be possible is completely unknown; we will find out tomorrow.
 
 Good amount of progress for the day. Excellent level of focus and output. Feeling good.
+
+---
+
+## Massive Breakthrough
+
+### Monday, September 12th 3:46PM PST
+
+---
+
+I am beginning to cultivate considerable respect for the practice of multithreaded programming. Here, I spent all this time thinking I was all fine and dandy, seeing as how I was able to get a multithreaded networked system up and running with a handful of different entities. 
+
+Well, I felt this way until I got to the thread cleanup phase. I spent a week literally just figuring out how to shut down my threads and dispose of their resources properly.
+
+The method calls are one thing. They're actually very simple and straightforward. One of the non-trivial aspects to thread shut down and clean up, however, it making sure it doesn't happen too early. 
+
+I spent I don't even know how many days trying to figure out why the *ExitRoomMessage* sent by ChatUser wasn't being returned. I mean, it was working just fine *before I added any of the shutdown code*.
+
+I had gotten this righteous idea stuck in my head that **because** SessionCoordinator was the technical *owner*, if you will, of the threaded workers employed for it that it should also be responsible for shutting them all down. 
+
+This is a nice idea in theory, but in practice, it introduces race conditions.
+
+More precisely, the *MessageRouter* is in a race to get its last task done to forward any remaining messages before it is shut down by *SessionCoordinator*, including the *ExitRoomMessage* that the ChatUser **must** receive before it signals its own shut down.
+
+Similarly, the SC's *OutputWorker* is in a race to write and flush the ERM passed along by *MessageRouter* (assuming it was successful in passing it along) before it is shut down by *SessionCoordinator*.
+
+I was stuck on this for a number of days. Many of these days were spent simply trying to pinpoint the exact location in the socket communication pipeline where things were breaking down.
+
+When I put a breakpoint on the function call *shutDownWorkers()* (a pretty self-explanatory function), the ERM to go out was still sitting in the incoming message queue where it had been placed by *SessionCoordinator*. In other words, *MessageRouter* and SC's *OutputWorker* seemed to getting shut down **long** before they had any chance of sending out the last set of messages. Bingo!
+
+So the problem had been located... So now what? Well, a clear issue had been identified with my shut down procedure. That said, I had to change the way in which I was shutting down my *SessionCoordinator* workers (I haven't even gotten to the *ChatUser* workers yet. Bear in mind, however, that these workers should be 1000x easier to gracefully shut down, based on the notion that all of ChatUser's workers can be signalled for shut down once the *UserInputHandler* receives the response ERM with no glaring issues, at least not yet).
+
+So what did I do? Well I thought, if *ExitRoomMessages* are so important, why not just add an if-statement that checks for them within *MessageRouter* and *OutputWorker* classes, such that either class signals itself for a shut down upon observing an ERM? This way, I can call *join()* on both thread workers from *SessionCoordinator* to ensure I'm not removing or closing anything I shouldn't be before those threads are officially dead. Turns out this works great. Sure, maybe it's not the cleanest thing in the world, but as far as I can tell, it's functional, and functional is more important than pretty. Functionally pretty would be ideal, but we don't live in a utopia. We do the best we can with the time we have. Any other way leads to frustrated perfectionism, at least that's what I've found in my discoveries in the context of solo projects on limited timelines.
+
+So that's it for today. Very excited to have made this break through. Of course, I will still have to test whether the room closure is detected by Bob's client when he tries to join Alice's room after she has left. We will have to see how that plays out tomorrow. Either way, this was a **major** breakthrough.
+
+Yeti out.

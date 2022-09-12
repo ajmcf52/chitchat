@@ -1,5 +1,6 @@
 package io.session;
 
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -48,6 +49,14 @@ public class SessionInputWorker extends InputWorker {
                 int workerNum = Integer.parseInt(workerID.split("-")[1]);
                 taskQueue.put(workerNum); // queue up the task for BWs
 
+            } catch (IOException e) {
+                if (isRunning) {
+                    /*
+                     * NOTE if we're still running and an IOException pops, something is wrong.
+                     * otherwise, we can shutdown gracefully.
+                     */
+                    System.out.println(workerID + " bad error, please verify. --> " + e.getMessage());
+                }
             } catch (Exception e) {
                 System.out.println(workerID + " Error! --> " + e.getMessage());
             }

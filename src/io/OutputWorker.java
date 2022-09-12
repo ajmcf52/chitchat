@@ -3,6 +3,7 @@ package io;
 import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
 
+import messages.ExitRoomMessage;
 import messages.Message;
 
 import java.io.ObjectOutputStream;
@@ -67,6 +68,10 @@ public class OutputWorker extends Worker {
 
                 for (Object msg : toSend) {
                     out.writeObject(msg);
+
+                    if (msg instanceof ExitRoomMessage) {
+                        turnOff();
+                    }
                 }
                 out.flush();
             } catch (Exception e) {

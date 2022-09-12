@@ -209,43 +209,46 @@ public class SessionCoordinator extends Worker {
             } else if (msg instanceof ExitRoomMessage) {
                 ExitRoomMessage erm = (ExitRoomMessage) msg;
 
-                int routingNum = 0; // NOTE if we don't enter, we just remove host's workers.
-                ArrayBlockingQueue<Message> q = incomingMsgQueueMap.get(routingNum);
                 String alias = erm.getExitingUser();
+                int routingNum = aliasWorkerNumberMappings.get(alias);
+                ArrayBlockingQueue<Message> q = incomingMsgQueueMap.get(routingNum);
 
                 // if there is more than one user, notify others of the exit.
                 if (activeRoutingIDs.size() > 1) {
-                    routingNum = aliasWorkerNumberMappings.get(alias);
-                    q = incomingMsgQueueMap.get(routingNum);
 
                     String roomName = erm.getAssociatedRoom();
                     ExitNotifyMessage enm = new ExitNotifyMessage(alias, roomName);
                     q.add(enm);
                 }
-
-                // in any case, send out the ERM response back to the ChatUser leaving.
-                q.add(erm);
+                String responseText = "OK";
+                SimpleMessage response = new SimpleMessage(alias, responseText);
                 try {
-                    taskQueue.add(routingNum);
+                    out.writeObject(response);
+                    out.flush();
+                    q.add(erm);
                 } catch (Exception e) {
-                    System.out.println(workerID + " error placing ExitNotify task --> " + e.getMessage());
+                    System.out.println(workerID + " error replying to ERM --> " + e.getMessage());
                 }
-
-                try {
-                    sleep(1000); // give the workers a second to send out the previously queued messages.
-                } catch (Exception e) {
-                    System.out.println(workerID + " interrupted while sleeping --> " + e.getMessage());
-                }
+                taskQueue.add(routingNum);
 
                 // ensure proper shut down of workers associated with user leaving
-                shutDownWorkers(routingNum);
-
-                // update remaining data structures
+                // shutDownWorkers(routingNum);
+                MessageRouter mr = messageRouters.remove(routingNum);
+                OutputWorker ow = outputWorkers.remove(routingNum);
+                try {
+                    mr.join();
+                    ow.join();
+                } catch (Exception e) {
+                    System.out.println("Error joining on MR and OW in shut down procedure.");
+                }
                 Socket s = chatRoomUserSockets.remove(routingNum);
+                SessionInputWorker siw = inputWorkers.remove(routingNum);
+                siw.turnOff();
                 try {
                     s.close();
+                    siw.join();
                 } catch (Exception e) {
-                    System.out.println(workerID + " error closing socket-" + routingNum + " --> " + e.getMessage());
+                    System.out.println("Error joining on SIW in shut down procedure.");
                 }
 
                 incomingMsgQueueMap.remove(routingNum);

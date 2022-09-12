@@ -159,6 +159,8 @@ public class UserInputHandler extends Thread {
             synchronized (mainAppNotifier) {
                 mainAppNotifier.notify(); // This tells main() that it can proceed to the next state.
             }
+            return; // NOTE the one message type where we don't add line to feed.
+
         } else if (msg instanceof ExitNotifyMessage) {
             ExitNotifyMessage enm = (ExitNotifyMessage) msg;
             String userLeaving = enm.getUserLeaving();

@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.ArrayBlockingQueue;
+
+import messages.ExitRoomMessage;
 import messages.Message;
 import misc.Worker;
 
@@ -68,36 +70,50 @@ public class MessageRouter extends Worker {
                 ArrayList<Message> messagesToFwd = new ArrayList<Message>();
                 ArrayBlockingQueue<Message> msgQueue = incomingMsgQueueMap.get(task);
                 // retrieve the messages to be forwarded
-                msgQueue.drainTo(messagesToFwd);
 
-                // forward the messages and notify the appropriate OutputWorker(s)
-                for (Message msg : messagesToFwd) {
-                    if (msg.isSingleShot()) {
-                        /**
-                         * in this case, we only send the Message to the one queue, associated by task
-                         * number.
-                         */
-                        outgoingMsgQueueMap.get(task).add(msg);
-                        synchronized (newMessageNotifierMap.get(task)) {
-                            newMessageNotifierMap.get(task).notify();
-                        }
-                    } else {
-                        /**
-                         * in this case we put the Message into everyone's queue EXCEPT for the one
-                         * queue, associated by task number.
-                         */
-                        for (Integer i : activeWorkerIDs) {
-                            if (task == i)
-                                continue;
-                            ArrayBlockingQueue<Message> outgoing = outgoingMsgQueueMap.get(i);
-                            outgoing.add(msg);
+                /**
+                 * NOTE if there are no more messages in the designated message queue, we are
+                 * safe to exit the loop.
+                 */
+                while (!msgQueue.isEmpty()) {
 
-                            synchronized (newMessageNotifierMap.get(i)) {
-                                newMessageNotifierMap.get(i).notify();
+                    msgQueue.drainTo(messagesToFwd);
+
+                    // forward the messages and notify the appropriate OutputWorker(s)
+                    for (Message msg : messagesToFwd) {
+                        if (msg.isSingleShot()) {
+                            /**
+                             * in this case, we only send the Message to the one queue, associated by task
+                             * number. NOTE we ensure that the final ExitRoomMessage is sent out before the
+                             * MessageRouter is shut down by getting it to shut itself down upon detecting
+                             * an ERM.
+                             */
+                            if (msg instanceof ExitRoomMessage) {
+                                turnOff();
+                            }
+                            outgoingMsgQueueMap.get(task).add(msg);
+                            synchronized (newMessageNotifierMap.get(task)) {
+                                newMessageNotifierMap.get(task).notify();
+                            }
+                        } else {
+                            /**
+                             * in this case we put the Message into everyone's queue EXCEPT for the one
+                             * queue, associated by task number.
+                             */
+                            for (Integer i : activeWorkerIDs) {
+                                if (task == i)
+                                    continue;
+                                ArrayBlockingQueue<Message> outgoing = outgoingMsgQueueMap.get(i);
+                                outgoing.add(msg);
+
+                                synchronized (newMessageNotifierMap.get(i)) {
+                                    newMessageNotifierMap.get(i).notify();
+                                }
                             }
                         }
                     }
                 }
+
             } catch (Exception e) {
                 System.out.println(workerID + " Error! --> " + e.getMessage());
             }

@@ -5,6 +5,8 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 import messages.ExitRoomMessage;
+import messages.SimpleMessage;
+import misc.ValidateInput;
 import net.ChatUser;
 
 /**
@@ -32,6 +34,7 @@ public class ExitRoomWorker extends Thread {
         Socket socket = null;
         ObjectInputStream in = null;
         ObjectOutputStream out = null;
+        Object obj = null;
         String sessionIP = userRef.getSessionIP();
         int sessionPort = userRef.getSessionPort();
         try {
@@ -40,6 +43,8 @@ public class ExitRoomWorker extends Thread {
             in = new ObjectInputStream(socket.getInputStream());
             out.writeObject(erm);
             out.flush();
+            obj = in.readObject();
+            SimpleMessage response = ValidateInput.validateSimpleMessage(obj);
             socket.close();
         } catch (Exception e) {
             // TODO: handle exception

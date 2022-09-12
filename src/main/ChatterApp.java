@@ -11,45 +11,47 @@ import ui.ChatWindow;
 import ui.RoomNamePanel;
 
 /**
- * main entry point for the chatter application.
+ * This class contains the main entry point for Chatter.
  */
 public class ChatterApp {
 
     public static void main(String[] args) {
-        // System.out.println("Hello World!");
+
+        /** --VARIABLE DECLARATIONS-- **/
+
+        // used to control the state machine within main().
+        ApplicationState appState = new ApplicationState();
 
         /**
-         * TODO come up with a system that allows a user to input a port number into the
-         * program that will be used for the ChatUser.
-         * 
-         * a. first version, we will declare the port locally here. b. second version,
-         * we will make use of command line arguments. c. third (and probably final)
-         * version will make use of a config text file, that will be read to gather the
-         * chat client's port number.
-         * 
-         * Bear in mind, too, that we will want to come up with a system that keeps
-         * generating port numbers randomly until agiven port number works for creating
-         * the ChatUser's socket. If we iron this out well enough, we may not even need
-         * a method of having a user-supplied port number; the program itself can take
-         * care of that.
+         * used by various entities in tandem with ChatUser facilitate synchronized
+         * comms.
          */
-
-        // variables!!
-        // Passing in a null ChatUser.
-        // This will eventually be initialized by UserSetupThread via LoginPanel's
-        // EvtHandler.
-        ApplicationState appState = new ApplicationState();
         Object chatUserLock = new Object();
+
+        // ibid, but instead entities use this to communicate with main().
         Object mainAppNotifier = new Object();
+
+        // main controller class of user comms.
         ChatUser chatUser = new ChatUser(chatUserLock, mainAppNotifier, appState);
+
+        // self-explanatory. Instantiated within "CHATTING" state.
         ChatWindow chatWindow = null;
 
-        // create all of our application panels.
+        // -- application panels --
+
+        // screen A: where users enter a screen name (i.e., alias)
         LoginPanel loginPanel = new LoginPanel(chatUser, chatUserLock, appState);
+
+        // screen B: where users choose to create or join a room.
         ChoicePanel choicePanel = new ChoicePanel(chatUser, chatUserLock, appState);
+
+        // screen C1: where users look at and join existing rooms.
         RoomSelectPanel roomSelectPanel = new RoomSelectPanel(appState, chatUser, mainAppNotifier);
+
+        // screen C2: where a user creating a room enters a name for it.
         RoomNamePanel roomNamePanel = new RoomNamePanel(chatUser, chatUserLock, appState);
 
+        // setting up an array of JPanels for CardLayout.
         int numPanels = 4;
         JPanel[] appPanels = new JPanel[numPanels];
         appPanels[0] = loginPanel;
@@ -57,40 +59,33 @@ public class ChatterApp {
         appPanels[2] = roomSelectPanel;
         appPanels[3] = roomNamePanel;
 
-        // create the window
         MainWindow mainWindow = new MainWindow(appPanels);
         boolean isRunning = true;
 
         while (isRunning) {
-            /**
-             * enter here if we are at the login panel.
-             */
-            System.out.println("state: " + appState.getAppState().name());
-            if (chatUser.getAlias().startsWith("bob")) {
-                System.out.println();
-            }
+
             if (appState.getAppState() == AppStateValue.LOGIN_PANEL) {
+                /**
+                 * NOTE there is no showLoginPanel() method in MainWindow (yet), as LoginPanel
+                 * is the default 1st panel and we have yet to support name changing. This may
+                 * or may not change in the future.
+                 */
                 try {
-                    /*
-                     * user will progress past this wait() after their alias has been entered and
-                     * set up on the back-end with the registry.
-                     */
                     synchronized (chatUserLock) {
-                        chatUserLock.wait();
+                        chatUserLock.wait(); // notified by UserSetupWorker.
                     }
                 } catch (InterruptedException e) {
                     System.out.println("ChatterApp error! --> " + e.getMessage());
                 }
-                System.out.println("ChatUser alias -->" + chatUser.getAlias());
+
+                System.out.println("ChatUser alias --> " + chatUser.getAlias());
                 try {
-                    Thread.sleep(2500);
+                    Thread.sleep(1500);
                 } catch (InterruptedException e) {
-                    System.out.println("ChatterApp thread snooze interrupted between LP and CP");
+                    System.out.println("ChatterApp thread snooze interrupted between Login/Choice Panel.");
                 }
             }
-            /**
-             * enter here if we are at the choice panel.
-             */
+
             else if (appState.getAppState() == AppStateValue.CHOICE_PANEL) {
                 /**
                  * TODO add a "Back" button on the choice screen, which allows a person to go
@@ -98,9 +93,8 @@ public class ChatterApp {
                  */
                 mainWindow.showChoicePanel();
                 try {
-                    /*
-                     * user will progress past this wait() after a button has been pressed on the
-                     * ChoicePanel.
+                    /**
+                     * notified by 1 of 2 action listeners in ChoicePanel.
                      */
                     synchronized (chatUserLock) {
                         chatUserLock.wait();
@@ -113,8 +107,7 @@ public class ChatterApp {
              * enter here if we have opened a chat window.
              */
             else if (appState.getAppState() == AppStateValue.CHATTING) {
-                // connect to the SeshCoordinator, set up the communication pathways, and begin
-                // chatting.
+                // connect to the SeshCoordinator, set up comm pathways, and begin chatting.
                 System.out.println("Chatting");
                 mainWindow.setVisible(false);
                 chatWindow = new ChatWindow("UNASSIGNED", chatUser);
