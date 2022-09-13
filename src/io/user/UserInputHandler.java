@@ -9,54 +9,40 @@ import messages.ExitRoomMessage;
 import messages.JoinNotifyMessage;
 import messages.Message;
 import messages.WelcomeMessage;
+import misc.Worker;
 import ui.ChatWindow;
 
 /**
  * This class is responsible for handling newly received messages for the
  * ChatUser.
  */
-public class UserInputHandler extends Thread {
+public class UserInputHandler extends Worker {
 
-    /**
-     * In place so this user can push incoming/outgoing messages into the chat feed.
-     *
-     * Another reason will be also to define the ActionListener for pushing new
-     * messages to SessionCoordinator within this class.
-     */
-    private ChatWindow chatWindowRef;
-
-    /**
-     * this is where incoming messages will be retrieved from, after they are placed
-     * there by UserInputWorker.
-     */
-    private ArrayBlockingQueue<Message> messageQueue;
-
-    private volatile boolean isRunning; // flag is used to switch worker on and off.
-    private Object runLock; // lock for aforementioned run flag.
-    private Object incomingMessageNotifier; // waited on for new messages to pull from the queue.
-    private Object mainAppNotifier; // used to notify the main() subroutine of application state changes.
+    private ChatWindow chatWindowRef; // used to carry out received message actions.
+    private ArrayBlockingQueue<Message> messageQueue; // for pulling in new messages.
+    private Object inNotifier; // waited on for new messages to pull from the queue.
+    private Object mainNotifier; // used to notify the main() subroutine of application state changes.
     private ApplicationState appState; // state of the application.
 
     /**
      * constructor for UIH.
      * 
-     * @param chatWin          chat window reference object
-     * @param msgQueue         message queue
-     * @param incomingNotifier new message notifier, notified by UserInputWorker
-     *                             (the receiver of messages via Socket)
-     * @param mainNotifier     Object used to notify the main() subroutine of a
-     *                             significant state change.
-     * @param state            state of the application
+     * @param workerNum routing number that associates this worker with a user
+     * @param chatWin   chat window reference object
+     * @param msgQueue  message queue
+     * @param inNotif   notified by UserInputWorker (receiver of messages)
+     * @param mainNotif to notify main() of state changes.
+     * @param state     state of the application
      */
-    public UserInputHandler(ChatWindow chatWin, ArrayBlockingQueue<Message> msgQueue, Object incomingNotifier,
-                    Object mainNotifier, ApplicationState state) {
+    public UserInputHandler(int workerNum, ChatWindow chatWin, ArrayBlockingQueue<Message> msgQueue, Object inNotif,
+                    Object mainNotif, ApplicationState state) {
+        super("UIH-" + Integer.toString(workerNum));
         chatWindowRef = chatWin;
         messageQueue = msgQueue;
-        isRunning = false;
-        runLock = new Object();
-        incomingMessageNotifier = incomingNotifier;
-        mainAppNotifier = mainNotifier;
+        inNotifier = inNotif;
+        mainNotifier = mainNotif;
         appState = state;
+        isRunning = false;
     }
 
     /**
@@ -65,14 +51,21 @@ public class UserInputHandler extends Thread {
     public void run() {
         turnOn();
         ArrayList<Message> messages = new ArrayList<>();
-        while (true) {
 
-            // only wait() if we don't have messages to process!
+        while (isRunning) {
+
+            // no need to wait if we have messages to process.
             if (messageQueue.size() == 0) {
                 try {
-                    synchronized (incomingMessageNotifier) {
-                        incomingMessageNotifier.wait();
+                    synchronized (inNotifier) {
+                        inNotifier.wait(); // notified by UserInputWorker
                     }
+                } catch (InterruptedException e) {
+                    if (isRunning) {
+                        System.out.println(workerID + " --> bad shutdown! Investigation needed.");
+                        turnOff();
+                    }
+
                 } catch (Exception e) {
                     System.out.println("UIH Error! --> " + e.getMessage());
                 }
@@ -87,27 +80,10 @@ public class UserInputHandler extends Thread {
             // check if it is time to exit.
             synchronized (runLock) {
                 if (!isRunning) {
+                    proclaimShutdown();
                     break;
                 }
             }
-        }
-    }
-
-    /**
-     * used to switch on this thread worker.
-     */
-    public void turnOn() {
-        synchronized (runLock) {
-            isRunning = true;
-        }
-    }
-
-    /**
-     * used to switch off this thread worker.
-     */
-    public void turnOff() {
-        synchronized (runLock) {
-            isRunning = false;
         }
     }
 
@@ -156,8 +132,8 @@ public class UserInputHandler extends Thread {
              */
             appState.setAppState(AppStateValue.CHOICE_PANEL);
 
-            synchronized (mainAppNotifier) {
-                mainAppNotifier.notify(); // This tells main() that it can proceed to the next state.
+            synchronized (mainNotifier) {
+                mainNotifier.notify(); // This tells main() that it can proceed to the next state.
             }
             return; // NOTE the one message type where we don't add line to feed.
 

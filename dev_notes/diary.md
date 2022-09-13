@@ -1018,3 +1018,19 @@ So what did I do? Well I thought, if *ExitRoomMessages* are so important, why no
 So that's it for today. Very excited to have made this break through. Of course, I will still have to test whether the room closure is detected by Bob's client when he tries to join Alice's room after she has left. We will have to see how that plays out tomorrow. Either way, this was a **major** breakthrough.
 
 Yeti out.
+
+---
+
+## Trucking along...
+
+### Tuesday, September 13th 3:06PM PST 2022
+
+---
+
+Today, we worked on graceful shutdown of ChatUser worker threads. The code isn't perfect, but it's functional. The code operates on the assumption that the only instance in which we will ever have an IOException is when we have a controlled shutdown. In the current state of the code base, this is perfectly fine. If we were to extend the application to support more users with higher network variability, we would likely want to have a little more infrastructure in place to get a pulse on when connections are shut down and why. But that's not really a concern of mine, at least in terms of code production in the "now". A good thought exercise nonetheless.
+
+Tomorrow, we will come in with the aim of getting back to working on the non-existent room detection and correction, so as to stop a user from joining a room that doesn't exist.
+
+Once this mechanism is in place, we will call the project "Done for Now", prompting a finish-up on final documentation, reflections and write-ups. We may add cloud support 6ish weeks down the line. I think that would be cool. Before we get to that, however, I would like to work on some web development for a bit in updating my website.
+
+Yeti out.

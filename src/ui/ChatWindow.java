@@ -76,7 +76,7 @@ public class ChatWindow extends JFrame {
      */
     public ChatWindow(String sid, ChatUser user) {
         chatUser = user;
-        outputHandler = new UserOutputHandler(messageEventNotifier, chatUser, this);
+        outputHandler = new UserOutputHandler(chatUser.getWorkerIdNumber(), messageEventNotifier, chatUser, this);
         outputHandler.start();
 
         // chatFeedString = "";

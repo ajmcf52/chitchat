@@ -6,15 +6,16 @@ import java.util.concurrent.ArrayBlockingQueue;
 import messages.ExitRoomMessage;
 import messages.Message;
 
+import java.io.IOException;
 import java.io.ObjectOutputStream;
 
 import misc.Worker;
 
 /**
  * this class is responsible for writing outgoing messages through a particular
- * Socket to a given ChatUser. Outgoing messages are retrieved from a
+ * Socket to OR from a given ChatUser. Outgoing messages are retrieved from a
  * message-oriented ABQ.
- * 
+ *
  * NOTE this class is slightly DIFFERENT from its counterpart, InputWorker, in
  * that its defined functionality in its capacity of server ChatUser and
  * SeshCoordinator are EXACTLY the same. Thus, there is zero need to subclass
@@ -24,26 +25,31 @@ public class OutputWorker extends Worker {
 
     private ObjectOutputStream out; // what will be used to send outgoing messages.
     private ArrayBlockingQueue<Message> messageQueue; // where outgoing messages will be retrieved from.
-    private Object outgoingMsgNotifier; // wait on this for new messages that require sending.
+    private Object outNotifier; // wait on this for new messages that require sending.
 
     /**
      * constructor of the OutputWorker.
      * 
-     * @param workerCode       2-character code unique to this worker within its
-     *                             worker class.
-     * @param output           PrintWriter to be used for writing outgoing messages;
-     *                             initialized by SessionCoordinator
-     * @param msgQueue         initialized by SessionCoordinator, where this thread
-     *                             will retrieve outgoing messages to be sent.
-     * @param outgoingNotifier used by ChatUser to notify this class of a new
-     *                             message needing to be sent.
+     * @param workerCode 2-character code unique to this worker within its class.
+     * @param output     stream used for writing outgoing messages.
+     * @param msgQueue   where outgoing messages to be sent are pulled from.
+     * @param outNotif   notified when new messages require sending.
      */
     public OutputWorker(String workerCode, ObjectOutputStream output, ArrayBlockingQueue<Message> msgQueue,
-                    Object outgoingNotifier) {
+                    Object outNotif) {
         super("OW-" + workerCode);
         messageQueue = msgQueue;
         out = output;
-        outgoingMsgNotifier = outgoingNotifier;
+        outNotifier = outNotif;
+    }
+
+    /**
+     * getter for OW's notifier Object.
+     * 
+     * @return notifier object for OutputWorker
+     */
+    public Object getNotifier() {
+        return outNotifier;
     }
 
     /**
@@ -61,30 +67,39 @@ public class OutputWorker extends Worker {
                     if (toSend.size() > 0) {
                         break;
                     }
-                    synchronized (outgoingMsgNotifier) {
-                        outgoingMsgNotifier.wait();
+                    synchronized (outNotifier) {
+                        outNotifier.wait();
                     }
                 }
 
                 for (Object msg : toSend) {
                     out.writeObject(msg);
-
+                    // if we catch an ERM as it's going out, we know to turn off.
                     if (msg instanceof ExitRoomMessage) {
                         turnOff();
+                        break;
                     }
                 }
                 out.flush();
+            } catch (IOException e) {
+                synchronized (runLock) {
+                    if (isRunning) {
+                        isRunning = false;
+                        break;
+                    }
+                }
             } catch (Exception e) {
                 System.out.println("OutputWorker Error! --> " + e.getMessage());
             }
 
             synchronized (runLock) {
                 if (!isRunning) {
-                    proclaimShutdown();
                     break;
                 }
             }
-        }
+        } // end of while loop
+
+        proclaimShutdown();
     }
 
     /**
@@ -95,8 +110,8 @@ public class OutputWorker extends Worker {
     public void triggerMessageSend(Message msg) {
         try {
             messageQueue.put(msg);
-            synchronized (outgoingMsgNotifier) {
-                outgoingMsgNotifier.notify();
+            synchronized (outNotifier) {
+                outNotifier.notify();
             }
         } catch (Exception e) {
             System.out.println("Exception occurred while pushing into " + workerID + "'s outgoing queue! --> "

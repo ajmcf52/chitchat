@@ -1,7 +1,7 @@
 package io.user;
 
+import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.net.Socket;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import io.InputWorker;
@@ -16,7 +16,6 @@ import misc.ValidateInput;
 public class UserInputWorker extends InputWorker {
 
     private Object incomingMsgNotifier; // used to notify UIH that there are newly received messages to process
-    private Socket socket; // for informational purposes.
 
     /**
      * constructor for UIW.
@@ -27,13 +26,20 @@ public class UserInputWorker extends InputWorker {
      * @param msgQueue         where newly received messages are placed
      * @param incomingNotifier used to notify the UserInputHandler when there are
      *                             newly received messages to process.
-     * @param s                client socket
      */
     public UserInputWorker(int workerNum, ObjectInputStream input, ArrayBlockingQueue<Message> msgQueue,
-                    Object incomingNotifier, Socket s) {
+                    Object incomingNotifier) {
         super("UIW-" + Integer.toString(workerNum), input, msgQueue);
         incomingMsgNotifier = incomingNotifier;
-        socket = s;
+    }
+
+    /**
+     * getter for UIW's notifier object.
+     * 
+     * @return return UserInputWorker's notifier
+     */
+    public Object getNotifier() {
+        return incomingMsgNotifier;
     }
 
     /**
@@ -47,8 +53,11 @@ public class UserInputWorker extends InputWorker {
             Message msg = null;
             try {
                 obj = in.readObject();
-
                 msg = ValidateInput.validateMessage(obj);
+
+            } catch (IOException e) {
+                turnOff();
+                break;
             } catch (Exception e) {
                 System.out.println("UserInputWorker Error! --> " + e.getMessage());
             }
@@ -65,7 +74,8 @@ public class UserInputWorker extends InputWorker {
                     break;
                 }
             }
-        }
+        } // end of while loop
+        proclaimShutdown();
     }
 
 }

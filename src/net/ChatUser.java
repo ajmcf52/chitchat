@@ -6,9 +6,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.concurrent.ArrayBlockingQueue;
-import main.AppStateValue;
 import main.ApplicationState;
-import messages.ExitRoomMessage;
 import messages.JoinRoomMessage;
 import messages.Message;
 import messages.SimpleMessage;
@@ -150,17 +148,16 @@ public class ChatUser extends Thread {
 
             if (isChatting) {
                 joinRoom();
-
+                // i.e., pulls 1 from "Alice#U01"
+                int workerIdNum = getWorkerIdNumber();
                 ArrayBlockingQueue<Message> msgQueue = new ArrayBlockingQueue<Message>(Constants.MSG_QUEUE_LENGTH,
                                 true);
+
                 outputWorker = new OutputWorker(userID, out, msgQueue, outgoingMsgNotifier);
                 outputWorker.start();
-                inputHandler = new UserInputHandler(chatWindowRef, msgQueue, incomingMsgNotifier, mainAppNotifier,
-                                appState);
-
-                // i.e., pulls 1 from "Alice#U01"
-                int workerIdNum = Integer.parseInt(alias.split("#U")[1]);
-                inputWorker = new UserInputWorker(workerIdNum, in, msgQueue, incomingMsgNotifier, sessionSocket);
+                inputHandler = new UserInputHandler(workerIdNum, chatWindowRef, msgQueue, incomingMsgNotifier,
+                                mainAppNotifier, appState);
+                inputWorker = new UserInputWorker(workerIdNum, in, msgQueue, incomingMsgNotifier);
                 inputWorker.start();
                 inputHandler.start();
 
@@ -177,26 +174,8 @@ public class ChatUser extends Thread {
                 System.out.println(alias + " encountered an error while waiting --> " + e.getMessage());
             }
 
-            /**
-             * if this is true but we have been notified, it means we have left our current
-             * chat. Upon joining another chat, we will restart our workers.
-             */
             if (isChatting) {
-                inputWorker.turnOff();
-                inputWorker.interrupt();
-                inputHandler.turnOff();
-                inputHandler.interrupt();
-                outputWorker.turnOff();
-                outputWorker.interrupt();
-
-                try {
-                    inputWorker.join();
-                    inputHandler.join();
-                    outputWorker.join();
-                } catch (Exception e) {
-                    System.out.println(alias + " join() error with worker threads on chat exit --> " + e.getMessage());
-                }
-
+                shutDownWorkers();
                 isChatting = false;
             }
         }
@@ -357,5 +336,40 @@ public class ChatUser extends Thread {
      */
     public int getSessionPort() {
         return sessionPort;
+    }
+
+    /**
+     * this method is responsible for triggering the graceful shutdown of all
+     * threaded workers responsible for ChatUser IO. NOTE UserOutputHandler is
+     * attached to the ChatWindow; their shut down is handled separately.
+     */
+    public void shutDownWorkers() {
+        inputHandler.turnOff();
+        inputWorker.turnOff();
+        outputWorker.turnOff();
+
+        inputHandler.interrupt();
+        synchronized (inputWorker.getNotifier()) {
+            inputWorker.getNotifier().notify();
+        }
+        synchronized (outputWorker.getNotifier()) {
+            outputWorker.getNotifier().notify();
+        }
+        try {
+            inputWorker.join();
+            inputHandler.join();
+            outputWorker.join();
+        } catch (Exception e) {
+            System.out.println(alias + " join() error with worker threads on chat exit --> " + e.getMessage());
+        }
+    }
+
+    /**
+     * Getter for this ChatUser's worker ID number.
+     * 
+     * @return
+     */
+    public int getWorkerIdNumber() {
+        return Integer.parseInt(alias.split("#U")[1]);
     }
 }
