@@ -113,7 +113,7 @@ public class ChatterApp {
                 chatWindow = new ChatWindow("UNASSIGNED", chatUser);
                 chatWindow.addLineToFeed("Connecting to SessionCoordinator...");
                 chatUser.initializeChatRoomRef(chatWindow);
-
+                chatUser.setChatting(true);
                 chatUser.start();
 
                 try { // main() waits here for an exit notification (delivered by UserInputHandler)
@@ -136,6 +136,7 @@ public class ChatterApp {
                 synchronized (chatUserLock) {
                     chatUserLock.notify();
                 }
+                // NOTE state change has been handled by UserInputHandler.
             }
 
             else if (appState.getAppState() == AppStateValue.ROOM_SELECT) {

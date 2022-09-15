@@ -170,15 +170,51 @@ public class RoomSelectPanel extends JPanel {
             int selectedRowNumber = table.getSelectedRow();
             String selectedRoomName = (String) table.getModel().getValueAt(selectedRowNumber,
                             Constants.ROOM_NAME_TABLE_COLUMN);
-            attemptRoomJoin(selectedRoomName);
+            new Thread() {
+                public void run() {
+                    attemptRoomJoin(selectedRoomName);
+                }
+            }.start();
         });
 
         backButton.addActionListener(e -> {
-            roomsListFetcher.signalWorkComplete();
-            synchronized (workerNotifier) {
-                workerNotifier.notify();
+            /**
+             * do this work in a spontaneous Thread to keep stress off the EDT.
+             */
+            new Thread() {
+                public void run() {
+                    roomsListFetcher.clearListingCache();
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            DefaultTableModel model = (DefaultTableModel) table.getModel();
+                            while (model.getRowCount() > 0) {
+                                model.removeRow(model.getRowCount() - 1);
+                            }
+                        }
+                    });
+                    appState.setAppState(AppStateValue.CHOICE_PANEL);
+                    synchronized (mainAppNotifier) {
+                        mainAppNotifier.notify();
+                    }
+                }
+            }.start();
+
+        });
+    }
+
+    /**
+     * clears all listing data local to this client, both within the model & the
+     * RoomsListFetch worker.
+     */
+    public void clearLocalListings() {
+        roomsListFetcher.clearListingCache();
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                DefaultTableModel model = (DefaultTableModel) table.getModel();
+                while (model.getRowCount() > 0) {
+                    model.removeRow(model.getRowCount() - 1);
+                }
             }
-            appState.setAppState(AppStateValue.CHOICE_PANEL);
         });
     }
 
@@ -187,7 +223,25 @@ public class RoomSelectPanel extends JPanel {
      * table. This persistent thread worker also handles refresh requests.
      */
     public void populateRoomsList() {
-        roomsListFetcher.start();
+        if (!roomsListFetcher.isAlive()) {
+            roomsListFetcher = new RoomsListFetcher(workerNotifier, preJoinNotifier, svn);
+            roomsListFetcher.start();
+        } else {
+            // clearing the table model + cache for fresh population of lists.
+            // SwingUtilities.invokeLater(new Runnable() {
+            // public void run() {
+            // DefaultTableModel model = (DefaultTableModel) table.getModel();
+            // while (table.getModel().getRowCount() > 0) {
+            // (model).removeRow(model.getRowCount() - 1);
+            // }
+            // }
+            // });
+            // roomsListFetcher.clearListingCache();
+            synchronized (workerNotifier) {
+                workerNotifier.notify();
+            }
+        }
+
     }
 
     /**
@@ -230,100 +284,6 @@ public class RoomSelectPanel extends JPanel {
     }
 
     /**
-     * This class is responsible for performing some pre-room join computations,
-     * mostly to ensure that the room the user is attempting to join actually still
-     * exists.
-     * 
-     * There is a very real possibility that a room, which had previously been open,
-     * may close down by the time another user selects said room and presses "Join".
-     * This thread is responsible for handling that edge case as gracefully as
-     * possible.
-     */
-    // private static class PreJoinWorker extends Thread {
-
-    // private Object workCompleteNotifier; // notifies on this when the job is
-    // done. (i.e., search complete)
-    // private String ipPortString; // connection information set for JRW by this
-    // worker.
-    // private boolean roomConfirmed; // set to true if the requested room was
-    // found, false otherwise.
-
-    // /**
-    // * constructor for PJW.
-    // *
-    // * @param wcn to notify main thread of execution when the search is
-    // * complete.
-    // * @param ipPortStr to set the ip & port for JoinRoomWorker (if search goes
-    // * well)
-    // * @param roomExists flag set by this worker to indicate a good search
-    // */
-    // public PreJoinWorker(Object wcn, String ipPortStr, boolean roomExists) {
-    // workCompleteNotifier = wcn;
-    // ipPortString = ipPortStr;
-    // roomConfirmed = roomExists;
-    // }
-
-    // public void run() {
-    // int row = table.getSelectedRow();
-    // if (row == -1) // "Join" when getSelectedRow() == -1, so this should really
-    // never happen.
-    // return;
-    // /**
-    // * before attempting to join a room, we want to make sure that the name of the
-    // * room that corresponds with the row last selected matches up with, ideally,
-    // * the index currently selected; if they don't match, this means that one or
-    // * more rooms created before (or even the room itself) has been disbanded. We
-    // * know this because the removal of any room created before it would result in
-    // * that room being moved up the list of rooms (while the removal of the
-    // * room-of-interest itself would result in us not even being able to find it).
-    // */
-
-    // // allow the RoomsListFetcher to do its job (refresh the listing table)
-    // synchronized (workerNotifier) {
-    // workerNotifier.notify();
-    // }
-    // try { // wait for the refresh to complete
-    // synchronized (preJoinNotifier) {
-    // preJoinNotifier.wait();
-    // }
-    // } catch (Exception err) {
-    // System.out.println("PJW Error in waiting for prejoin refresh --> " +
-    // err.getMessage());
-    // }
-
-    // // Post-refresh, the values in the table are up-to-date.
-    // ipPortString = (String) table.getModel().getValueAt(row,
-    // Constants.IP_PORT_TABLE_COLUMN);
-    // String roomName = (String) table.getModel().getValueAt(row,
-    // Constants.ROOM_NAME_TABLE_COLUMN);
-
-    // // if the room name selected before joining doesn't match up-to-date room
-    // name
-    // // at that row, perform a backward linear search.
-    // if (!selectedRoomName.equals(roomName)) {
-    // int i = row - 1;
-    // while (i >= 0 && !roomConfirmed) {
-    // roomName = (String) table.getModel().getValueAt(i,
-    // Constants.ROOM_NAME_TABLE_COLUMN);
-    // if (roomName.equals(selectedRoomName)) {
-    // ipPortString = (String) table.getModel().getValueAt(i,
-    // Constants.IP_PORT_TABLE_COLUMN);
-    // roomConfirmed = true;
-    // break;
-    // }
-    // }
-    // } else {
-    // roomConfirmed = true;
-    // }
-
-    // // indicate, for good or for worse, that the search has completed.
-    // synchronized (workCompleteNotifier) {
-    // workCompleteNotifier.notify();
-    // }
-    // }
-    // }
-
-    /**
      * this class is responsible for fetching rooms list data from the Registry,
      * which will then be used to populate the featured table with room listing
      * data.
@@ -361,8 +321,21 @@ public class RoomSelectPanel extends JPanel {
          * this method is used to let the RLF worker that it can exit.
          */
         public void signalWorkComplete() {
+
             isRunning = false;
             this.interrupt();
+            try {
+                this.join();
+            } catch (Exception e) {
+                System.out.println("RSP error waiting for join() --> " + e.getMessage());
+            }
+        }
+
+        /**
+         * clears the local storage of room listing CSV objects.
+         */
+        public void clearListingCache() {
+            csvRoomDataObjs.clear();
         }
 
         /**
@@ -449,7 +422,6 @@ public class RoomSelectPanel extends JPanel {
             // room listings refresh complete.
 
             synchronized (svn) {
-                DefaultTableModel model = (DefaultTableModel) table.getModel();
 
                 if (svn.readRequested()) {
                     i = table.getSelectedRow();
@@ -502,7 +474,7 @@ public class RoomSelectPanel extends JPanel {
                 table.addEntry(listingArgs);
                 csvRoomDataObjs.add(csvListing);
             }
-            DefaultTableModel model = (DefaultTableModel) table.getModel();
+
             // principal list fetch complete; wait on user for additional RoomListing (i.e.,
             // Refresh) requests.
             while (true) {
@@ -516,14 +488,9 @@ public class RoomSelectPanel extends JPanel {
                 if (!isRunning) {
                     break; // work is done, time to break.
                 }
-                System.out.println();
+
                 // otherwise, we can rightfully assume user is requesting a refresh.
                 serviceRefreshRequest();
-
-                // tell RSP's main line of execution that the refresh is complete
-                // synchronized (preJoinNotifier) {
-                // preJoinNotifier.notify();
-                // }
             }
             // work done; close streams and exit.
             try {

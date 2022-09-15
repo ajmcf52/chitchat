@@ -129,6 +129,15 @@ public class ChatUser extends Thread {
     }
 
     /**
+     * controls whether the user is "chatting" or not.
+     * 
+     * @param chatting true if chatting, false otherwise
+     */
+    public void setChatting(boolean chatting) {
+        isChatting = chatting;
+    }
+
+    /**
      * NOTE sessionIP, sessionPort, and roomName are all initialized by outside
      * forces: - In the case of joining a chat room, these fields are initialized by
      * a JoinRoomWorker. - In the case of starting a new room, these fields are
@@ -161,22 +170,26 @@ public class ChatUser extends Thread {
                 inputWorker.start();
                 inputHandler.start();
 
+                // ChatUser sits around while its threads do work for it.
+                try {
+                    synchronized (chatUserLock) {
+                        chatUserLock.wait();
+                    }
+                } catch (Exception e) {
+                    System.out.println(alias + " encountered an error while waiting --> " + e.getMessage());
+                }
+
+                shutDownWorkers();
+                isChatting = false;
             }
-            /**
-             * In states of chatting & non-chatting, ChatUser just sits around waiting while
-             * dispatched threads do all the work.
-             */
+
+            // sit around waiting until it is time to chat again.
             try {
                 synchronized (chatUserLock) {
                     chatUserLock.wait();
                 }
             } catch (Exception e) {
                 System.out.println(alias + " encountered an error while waiting --> " + e.getMessage());
-            }
-
-            if (isChatting) {
-                shutDownWorkers();
-                isChatting = false;
             }
         }
     }

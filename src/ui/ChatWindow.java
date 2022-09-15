@@ -79,8 +79,6 @@ public class ChatWindow extends JFrame {
         outputHandler = new UserOutputHandler(chatUser.getWorkerIdNumber(), messageEventNotifier, chatUser, this);
         outputHandler.start();
 
-        // chatFeedString = "";
-        // participantListString = "";
         sessionID = sid;
         this.setTitle("CHAT SESSION - " + sessionID);
         this.setSize(CHAT_WINDOW_WIDTH, CHAT_WINDOW_HEIGHT);
@@ -175,6 +173,16 @@ public class ChatWindow extends JFrame {
         participantLabelConstraints.gridheight = 2;
         participantLabelConstraints.gridwidth = 4;
         participantLabelConstraints.insets = new Insets(5, 5, 0, 5);
+
+        /**
+         * NOTE I realize I could have used one GridBagConstraints object and simply
+         * modified the constraints for each object accordingly.
+         * 
+         * I just had this code set up the way it was before realizing it could done
+         * differently, so I stuck with it.
+         * 
+         * You can see what I'm talking about in RoomSelectPanel's setup.
+         */
 
         /**
          * miscellaneous editing of object properties...

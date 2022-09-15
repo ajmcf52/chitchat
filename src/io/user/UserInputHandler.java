@@ -2,6 +2,9 @@ package io.user;
 
 import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
+
+import javax.swing.SwingUtilities;
+
 import main.AppStateValue;
 import main.ApplicationState;
 import messages.ExitNotifyMessage;
@@ -104,17 +107,20 @@ public class UserInputHandler extends Worker {
             if (!chatWindowRef.getTitle().endsWith("UNASSIGNED")) {
                 return;
             }
-            chatWindowRef.setTitle("CHATTER --- " + wm.getAssociatedRoomName());
-            /**
-             * this adds all names of people currently in the chat first, then our own at
-             * the end. NOTE if isHosting == true, this works perfect, as getParticipants()
-             * will return an empty list.
-             */
-            for (String p : wm.getParticipants()) {
-                chatWindowRef.addParticipantName(p);
-                System.out.println("existing participant --> " + p);
-            }
-            chatWindowRef.addParticipantName(wm.getAssociatedReceivingAlias());
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    chatWindowRef.setTitle("CHATTER --- " + wm.getAssociatedRoomName());
+                    /**
+                     * this adds all names of people currently in the chat first, then our own at
+                     * the end. NOTE if isHosting == true, this works perfect, as getParticipants()
+                     * will return an empty list.
+                     */
+                    for (String p : wm.getParticipants()) {
+                        chatWindowRef.addParticipantName(p);
+                    }
+                    chatWindowRef.addParticipantName(wm.getAssociatedReceivingAlias());
+                }
+            });
 
         } else if (msg instanceof JoinNotifyMessage) {
             JoinNotifyMessage jnm = (JoinNotifyMessage) msg;
@@ -135,7 +141,7 @@ public class UserInputHandler extends Worker {
             synchronized (mainNotifier) {
                 mainNotifier.notify(); // This tells main() that it can proceed to the next state.
             }
-            return; // NOTE the one message type where we don't add line to feed.
+            return; // NOTE ERMs are the one message where we don't add a line to the feed.
 
         } else if (msg instanceof ExitNotifyMessage) {
             ExitNotifyMessage enm = (ExitNotifyMessage) msg;
