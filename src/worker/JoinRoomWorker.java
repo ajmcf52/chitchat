@@ -1,4 +1,4 @@
-package requests;
+package worker;
 
 import main.ApplicationState;
 import main.AppStateValue;

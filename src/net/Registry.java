@@ -202,6 +202,7 @@ public class Registry {
          * @param msg the ListRoomsMessage to handle
          */
         public void handleMessage(ListRoomsMessage msg) {
+            HashMap<String, String> roomListTemp = roomListCsvMap;
             ArrayList<String> listings = null;
             synchronized (roomListDataLock) {
                 listings = new ArrayList<String>(roomListCsvMap.values());

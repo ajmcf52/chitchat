@@ -1,4 +1,4 @@
-package requests;
+package worker;
 
 import java.net.Socket;
 
@@ -17,13 +17,13 @@ import messages.NewRoomMessage;
 import messages.SimpleMessage;
 
 /**
- * This thread-based class is responsible for communicating with the
- * Registry to get a new chat room set up for a given ChatUser, as
- * denoted by the user alias.
+ * This thread-based class is responsible for communicating with the Registry to
+ * get a new chat room set up for a given ChatUser, as denoted by the user
+ * alias.
  * 
  */
 public class RoomSetupWorker extends Worker {
-    
+
     private ChatUser chatUser; // ChatUser we are setting up as the intended host.
     private Object chatUserLock; // ChatUser will wait to be notified on this (signifies work has been done)
     private ApplicationState appState; // modified to let main() know where we are at.
@@ -31,10 +31,11 @@ public class RoomSetupWorker extends Worker {
 
     /**
      * constructor.
+     * 
      * @param nameOfRoom number unique to the worker within its class of workers
-     * @param ali user alias
-     * @param chatLock notified to alert ChatUser in main() of progress.
-     * @param state for main() loop control.
+     * @param ali        user alias
+     * @param chatLock   notified to alert ChatUser in main() of progress.
+     * @param state      for main() loop control.
      */
     public RoomSetupWorker(String nameOfRoom, ChatUser chUser, Object chatLock, ApplicationState state) {
         super("RWS-0");
@@ -51,7 +52,8 @@ public class RoomSetupWorker extends Worker {
         Socket socket = null;
         try {
             socket = new Socket(Constants.REGISTRY_IP, Constants.REGISTRY_PORT);
-            // NOTE order of constructor calls is crucial here! Reference ChatUser.java for more details.
+            // NOTE order of constructor calls is crucial here! Reference ChatUser.java for
+            // more details.
             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
@@ -60,11 +62,10 @@ public class RoomSetupWorker extends Worker {
             out.writeObject(nrm);
             out.flush();
 
-            /* NOTE Registry response is expected to be a SimpleMessage whose content follows
-            the following format:
-
-            "OK; ConnectInfo is IP:port"
-            */
+            /*
+             * NOTE Registry response is expected to be a SimpleMessage whose content
+             * follows the following format: "OK; ConnectInfo is IP:port"
+             */
 
             Object obj = in.readObject();
             SimpleMessage response = ValidateInput.validateSimpleMessage(obj);
@@ -75,10 +76,11 @@ public class RoomSetupWorker extends Worker {
             String[] ipAndPort = msgArgs[2].split(":"); // msgArgs[2] --> "IP:port"
             String seshIp = ipAndPort[0];
             int seshPortNum = Integer.valueOf(ipAndPort[1]);
-            chatUser.initSessionInfo(seshIp, seshPortNum, roomName); // perform ChatUser initialization with the Session.
+            chatUser.initSessionInfo(seshIp, seshPortNum, roomName); // perform ChatUser initialization with the
+                                                                     // Session.
             chatUser.setHost(true); // NOTE this is crucial for ensuring the chat thread is started in "CHATTING"
             appState.setAppState(AppStateValue.CHATTING);
-            
+
             synchronized (chatUserLock) {
                 chatUserLock.notify(); // allows ChatUser to proceed to the "CHATTING" state in its state machine.
             }

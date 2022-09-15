@@ -16,16 +16,16 @@ import javax.swing.JTextField;
 import javax.swing.Timer;
 
 import net.ChatUser;
+import worker.RoomSetupWorker;
 import main.ApplicationState;
 import main.AppStateValue;
 import misc.Constants;
 import misc.PanelNames;
 import misc.ValidateInput;
-import requests.RoomSetupWorker;
 
 /**
- * this class represents a panel that allows
- * a user to enter their desired room name
+ * this class represents a panel that allows a user to enter their desired room
+ * name
  */
 public class RoomNamePanel extends JPanel {
 
@@ -45,18 +45,20 @@ public class RoomNamePanel extends JPanel {
 
     /**
      * constructor for RNP
-     * @param ref reference to the user object
+     * 
+     * @param ref      reference to the user object
      * @param userLock lock that will be used to notify the user
-     * @param state application state
+     * @param state    application state
      */
     public RoomNamePanel(ChatUser ref, Object userLock, ApplicationState state) {
         userRef = ref;
         chatUserLock = userLock;
         appState = state;
 
-        //fieldPanel = new JPanel();
+        // fieldPanel = new JPanel();
 
-        roomNameField = new JTextField(ROOM_NAMING_FIELD_WIDTH); // makes a field with 20 "columns" (i.e., horizontal spaces roughly)
+        roomNameField = new JTextField(ROOM_NAMING_FIELD_WIDTH); // makes a field with 20 "columns" (i.e., horizontal
+                                                                 // spaces roughly)
         roomNameField.setVisible(true);
         roomNameField.setAlignmentX(Component.CENTER_ALIGNMENT);
         roomNameField.setFont(new Font("Serif", Font.PLAIN, 18));
@@ -79,7 +81,8 @@ public class RoomNamePanel extends JPanel {
         prompt.setFont(new Font("Serif", Font.BOLD, 22));
         prompt.setVisible(true);
 
-        instructions = new JLabel("<html><center>must contain between 2-16 characters.<br/>No profanity please! :)<center/></html>");
+        instructions = new JLabel(
+                        "<html><center>must contain between 2-16 characters.<br/>No profanity please! :)<center/></html>");
         instructions.setFont(new Font("Serif", Font.ITALIC, 12));
         instructions.setVisible(true);
 
@@ -90,7 +93,7 @@ public class RoomNamePanel extends JPanel {
         backButton = new JButton();
         backButton.setText("Back");
         backButton.setFont(new Font("Serif", Font.BOLD, 24));
-        //backButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // backButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // layout programming
 
@@ -107,19 +110,19 @@ public class RoomNamePanel extends JPanel {
         constraints.gridheight = 2;
         constraints.anchor = GridBagConstraints.CENTER;
         constraints.fill = GridBagConstraints.NONE;
-        constraints.insets = new Insets(0,0,10,0);
+        constraints.insets = new Insets(0, 0, 10, 0);
         constraints.weightx = 0.5;
         constraints.weighty = 0.5;
         this.add(prompt, constraints);
 
         constraints.gridy = 2;
         constraints.anchor = GridBagConstraints.PAGE_START;
-        constraints.insets = new Insets(10,0,0,0);
+        constraints.insets = new Insets(10, 0, 0, 0);
         constraints.gridheight = 1;
         this.add(instructions, constraints);
 
         constraints.gridy = 3;
-        constraints.insets = new Insets(0,0,0,0);
+        constraints.insets = new Insets(0, 0, 0, 0);
         this.add(roomNameField, constraints);
 
         constraints.gridy = 5;
@@ -145,8 +148,8 @@ public class RoomNamePanel extends JPanel {
 
             String roomName = roomNameField.getText();
 
-            if (!ValidateInput.validateLength(roomName, Constants.MIN_USER_INPUT_LENGTH, Constants.MAX_USER_INPUT_LENGTH)
-            || !ValidateInput.validateGeneric(roomName)) {
+            if (!ValidateInput.validateLength(roomName, Constants.MIN_USER_INPUT_LENGTH,
+                            Constants.MAX_USER_INPUT_LENGTH) || !ValidateInput.validateGeneric(roomName)) {
                 triggerErrorMessage(badNameWarning);
                 return;
             }
@@ -166,10 +169,12 @@ public class RoomNamePanel extends JPanel {
         roomNameField.addKeyListener(new KeyListener() {
 
             @Override
-            public void keyTyped(KeyEvent e) { }
+            public void keyTyped(KeyEvent e) {
+            }
 
             @Override
-            public void keyPressed(KeyEvent e) { }
+            public void keyPressed(KeyEvent e) {
+            }
 
             @Override
             public void keyReleased(KeyEvent e) {
@@ -185,12 +190,13 @@ public class RoomNamePanel extends JPanel {
     }
 
     /**
-     * this method is called when a bad room name is entered into the room name field textbox for a new chat room.
-     * Warning appears for 5 seconds.
+     * this method is called when a bad room name is entered into the room name
+     * field textbox for a new chat room. Warning appears for 5 seconds.
+     * 
      * @param badNameWarning JLabel containing the warning text.
      */
     public void triggerErrorMessage(JLabel badNameWarning) {
-        //System.out.println("farts");
+        // System.out.println("farts");
         badNameWarning.setText(WARNING_TEXT);
         Timer timer = new Timer(3500, event -> {
             badNameWarning.setText(" ");

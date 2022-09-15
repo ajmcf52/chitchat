@@ -22,7 +22,7 @@ import javax.swing.border.*;
 import misc.Constants;
 import misc.TimeStampGenerator;
 import net.ChatUser;
-import requests.ExitRoomWorker;
+import worker.ExitRoomWorker;
 
 /**
  * this class represents the popup chat window that is used for one ChatUser to
@@ -262,8 +262,6 @@ public class ChatWindow extends JFrame {
             String timestamp = TimeStampGenerator.now();
             String selfMsg = "[" + timestamp + "]" + " You: " + msgText;
             addLineToFeed(selfMsg);
-            // chatFeed.ensureIndexIsVisible(chatFeedModel.size());
-            // chatFeed.requestFocus();
 
             synchronized (messageEventNotifier) {
                 messageEventNotifier.notify();

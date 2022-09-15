@@ -4,9 +4,10 @@ import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.event.ListSelectionListener;
-
+import javax.swing.table.DefaultTableModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.JScrollPane;
 
@@ -30,9 +31,8 @@ import misc.PanelNames;
 import misc.SharedValidateNotifier;
 import misc.ValidateInput;
 import net.ChatUser;
+import worker.JoinRoomWorker;
 import misc.Constants;
-
-import requests.JoinRoomWorker;
 
 /**
  * this class represents the panel that shows all available chat rooms that have
@@ -199,7 +199,9 @@ public class RoomSelectPanel extends JPanel {
      */
     public void attemptRoomJoin(String selectedRoomName) {
         String ipPortString = selectedConnectInfo;
-
+        if (SwingUtilities.isEventDispatchThread()) {
+            System.out.println("hihihi");
+        }
         synchronized (svn) {
             svn.toggleRequest();
         }
@@ -391,6 +393,32 @@ public class RoomSelectPanel extends JPanel {
 
             ListRoomsMessage response = ValidateInput.validateListRoomsMessage(obj);
             ArrayList<String> latestListings = response.getListings();
+
+            if (latestListings.size() == 0) {
+                // edge case: if true, just clear the model & list.
+                DefaultTableModel model = (DefaultTableModel) table.getModel();
+
+                try {
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            while (table.getModel().getRowCount() > 0) {
+                                ((DefaultTableModel) table.getModel()).removeRow(model.getRowCount() - 1);
+                            }
+                        }
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            csvRoomDataObjs.clear();
+            try {
+                System.out.println("waiting for table updates to occur..");
+                sleep(750);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
             /**
              * at this point, we have the current set of rooms; now we can compare with the
              * local CSV ArrayList and update the table's model accordingly.
@@ -421,6 +449,8 @@ public class RoomSelectPanel extends JPanel {
             // room listings refresh complete.
 
             synchronized (svn) {
+                DefaultTableModel model = (DefaultTableModel) table.getModel();
+
                 if (svn.readRequested()) {
                     i = table.getSelectedRow();
                     while (i >= 0) {
@@ -472,7 +502,7 @@ public class RoomSelectPanel extends JPanel {
                 table.addEntry(listingArgs);
                 csvRoomDataObjs.add(csvListing);
             }
-
+            DefaultTableModel model = (DefaultTableModel) table.getModel();
             // principal list fetch complete; wait on user for additional RoomListing (i.e.,
             // Refresh) requests.
             while (true) {
@@ -486,6 +516,7 @@ public class RoomSelectPanel extends JPanel {
                 if (!isRunning) {
                     break; // work is done, time to break.
                 }
+                System.out.println();
                 // otherwise, we can rightfully assume user is requesting a refresh.
                 serviceRefreshRequest();
 

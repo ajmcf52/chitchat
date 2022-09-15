@@ -1034,3 +1034,56 @@ Tomorrow, we will come in with the aim of getting back to working on the non-exi
 Once this mechanism is in place, we will call the project "Done for Now", prompting a finish-up on final documentation, reflections and write-ups. We may add cloud support 6ish weeks down the line. I think that would be cool. Before we get to that, however, I would like to work on some web development for a bit in updating my website.
 
 Yeti out.
+
+---
+
+## Zero Progress, Ended with an Epiphany
+
+### Wednesday, September 14th 8:48PM PST
+
+---
+
+Today during my 2.5 hour coding session after my day job, I got next to nothing done. Literally no progress. Well, no output at least.
+
+The code I was working involves updating a JTable *DefaultTableModel*, essentially performing a refresh by comparing the latest set of data sent over the wire from *Registry* with the current data. With the current test case, I am simply looking to have my program detect that a row is missing, deleting said row from the model and alerting the user that the room they are trying to join is no longer in existence.
+
+When I tried to simply remove the row, I encountered an unnaturally illogical *ArrayIndexOutOfBoundsException* that didn't even really make sense, as I was using an index of 0 on an model with 1 row. 
+
+Upon digging further, I discovered that the nature of what I was trying to accomplish demanded that I interact with Java's **Event Dispatch Thread**, essentially queuing up a GUI-related task asynchronously so as to minimize strange bugs like the one I encountered while maximizing thread safety. I learned about the *SwingWorker* and how it can be used for longer tasks, as well as *invokeLater(Runnable)* for shorter ones.
+
+In my case, literally all I'm looking to do is remove some rows from a table model, which I don't quite think merits involving a *SwingWorker*. 
+
+So I enclosed the row removal code into an *invokeLater* call, and sure enough, **the model never updates**! I even tried adding a 750ms sleep call directly after, in the odd case that the EDT was somehow backed up and needed some time to process events (which seemed extremely unlikely anyway but didn't hurt to try). Nope, nothing.
+
+Another post I found online suggested that if I call *invokeLater* from a thread that happens to be an *EventDispatchThread* itself, **this** can cause undesirable behavior as well. So I checked this using *SwingUtilities.isEventDispatchThread()*, to no avail.
+
+I really really wanted to figure this thing out tonight. A big part of me wanted to play hero and stay up all night trying to fix it. But at the same time, the pragmatic side of me knows that this would probably do more harm than good in the long run seeing how I have to be up in under 7 hours and I still have my nightly reading to do.
+
+So, that was that. In a feat of desperation, I began the mental process of accepting my defeat for the night. A bitter pill to swallow.
+
+Just as I was about to close my laptop, I figured it would probably do me some good to post a question on reddit.com/r/learnjava or something like that. I thought about *StackOverflow*, but questions need to be phrased *so* carefully on there to keep angry cheeto-dusted firestorms from shooting off out of nowhere. Given my limited time and patience, I settled on Reddit.
+
+As I was coming up with a title for my post, I thought about what code I wanted to copy and paste to articulate my issue. The issue was really completely centered around this method named *serviceRefreshRequest()* in *RoomSelectPanel*. Then through some unconsciously blessed string of thoughts, the likely source of my woes came to me...
+
+The method *serviceRefreshRequest()* was being called from a persistent private static worker thread named *RoomsListFetcher* defined within *RoomSelectPanel*. The design of this fetcher is centered upon wait()/notify(); it waits around until it is notified by some other entity within *RoomSelectPanel* desiring a refresh, upon which it wakes up and performs the refresh.
+
+In the case of performing a refresh directly before a room join **for the purpose of** ensuring that the room to-be-joined is **actually still there**, a function called *attemptRoomJoin(String)* is called from the "Join" button action listener, where the String passed in is the room name to be joined. This function is called **directly** from the action listener. No threading there.
+
+In *attemptRoomJoin(String)*, the way I designed the code is to essentially wait to receive a notify back from *RoomsListFetcher* that the refresh work has been done, and that the decision can be made to either join the existing room or trigger a popup notifying the user that it no longer exists.
+
+In examining this method, I thought to myself... *What if THIS method was being called by the EDT?* Well if that were the case, assuming that I had only Event Dispatch Thread, the EDT would be blocked waiting for a *notify()* from *RoomsListFetcher*, which had made an *invokeLater()* call expecting it to be done within a respectable timespan, so that 20 or 30 lines of code later, it would be able to successfully verify whether or not the room in question actually existed or not.
+
+Turns out, *attemptRoomJoin(String)* WAS an Event Dispatch Thread, which really made me laugh in a relieving way; while I hadn't made any code progress today, I had found the very likely cause to my bug that I had been stuck on all of today, and had been previously putting off as I hadn't had the slightest clue how to deal with it previously, but I'm now at the point where I can no longer put it off.
+
+Do you see the problem here?? I've caught myself in a bit of a partial deadlock; not complete, in the sense that the program cannot progress any longer past a certain point, but partial, in the sense of the following:
+
+Thread B asynchronously passes off an GUI-related invocation to Thread A's task queue, **while** Thread A is stuck waiting for Thread B to be done with its processing, **BUT** Thread B isn't able to actually do said processing correctly until the previously passed off invocation is handled, which can't be handled until Thread A wakes up, which isn't done until after Thread B finishes its unfortunately unsuccessful processing.
+
+So the program never actually deadlocks in the traditional sense, but there is a kind of temporary deadlock occurring that accidentally stops the mysterious Event Dispatch Thread from doing it's job for the worker that so desperately needs it to do its job.
+
+This was destroying me. I'm glad I have gotten to the bottom of *something*.
+
+Unfortunately, none of my GUI-related code is technically Swing safe, which is a terrible thing to think about. A big part of me wants to just fix this bug and mail in the code, but I don't think my conscience will let me do that.
+
+Until tomorrow. Let's get some sleep...
+

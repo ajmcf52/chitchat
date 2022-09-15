@@ -8,7 +8,7 @@ import java.awt.event.KeyEvent;
 import javax.swing.*;
 
 import net.ChatUser;
-import requests.UserSetupWorker;
+import worker.UserSetupWorker;
 import misc.Constants;
 import misc.PanelNames;
 import main.ApplicationState;
@@ -28,8 +28,8 @@ public class LoginPanel extends JPanel {
     private JLabel badAliasWarning;
 
     /**
-     * to be instantiated by another Thread-based worker (from within the key event handler) 
-     * that will communicate with the Registry.
+     * to be instantiated by another Thread-based worker (from within the key event
+     * handler) that will communicate with the Registry.
      */
     private ChatUser userRef;
     private Object chatUserLock;
@@ -39,8 +39,10 @@ public class LoginPanel extends JPanel {
      * Constructor. Basic stuff.
      */
     public LoginPanel(ChatUser ref, Object cuLock, ApplicationState state) {
-        userRef = ref; // we pass a ChatUser reference in so it can be passed along to UserSetupThread's ctor.
-        chatUserLock = cuLock; // this will be passed on to UserSetupThread, so it can notify once ChatUser has been instantiated.
+        userRef = ref; // we pass a ChatUser reference in so it can be passed along to
+                       // UserSetupThread's ctor.
+        chatUserLock = cuLock; // this will be passed on to UserSetupThread, so it can notify once ChatUser has
+                               // been instantiated.
         appState = state;
 
         welcomeLabel = new JLabel();
@@ -65,8 +67,9 @@ public class LoginPanel extends JPanel {
         aliasField.setVisible(true);
         aliasField.setAlignmentX(Component.CENTER_ALIGNMENT);
         aliasField.setFont(new Font("Serif", Font.PLAIN, 18));
-        aliasField.setMaximumSize(aliasField.getPreferredSize()); // stops text field from needlessly expanding in BoxLayout
-        
+        aliasField.setMaximumSize(aliasField.getPreferredSize()); // stops text field from needlessly expanding in
+                                                                  // BoxLayout
+
         hitReturnNotice = new JLabel();
         hitReturnNotice.setText("Press \"Return\" when done.");
         hitReturnNotice.setFont(new Font("Serif", Font.PLAIN, 14));
@@ -92,14 +95,18 @@ public class LoginPanel extends JPanel {
 
         // setting up event listener for when users press "Return".
 
-        aliasField.addKeyListener(new KeyListener(){
+        aliasField.addKeyListener(new KeyListener() {
             // keyPressed + keyTyped are both included simply to satisfy the compiler.
-            public void keyPressed(KeyEvent e) {}
-            public void keyTyped(KeyEvent e) {}
+            public void keyPressed(KeyEvent e) {
+            }
+
+            public void keyTyped(KeyEvent e) {
+            }
 
             /*
-             * event handler for keyReleased. this will be the handler that will be used to process
-             * the passing of the typed user alias to a Thread in setting up the ChatUser.
+             * event handler for keyReleased. this will be the handler that will be used to
+             * process the passing of the typed user alias to a Thread in setting up the
+             * ChatUser.
              */
             public void keyReleased(KeyEvent e) {
 
@@ -109,51 +116,53 @@ public class LoginPanel extends JPanel {
                 if (e.getKeyCode() != Constants.KC_RETURN) {
                     return;
                 }
-                
+
                 // 1. retrieve text String from inside the text field.
-                JTextField src = (JTextField) e.getSource(); // should be aliasField, but we attain this way to satisfy OCD.
+                JTextField src = (JTextField) e.getSource(); // should be aliasField, but we attain this way to satisfy
+                                                             // OCD.
                 String chatUserAlias = src.getText();
 
-   
-                // verify alias input with two separate checks: one for length and one for alphanumerics.
+                // verify alias input with two separate checks: one for length and one for
+                // alphanumerics.
 
-                if (!ValidateInput.validateLength(chatUserAlias, Constants.MIN_USER_INPUT_LENGTH, Constants.MAX_USER_INPUT_LENGTH)
-                || !ValidateInput.validateAlphaNumeric(chatUserAlias)) {
+                if (!ValidateInput.validateLength(chatUserAlias, Constants.MIN_USER_INPUT_LENGTH,
+                                Constants.MAX_USER_INPUT_LENGTH)
+                                || !ValidateInput.validateAlphaNumeric(chatUserAlias)) {
                     triggerErrorMessage(badAliasWarning);
                     return;
                 }
-                
-                
 
                 // TODO add an alias Hashmap lookup with the registry
                 // to make sure it's not taken.
-                
 
-                // 3a. if input doesn't pass, trigger a Timer and/or Runnable that sets the visibility of 'badAliasWarning' to true,
+                // 3a. if input doesn't pass, trigger a Timer and/or Runnable that sets the
+                // visibility of 'badAliasWarning' to true,
                 // waits 4 seconds, then sets visibility to false again.
 
                 // 3b. if input is good, pass the input to a Runnable that does the following:
                 /**
-                 * I) messages the Registry socket, requesting a UID.
-                 * II) receive said UID from the registry, and use that along with the alias to instantiate a ChatUser.
-                 * It is likely that this Runnable will be instantiated as a custom class implementing the Runnable interface;
-                 * an instance of this class will be created within the scope of ChatterApp.java, though it will not be started
+                 * I) messages the Registry socket, requesting a UID. II) receive said UID from
+                 * the registry, and use that along with the alias to instantiate a ChatUser. It
+                 * is likely that this Runnable will be instantiated as a custom class
+                 * implementing the Runnable interface; an instance of this class will be
+                 * created within the scope of ChatterApp.java, though it will not be started
                  * until it is required to perform the critical task.
                  */
                 UserSetupWorker usWorker = new UserSetupWorker(0, chatUserAlias, userRef, chatUserLock, appState);
                 usWorker.start();
-                
+
             }
         });
     }
 
     /**
-     * this method is called when a bad alias is entered into the alias field textbox for a new User.
-     * Warning appears for 5 seconds.
+     * this method is called when a bad alias is entered into the alias field
+     * textbox for a new User. Warning appears for 5 seconds.
+     * 
      * @param badAliasWarning JLabel containing the warning text.
      */
     public void triggerErrorMessage(JLabel badAliasWarning) {
-        //System.out.println("farts");
+        // System.out.println("farts");
         badAliasWarning.setVisible(true);
         Timer timer = new Timer(5000, event -> {
             badAliasWarning.setVisible(false);
