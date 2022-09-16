@@ -9,37 +9,34 @@ import messages.Message;
 import misc.ValidateInput;
 
 /**
- * A special type of InputWorker that receives messages from the
- * SessionCoordinator, either pushing said content directly into either the
- * chatFeed
+ * A special type of InputWorker that works solely for ChatUsers by receiving
+ * messages from the SessionCoordinator's OutputWorker.
  */
 public class UserInputWorker extends InputWorker {
 
-    private Object incomingMsgNotifier; // used to notify UIH that there are newly received messages to process
+    private Object inNotifier; // to notify UserInputHandler of newly received messages to process.
 
     /**
-     * constructor for UIW.
+     * constructor for UserInputWorker.
      * 
-     * @param workerNum        unique number assigned to this worker within its
-     *                             class
+     * @param workerNum        unique number assigned to this worker its class
      * @param input            reader used to read in messages
      * @param msgQueue         where newly received messages are placed
-     * @param incomingNotifier used to notify the UserInputHandler when there are
-     *                             newly received messages to process.
+     * @param incomingNotifier to notify UserInputHandler of messages to process.
      */
     public UserInputWorker(int workerNum, ObjectInputStream input, ArrayBlockingQueue<Message> msgQueue,
                     Object incomingNotifier) {
         super("UIW-" + Integer.toString(workerNum), input, msgQueue);
-        incomingMsgNotifier = incomingNotifier;
+        inNotifier = incomingNotifier;
     }
 
     /**
-     * getter for UIW's notifier object.
+     * getter for UserInputWorker's notifier object.
      * 
      * @return return UserInputWorker's notifier
      */
     public Object getNotifier() {
-        return incomingMsgNotifier;
+        return inNotifier;
     }
 
     /**
@@ -52,20 +49,27 @@ public class UserInputWorker extends InputWorker {
             Object obj = null;
             Message msg = null;
             try {
+                // read in a message and validate it.
                 obj = in.readObject();
                 msg = ValidateInput.validateMessage(obj);
 
             } catch (IOException e) {
+                /**
+                 * operating on the assumption that someone has closed our socket for good
+                 * reason, and that it is likely time to turn off and exit.
+                 */
                 turnOff();
                 break;
             } catch (Exception e) {
                 System.out.println("UserInputWorker Error! --> " + e.getMessage());
             }
+
+            // enqueue the newly received message.
             messageQueue.add(msg);
 
-            synchronized (incomingMsgNotifier) {
-                incomingMsgNotifier.notify(); // sends a signal to the InputHandler that there is a message to be
-                                              // handled.
+            synchronized (inNotifier) {
+                inNotifier.notify(); // sends a signal to the InputHandler that there is a message to be
+                                     // handled.
             }
 
             // check to see if it's time to exit.
@@ -75,6 +79,7 @@ public class UserInputWorker extends InputWorker {
                 }
             }
         } // end of while loop
+          // vocalize the shut down.
         proclaimShutdown();
     }
 

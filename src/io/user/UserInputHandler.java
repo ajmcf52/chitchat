@@ -16,19 +16,18 @@ import misc.Worker;
 import ui.ChatWindow;
 
 /**
- * This class is responsible for handling newly received messages for the
- * ChatUser.
+ * This class handles newly received messages for its ChatUser.
  */
 public class UserInputHandler extends Worker {
 
-    private ChatWindow chatWindowRef; // used to carry out received message actions.
+    private ChatWindow chatWindowRef; // used to carry out appropriate message reactions.
     private ArrayBlockingQueue<Message> messageQueue; // for pulling in new messages.
     private Object inNotifier; // waited on for new messages to pull from the queue.
     private Object mainNotifier; // used to notify the main() subroutine of application state changes.
     private ApplicationState appState; // state of the application.
 
     /**
-     * constructor for UIH.
+     * constructor for UserInputHandler.
      * 
      * @param workerNum routing number that associates this worker with a user
      * @param chatWin   chat window reference object
@@ -61,11 +60,11 @@ public class UserInputHandler extends Worker {
             if (messageQueue.size() == 0) {
                 try {
                     synchronized (inNotifier) {
-                        inNotifier.wait(); // notified by UserInputWorker
+                        inNotifier.wait(); // (notified by UserInputWorker)
                     }
                 } catch (InterruptedException e) {
                     if (isRunning) {
-                        System.out.println(workerID + " --> bad shutdown! Investigation needed.");
+                        System.out.println(workerID + " --> bad interrupt! Investigation needed.");
                         turnOff();
                     }
 
@@ -75,12 +74,12 @@ public class UserInputHandler extends Worker {
             }
             messageQueue.drainTo(messages);
 
-            // handle each and every single message.
+            // handle each message.
             for (Message msg : messages) {
                 handleMessage(msg);
             }
             messages.clear();
-            // check if it is time to exit.
+            // check if it is time to exit, and if so, vocalize it.
             synchronized (runLock) {
                 if (!isRunning) {
                     proclaimShutdown();
@@ -96,17 +95,16 @@ public class UserInputHandler extends Worker {
      * @param msg the incoming message.
      */
     public void handleMessage(Message msg) {
-        System.out.println();
-        /*
-         * NOTE we only want to receive this message in cases where: a) we didn't send
-         * it b) it's the first WelcomeMessage we've received (duplicates have been
-         * noted to infrequently occur)
-         */
+
         if (msg instanceof WelcomeMessage) {
             WelcomeMessage wm = (WelcomeMessage) msg;
+
+            // if the title doesn't end with "UNASSIGNED", we know it to be a duplicate
+            // WelcomeMessage and we can rightfully discard it.
             if (!chatWindowRef.getTitle().endsWith("UNASSIGNED")) {
                 return;
             }
+
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     chatWindowRef.setTitle("CHATTER --- " + wm.getAssociatedRoomName());
@@ -122,20 +120,29 @@ public class UserInputHandler extends Worker {
                 }
             });
 
-        } else if (msg instanceof JoinNotifyMessage) {
+        }
+        /*
+         * these notify us of another ChatUser joining the session.
+         */
+        else if (msg instanceof JoinNotifyMessage) {
             JoinNotifyMessage jnm = (JoinNotifyMessage) msg;
-            chatWindowRef.addParticipantName(jnm.getUserJoined());
 
-        } else if (msg instanceof ExitRoomMessage) {
-            /**
-             * Recognizing that ERMs are initially always sent by ExitRoomWorkers acting on
-             * behalf of ChatUsers that want to leave their session, receiving one back
-             * indicates that the SessionCoordinator acknowledges the ERM, and that the
-             * ChatUser is fine to leave.
-             *
-             * In terms of processing the message, there really isn't anything that we
-             * actually have to do with it (at least in this current version).
-             */
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    chatWindowRef.addParticipantName(jnm.getUserJoined());
+                }
+            });
+
+        }
+        /**
+         * ERMs are always initially sent by ExitRoomWorkers responding to ChatUsers
+         * that want to leave their session. Receiving one back indicates that the
+         * SessionCoordinator has acknowledged the ERM and that the ChatUser is fine to
+         * leave.
+         */
+        else if (msg instanceof ExitRoomMessage) {
+
+            // leave the "CHATTING" state for the "CHOICE_PANEL" state.
             appState.setAppState(AppStateValue.CHOICE_PANEL);
 
             synchronized (mainNotifier) {
@@ -143,12 +150,24 @@ public class UserInputHandler extends Worker {
             }
             return; // NOTE ERMs are the one message where we don't add a line to the feed.
 
-        } else if (msg instanceof ExitNotifyMessage) {
+        }
+        /**
+         * indicates that a ChatUser has left the session we are currently in.
+         */
+        else if (msg instanceof ExitNotifyMessage) {
             ExitNotifyMessage enm = (ExitNotifyMessage) msg;
             String userLeaving = enm.getUserLeaving();
-            chatWindowRef.removeParticipantName(userLeaving);
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    chatWindowRef.removeParticipantName(userLeaving);
+                }
+            });
         }
 
-        chatWindowRef.addLineToFeed(msg.getContent());
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                chatWindowRef.addLineToFeed(msg.getContent());
+            }
+        });
     }
 }

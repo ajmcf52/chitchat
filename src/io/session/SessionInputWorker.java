@@ -9,11 +9,11 @@ import messages.Message;
 import misc.ValidateInput;
 
 /**
- * a special type of InputWorker that solely works with the SessionCoordinator.
+ * A special type of InputWorker that solely works with the SessionCoordinator.
  */
 public class SessionInputWorker extends InputWorker {
 
-    private ArrayBlockingQueue<Integer> taskQueue; // used to queue up tasks for BroadcastWorkers
+    private ArrayBlockingQueue<Integer> taskQueue; // used to queue up tasks for MessageRouters
 
     /**
      * SIW constructor.
@@ -37,17 +37,16 @@ public class SessionInputWorker extends InputWorker {
 
         while (true) {
             try {
+                // wait for a message, validate it, and enqueue it.
                 Object obj = in.readObject();
                 Message msg = ValidateInput.validateMessage(obj);
                 messageQueue.put(msg);
 
-                /**
-                 * NOTE all worker ID strings follow a strict format. This should be fine. If it
-                 * breaks, it should be relatively straightforward as to why it broke and how to
-                 * fix it.
-                 */
+                // operating on the precondition that all worker ID strings follow a format.
                 int workerNum = Integer.parseInt(workerID.split("-")[1]);
-                taskQueue.put(workerNum); // queue up the task for BWs
+
+                // queue up the task for a MessageRouter.
+                taskQueue.put(workerNum);
 
             } catch (IOException e) {
                 if (isRunning) {
@@ -64,6 +63,7 @@ public class SessionInputWorker extends InputWorker {
             // check to see if it is time to exit.
             synchronized (runLock) {
                 if (!isRunning) {
+                    // vocalize shut down.
                     proclaimShutdown();
                     break;
                 }

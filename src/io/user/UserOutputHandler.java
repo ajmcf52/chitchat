@@ -6,8 +6,8 @@ import net.ChatUser;
 import ui.ChatWindow;
 
 /**
- * this class is responsible for retrieving passing along user-supplied
- * information (i.e., SimpleMessages) to the user's OutputWorker.
+ * this class is responsible for passing along user-supplied information (i.e.,
+ * SimpleMessages) to the user's OutputWorker.
  */
 public class UserOutputHandler extends Worker {
 
@@ -16,11 +16,10 @@ public class UserOutputHandler extends Worker {
     private Object notifier; // UOH waits on this for various events to pop up for it to handle
 
     /**
-     * constructor for UOH.
+     * constructor for UserOutputHandler.
      * 
      * @param workerNum routing number associated with this worker.
-     * @param notif     object used to notify this worker of events needing to be
-     *                      handled.
+     * @param notif     object used to notify this worker of events to be handled.
      * @param user      reference to the user attached to the chat window.
      * @param chatWin   reference object to the chat window.
      */
@@ -45,8 +44,9 @@ public class UserOutputHandler extends Worker {
                 }
             } catch (InterruptedException e) {
                 if (isRunning) {
-                    System.out.println(workerID + " bad shutdown! Investigation needed.");
+                    System.out.println(workerID + " bad interrupt! Investigation needed.");
                     turnOff();
+                    break;
                 }
             } catch (Exception e) {
                 System.out.println("UOH Error while waiting for events.. --> " + e.getMessage());
@@ -55,8 +55,7 @@ public class UserOutputHandler extends Worker {
             // at this point, there should be text in the text field to send.
             String toSend = chatWindow.retrieveChatFieldText();
             if (toSend.equals("")) {
-                System.out.println("Blank message... Nothing to send.");
-                continue; // if the message is blank, there is nothing to do here.
+                continue; // empty-string messages aren't sent (this doesn't include " ")
             }
 
             // package the text into a message, and push it out.
@@ -65,10 +64,11 @@ public class UserOutputHandler extends Worker {
 
             synchronized (runLock) {
                 if (!isRunning) {
-                    proclaimShutdown();
                     break;
                 }
             }
         }
+        // vocalize the shut down.
+        proclaimShutdown();
     }
 }

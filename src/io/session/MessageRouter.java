@@ -10,20 +10,42 @@ import messages.Message;
 import misc.Worker;
 
 /**
- * this class is responsible for the task of forwarding messages (in the context
- * of one specific chat session) that are sent by one user to all the other
- * users in the session.
+ * This class is responsible for the task of forwarding messages from one
+ * ChatUser to all other ChatUsers in a given chat session. Each ChatUser in
+ * every session is allocated a MessageRouter.
+ * 
+ * --------------
+ * 
+ * This is undoubtedly a resource-hungry design and could be made to be much
+ * more scalable with even just some form of a basic load balancing scheme. The
+ * whole point of "Chatter: Part One" was simply to get the app to as functional
+ * of a state as possible. As of today, 9/15/22, I have already been working on
+ * Part 1 of this project for 10 weeks (on top of a full-time day job), and so I
+ * have decided to cut my losses and proceed on to other things for now.
+ * 
+ * However, load balancing is certainly something I will likely investigate when
+ * I circle back to this application in a few months to add in cloud support.
+ * Life is a dynamic beast, though, so nothing is guaranteed. I will say,
+ * however, that deploying this app on the cloud will take priority over
+ * implementing load balancing, though LB will be integrated as a close second.
+ * 
+ * Of course, to test the load balancing to some degree, I would need to
+ * investigate the development of a ChatterApp testing framework, perhaps even
+ * consisting of an N user headless setup configuration. If anything, though,
+ * that is a down-the-line discussion.
+ * 
+ * --------------
  *
  * When an InputWorker has finished placing a newly received message in its
  * outgoing queue, it then places its worker ID number in the chat session task
  * queue.
  *
- * This class works by essentially having a pool of BWs taking ID numbers from
- * the task queue, which then indicate which queue has messages waiting to be
+ * MessageRouters take tasks (i.e., routing ID numbers) from the task queue,
+ * which indicate by way of routing ID which queue has messages waiting to be
  * forwarded.
  *
  * By employing ABQs, practically all of our race condition problems are handled
- * via internal mechanisms.
+ * by the Java API, at least for message passing.
  */
 public class MessageRouter extends Worker {
 
@@ -34,14 +56,13 @@ public class MessageRouter extends Worker {
     private HashSet<Integer> activeWorkerIDs; // a set of the worker IDs corresponding to active ChatUsers.
 
     /**
-     * constructor for BW.
+     * constructs the MessageRouter.
      * 
-     * @param workerNum number unique to the worker of its class
-     * @param tasks     task queue
-     * @param in        incoming message queue
-     * @param out       outgoing message queue
-     * @param notifiers list of objects to notify on when there are messages to be
-     *                      sent
+     * @param workerNumber number unique to the worker of its class
+     * @param tasks        task queue
+     * @param in           incoming message queue
+     * @param out          outgoing message queue
+     * @param notifiers    objects to notify when there are messages to be sent
      */
     public MessageRouter(int workerNumber, ArrayBlockingQueue<Integer> tasks,
                     HashMap<Integer, ArrayBlockingQueue<Message>> in, HashMap<Integer, ArrayBlockingQueue<Message>> out,
@@ -72,8 +93,9 @@ public class MessageRouter extends Worker {
                 // retrieve the messages to be forwarded
 
                 /**
-                 * NOTE if there are no more messages in the designated message queue, we are
-                 * safe to exit the loop.
+                 * if we circle back and there are more messages to forward, get it done. if the
+                 * message queue is empty, however, we wait for another task from the task
+                 * queue.
                  */
                 while (!msgQueue.isEmpty()) {
 
@@ -83,10 +105,10 @@ public class MessageRouter extends Worker {
                     for (Message msg : messagesToFwd) {
                         if (msg.isSingleShot()) {
                             /**
-                             * in this case, we only send the Message to the one queue, associated by task
-                             * number. NOTE we ensure that the final ExitRoomMessage is sent out before the
-                             * MessageRouter is shut down by getting it to shut itself down upon detecting
-                             * an ERM.
+                             * in this case, we only send the Message to the one queue, associated by
+                             * routing number. NOTE we ensure that the final ExitRoomMessage is sent out
+                             * before the MessageRouter is shut down by getting it to shut itself down upon
+                             * detecting an ERM.
                              */
                             if (msg instanceof ExitRoomMessage) {
                                 turnOff();
@@ -98,7 +120,7 @@ public class MessageRouter extends Worker {
                         } else {
                             /**
                              * in this case we put the Message into everyone's queue EXCEPT for the one
-                             * queue, associated by task number.
+                             * queue associated by task number.
                              */
                             for (Integer i : activeWorkerIDs) {
                                 if (task == i)
@@ -120,6 +142,7 @@ public class MessageRouter extends Worker {
 
             synchronized (runLock) {
                 if (!isRunning) {
+                    // vocalize shut down in console.
                     proclaimShutdown();
                     break;
                 }
