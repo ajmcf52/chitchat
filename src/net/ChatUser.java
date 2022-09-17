@@ -21,14 +21,16 @@ public class ChatUser extends Thread {
 
     private String userID; // number assigned to this user.
     private String alias; // user-chosen screen name; userID is attached at the end to ensure uniqueness.
+    private String roomName; // name of the room that this user is currently in or trying to join (can be "")
+
     private String sessionIP; // ip address of a chat session's server socket.
     private int sessionPort; // port of the chat session's server socket.
     private Socket sessionSocket; // socket for the session.
+
     private boolean isHost; // true if hosting, false if not
     private boolean isChatting; // true if currently in a chat (or joining one), false otherwise
-    private String roomName; // name of the room that this user is currently in or trying to join (can be "")
+    private volatile boolean isRunning; // volatile, as we don't want outdated cached values.
 
-    private volatile boolean isRunning; // used to indicate when this thread should shut down.
     private final Object runLock = new Object(); // lock object for accessing run flag
     private Object chatUserLock; // notified by outside forces to communicate with this user.
     private Object mainAppNotifier; // used to notify main() of changes in state.
@@ -44,17 +46,20 @@ public class ChatUser extends Thread {
     private static final Object incomingMsgNotifier = new Object();
 
     private UserInputWorker inputWorker; // receives incoming messages and passes them to the handler.
+
     private OutputWorker outputWorker; // sends outgoing messages to SeshCoordinator.
+
     private UserInputHandler inputHandler; // receives new messages from UIW and handles them accordingly.
+
     private ChatWindow chatWindowRef; // a reference object to the front-facing chat window.
 
     private ObjectInputStream in; // input stream
     private ObjectOutputStream out; // output stream
 
-    private ApplicationState appState;
+    private ApplicationState appState; // state of the application
 
     /**
-     * default constructor for ChatUser.
+     * default constructor for ChatUser. Many things are left null initially.
      * 
      * @param cul   chat user lock
      * @param man   AKA, main App Notifier
@@ -81,10 +86,9 @@ public class ChatUser extends Thread {
     }
 
     /**
-     * This method is called to join a chat room. The fields involved performing the
-     * actual joining of the room (namely, the room name, host ip, & port) are all
-     * initialized by JoinRoomWorker, a Thread worker that gets fired up in
-     * RoomSelectPanel.java
+     * Used to join chat rooms. The fields involved performing the actual joining of
+     * the room (namely, the room name, host ip, & port) are all initialized by
+     * JoinRoomWorker, a Thread worker that gets fired up in RoomSelectPanel.
      */
     public void joinRoom() {
         try {
@@ -109,6 +113,7 @@ public class ChatUser extends Thread {
                 out.flush();
                 // read the response (should just read "OK")
                 Object obj = in.readObject();
+
                 SimpleMessage response = ValidateInput.validateSimpleMessage(obj);
 
                 /**
@@ -121,6 +126,11 @@ public class ChatUser extends Thread {
                     System.out.println("Unexpected Response to JRM --> " + response.getContent());
                 }
             }
+
+            /**
+             * NOTE if we ARE hosting, all we have to do is create the IO streams; the
+             * SessionCoordinator is expecting us and will greet us with a welcome.
+             */
 
         } catch (Exception e) {
             System.out.println(alias + " Error --> " + e.getMessage());
@@ -139,9 +149,13 @@ public class ChatUser extends Thread {
 
     /**
      * NOTE sessionIP, sessionPort, and roomName are all initialized by outside
-     * forces: - In the case of joining a chat room, these fields are initialized by
-     * a JoinRoomWorker. - In the case of starting a new room, these fields are
-     * initialized by a RoomSetupWorker.
+     * forces:
+     * 
+     * - In the case of joining a chat room, these fields are initialized by a
+     * JoinRoomWorker.
+     * 
+     * - In the case of starting a new room, these fields are initialized by a
+     * RoomSetupWorker.
      */
 
     /**
@@ -159,6 +173,10 @@ public class ChatUser extends Thread {
                 joinRoom();
                 // i.e., pulls 1 from "Alice#U01"
                 int workerIdNum = getWorkerIdNumber();
+
+                /**
+                 * set up the message queue, and fire up the workers.
+                 */
                 ArrayBlockingQueue<Message> msgQueue = new ArrayBlockingQueue<Message>(Constants.MSG_QUEUE_LENGTH,
                                 true);
 
@@ -170,7 +188,7 @@ public class ChatUser extends Thread {
                 inputWorker.start();
                 inputHandler.start();
 
-                // ChatUser sits around while its threads do work for it.
+                // ChatUser sits around for state changes while its threads do all the work.
                 try {
                     synchronized (chatUserLock) {
                         chatUserLock.wait();
@@ -178,12 +196,16 @@ public class ChatUser extends Thread {
                 } catch (Exception e) {
                     System.out.println(alias + " encountered an error while waiting --> " + e.getMessage());
                 }
-
+                /**
+                 * getting here indicates a state change (i.e., no longer chatting).
+                 * 
+                 * Hence, we can shut down the workers.
+                 */
                 shutDownWorkers();
                 isChatting = false;
             }
 
-            // sit around waiting until it is time to chat again.
+            // sit around waiting for a state change.
             try {
                 synchronized (chatUserLock) {
                     chatUserLock.wait();
@@ -206,12 +228,15 @@ public class ChatUser extends Thread {
      */
     public void initializeID(SimpleMessage uidMessage, String a)
                     throws IndexOutOfBoundsException, NumberFormatException {
-        // perform argument manipulation based on the expected standardized
-        // SimpleMessage format.
+
+        /*
+         * perform argument manipulation based on the expected standardized
+         * SimpleMessage format.
+         */
         String[] msgArgs = uidMessage.getContent().split(";");
         userID = msgArgs[1].substring(1).split(" ")[2]; // substring(1) removes the first " ".
 
-        alias = a + "#" + userID; // NOTE this formatting of user alias ensures that every alias is unique.
+        alias = a + "#" + userID; // NOTE this alias format ensures that every alias is unique.
     }
 
     /**
@@ -224,6 +249,7 @@ public class ChatUser extends Thread {
      * @param nameOfRoom   name of the room being joined
      */
     public void initSessionInfo(String seshInetAddr, int seshPort, String nameOfRoom) {
+
         // if the given address is 0.0.0.0, just use localhost instead.
         sessionIP = seshInetAddr.startsWith("0.0.0.0") ? "localhost" : seshInetAddr;
         sessionPort = seshPort;
@@ -232,9 +258,10 @@ public class ChatUser extends Thread {
 
     /**
      * Initializer method for setting up a chat room reference object. This is in
-     * place so the ChatUser thread
+     * place so the ChatUser worker's can interact appropriately with various window
+     * components.
      * 
-     * @param chatWindow
+     * @param chatWindow chat window reference object
      */
     public void initializeChatRoomRef(ChatWindow chatWindow) {
         chatWindowRef = chatWindow;
@@ -288,6 +315,9 @@ public class ChatUser extends Thread {
     }
 
     /**
+     * NOTE this was added in anticipation of adding a name change feature, which
+     * never occurred during v1.0..
+     * 
      * setter for alias.
      * 
      * @param a - ChatUser's new alias
@@ -380,7 +410,7 @@ public class ChatUser extends Thread {
     /**
      * Getter for this ChatUser's worker ID number.
      * 
-     * @return
+     * @return worker ID number, which is also a routing number.
      */
     public int getWorkerIdNumber() {
         return Integer.parseInt(alias.split("#U")[1]);

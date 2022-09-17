@@ -5,8 +5,8 @@ package messages;
  * them in the loop of a particular user having left the room.
  */
 public class ExitNotifyMessage extends Message {
-    private String userLeaving; // alias of the user that left
-    private String roomBeingLeft; // room that is being left
+    private String userLeaving; // alias of the user that left.
+    private String roomBeingLeft; // room that is being left.
 
     /**
      * ENM constructor.
@@ -48,7 +48,8 @@ public class ExitNotifyMessage extends Message {
     }
 
     /**
-     * sender is technically the SessionCoordinator, and so we can leave this blank.
+     * As this method was created for identifying sender users and ENMs are
+     * typically sent by Coordinators, this method's purpose is moot.
      */
     @Override
     public String getAssociatedSenderAlias() {

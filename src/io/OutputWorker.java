@@ -12,14 +12,14 @@ import java.io.ObjectOutputStream;
 import misc.Worker;
 
 /**
- * this class is responsible for writing outgoing messages through a particular
- * Socket to OR from a given ChatUser. Outgoing messages are retrieved from a
- * message-oriented ABQ.
+ * this class represents an entity responsible for writing messages out through
+ * a particular Socket to/from a given ChatUser. Before being written to the
+ * Socket, outgoing messages are retrieved from an ArrayBlockingQueue, which
+ * carries with it embedded protection against race conditions.
  *
- * NOTE this class is slightly DIFFERENT from its counterpart, InputWorker, in
- * that its defined functionality in its capacity of server ChatUser and
- * SeshCoordinator are EXACTLY the same. Thus, there is zero need to subclass
- * OutputWorker with SOW and COW.
+ * NOTE this class is slightly different from its counterpart, InputWorker, in
+ * that its defined functionality/role it is intended to serve for ChatUser and
+ * SessionCoordinator are exactly the same. Thus, there is no need to subclass.
  */
 public class OutputWorker extends Worker {
 
@@ -28,12 +28,12 @@ public class OutputWorker extends Worker {
     private Object outNotifier; // wait on this for new messages that require sending.
 
     /**
-     * constructor of the OutputWorker.
+     * constructor of OutputWorker.
      * 
-     * @param workerCode 2-character code unique to this worker within its class.
+     * @param workerCode differentiates ChatUser/Coordinator writers.
      * @param output     stream used for writing outgoing messages.
-     * @param msgQueue   where outgoing messages to be sent are pulled from.
-     * @param outNotif   notified when new messages require sending.
+     * @param msgQueue   where to-be-sent messages are first pulled from.
+     * @param outNotif   notified on when new messages require sending.
      */
     public OutputWorker(String workerCode, ObjectOutputStream output, ArrayBlockingQueue<Message> msgQueue,
                     Object outNotif) {
@@ -44,7 +44,7 @@ public class OutputWorker extends Worker {
     }
 
     /**
-     * getter for OW's notifier Object.
+     * accessor for OutputWorker's notifier.
      * 
      * @return notifier object for OutputWorker
      */
@@ -53,15 +53,18 @@ public class OutputWorker extends Worker {
     }
 
     /**
-     * this worker's main line of execution.
+     * main line of execution.
      */
     public void run() {
         turnOn();
 
         while (true) {
             try {
-                // check the message queue before waiting (messages + notify can fire pre-wait)
                 ArrayList<Message> toSend = new ArrayList<Message>();
+                /**
+                 * this loop ensures we don't accidentally call wait() when there are already
+                 * messages queued & ready to be sent out.
+                 */
                 while (true) {
                     messageQueue.drainTo(toSend);
                     if (toSend.size() > 0) {
@@ -77,6 +80,7 @@ public class OutputWorker extends Worker {
                     // if we catch an ERM as it's going out, we know to turn off.
                     if (msg instanceof ExitRoomMessage) {
                         turnOff();
+                        out.flush();
                         break;
                     }
                 }
@@ -99,11 +103,13 @@ public class OutputWorker extends Worker {
             }
         } // end of while loop
 
+        // vocalize shut down.
         proclaimShutdown();
     }
 
     /**
-     * triggers the sending of a message.
+     * Allows external entities to push Messages in for sending by this
+     * OutputWorker.
      * 
      * @param msg message to be sent
      */

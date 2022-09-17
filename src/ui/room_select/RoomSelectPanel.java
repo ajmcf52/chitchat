@@ -253,9 +253,7 @@ public class RoomSelectPanel extends JPanel {
      */
     public void attemptRoomJoin(String selectedRoomName) {
         String ipPortString = selectedConnectInfo;
-        if (SwingUtilities.isEventDispatchThread()) {
-            System.out.println("hihihi");
-        }
+
         synchronized (svn) {
             svn.toggleRequest();
         }
@@ -315,20 +313,6 @@ public class RoomSelectPanel extends JPanel {
             in = null;
             out = null;
             svn = svn__;
-        }
-
-        /**
-         * this method is used to let the RLF worker that it can exit.
-         */
-        public void signalWorkComplete() {
-
-            isRunning = false;
-            this.interrupt();
-            try {
-                this.join();
-            } catch (Exception e) {
-                System.out.println("RSP error waiting for join() --> " + e.getMessage());
-            }
         }
 
         /**

@@ -38,7 +38,7 @@ import messages.WelcomeMessage;
  * 
  * SIW and OW read from and write to sockets, pushing to and pulling from
  * Message-based thread-safe queues (i.e., ArrayBlockingQueues). MessageRouter
- * is the entity that truly makes the magic happen.
+ * is the entity that connects their workflows together.
  * 
  * All SIWs also have access to a singular global task queue. In this context,
  * tasks are seen as routing numbers. Every I/O pipeline that gets opened up for
@@ -53,13 +53,13 @@ import messages.WelcomeMessage;
  * number, and forwards those Message(s) to all other outgoing queues in a
  * 1-to-N format, skipping of course the outgoing queue that corresponds with
  * the originally tasked routing number, as that would lead to users sending
- * Messages to themselves, which is undesirable.
+ * Messages to themselves, which is undesirable (with single-shot messages, the
+ * routed user is the only receiver. This is explained in Message.java).
  * 
  * When these Messages are forwarded and pushed into their correspondent
  * outgoing message queues, the appropriate OutputWorkers wake up, see there is
  * work to do, and write these messages out one by one via their provided
- * Socket, which then gets received by every other user in the chat. Long-
- * winded, maybe, but truly not that complicated.
+ * Socket, which then gets received by every other user in the chat.
  */
 public class SessionCoordinator extends Worker {
 
@@ -87,9 +87,9 @@ public class SessionCoordinator extends Worker {
                                                                 // workers responsible for said user.
 
     /**
-     * constructor for the SessionCoordinator
+     * constructor for the SessionCoordinator.
      * 
-     * @param workerNum  number unique to this worker within its class
+     * @param workerNum  number unique to this worker.
      * @param serveSock  server socket that will be used to accept incoming user
      *                       connections to the chat room
      * @param hostAli    alias of the intended chat room host
@@ -168,17 +168,23 @@ public class SessionCoordinator extends Worker {
             } catch (Exception e) {
                 System.out.println(workerID + " Error! --> " + e.getMessage());
             }
+
+            /**
+             * in the case of a JoinRoom request, we simply initialize the user. everything
+             * is taken care of in that function.
+             */
             if (msg instanceof JoinRoomMessage) {
-                /**
-                 * in the case of a JoinRoom request, we simply initialize the user. everything
-                 * is taken care of in that function.
-                 */
+
                 JoinRoomMessage jrm = (JoinRoomMessage) msg;
                 String alias = jrm.getUserJoining();
                 initializeUser(alias, socket, false, in, out);
 
+                /**
+                 * communicate the user join with the Registry for participant count tracking.
+                 */
                 try {
                     rSocket = new Socket(Constants.REGISTRY_IP, Constants.REGISTRY_PORT);
+
                     // NOTE order of constructor calls is crucial here! Reference ChatUser.java for
                     // more details.
                     rOut = new ObjectOutputStream(rSocket.getOutputStream());
@@ -206,20 +212,33 @@ public class SessionCoordinator extends Worker {
                 } catch (Exception e) {
                     System.out.println(workerID + " error communicating Reg for JRM --> " + e.getMessage());
                 }
-            } else if (msg instanceof ExitRoomMessage) {
+            }
+
+            /**
+             * received when a user wishes to exit the chat room.
+             */
+            else if (msg instanceof ExitRoomMessage) {
                 ExitRoomMessage erm = (ExitRoomMessage) msg;
 
                 String alias = erm.getExitingUser();
                 int routingNum = aliasWorkerNumberMappings.get(alias);
                 ArrayBlockingQueue<Message> q = incomingMsgQueueMap.get(routingNum);
 
-                // if there is more than one user, notify others of the exit.
+                // if there is more than one user currently, notify others of the exit.
                 if (activeRoutingIDs.size() > 1) {
 
                     String roomName = erm.getAssociatedRoom();
                     ExitNotifyMessage enm = new ExitNotifyMessage(alias, roomName);
                     q.add(enm);
                 }
+
+                /**
+                 * NOTE Here, the SimpleMessage response is being written to the ExitRoomWorker,
+                 * and the ERM is being forwarded to the exiting ChatUser's InputHandler.
+                 * 
+                 * Perhaps a tad overcomplicated, but this is how I was able to get the exit
+                 * procedure to work within the context of my code base.
+                 */
                 String responseText = "OK";
                 SimpleMessage response = new SimpleMessage(alias, responseText);
                 try {
@@ -235,6 +254,14 @@ public class SessionCoordinator extends Worker {
                 // shutDownWorkers(routingNum);
                 MessageRouter mr = messageRouters.remove(routingNum);
                 OutputWorker ow = outputWorkers.remove(routingNum);
+
+                /**
+                 * NOTE both of these workers have code that allows them to self-detect when to
+                 * shut themselves done based on checking messages as they are sent out.
+                 * 
+                 * For instance, if an outgoing message is an ERM, they know to shut down, no
+                 * interrupt required.
+                 */
                 try {
                     mr.join();
                     ow.join();
@@ -259,7 +286,9 @@ public class SessionCoordinator extends Worker {
                 aliasWorkerNumberMappings.remove(alias);
                 activeRoutingIDs.remove(routingNum);
 
-                // communicate participant changes with Registry
+                /**
+                 * communicate participant changes with Registry.
+                 */
                 try {
                     rSocket = new Socket(Constants.REGISTRY_IP, Constants.REGISTRY_PORT);
                     rOut = new ObjectOutputStream(rSocket.getOutputStream());
@@ -269,6 +298,7 @@ public class SessionCoordinator extends Worker {
                     rOut.writeObject(erm);
                     rOut.flush();
 
+                    // read the reply
                     obj = rIn.readObject();
                     msg = ValidateInput.validateMessage(obj);
                     if (!(msg instanceof SimpleMessage)) {
@@ -286,10 +316,10 @@ public class SessionCoordinator extends Worker {
                 }
             }
 
-            // in either case, close the registry streams and socket.
+            // in any case, close the registry socket and associated streams.
             if (rSocket.isConnected()) {
                 try {
-                    rSocket.close(); // NOTE closing the socket also closes the streams as well.
+                    rSocket.close();
                 } catch (Exception e) {
                     System.out.println(workerID + " error closing comms with Registry --> " + e.getMessage());
                 }
@@ -317,6 +347,8 @@ public class SessionCoordinator extends Worker {
      * digit.
      * 
      * @param routingID integer value corresponding to a set of workers.
+     * 
+     * @deprecated other measures were taken to shut SC workers down.
      */
     public void shutDownWorkers(int routingID) {
         if (routingID < 0 || routingID >= activeRoutingIDs.size())
@@ -490,6 +522,7 @@ public class SessionCoordinator extends Worker {
             e.printStackTrace();
         }
 
+        // host is a user too.
         initializeUser(hostAlias, socket, true, in, out);
     }
 

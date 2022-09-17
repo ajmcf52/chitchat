@@ -23,18 +23,24 @@ public class ChatterApp {
         ApplicationState appState = new ApplicationState();
 
         /**
-         * used by various entities in tandem with ChatUser facilitate synchronized
-         * comms.
+         * used by various entities to facilitate synchronized communication with
+         * ChatUser.
          */
         Object chatUserLock = new Object();
 
-        // ibid, but instead entities use this to communicate with main().
+        /*
+         * Used by external entities to facilitate synchronized communicate with main().
+         */
         Object mainAppNotifier = new Object();
 
-        // main controller class of user comms.
+        /*
+         * Main controller class of user communication threads.
+         */
         ChatUser chatUser = new ChatUser(chatUserLock, mainAppNotifier, appState);
 
-        // self-explanatory. Instantiated within "CHATTING" state.
+        /*
+         * Window in which chat sessions will take place. Instantiated in "CHATTING".
+         */
         ChatWindow chatWindow = null;
 
         // -- application panels --
@@ -59,6 +65,9 @@ public class ChatterApp {
         appPanels[2] = roomSelectPanel;
         appPanels[3] = roomNamePanel;
 
+        /**
+         * window within which the main program will be shown.
+         */
         MainWindow mainWindow = new MainWindow(appPanels);
         boolean isRunning = true;
 
@@ -71,14 +80,21 @@ public class ChatterApp {
                  * or may not change in the future.
                  */
                 try {
+                    /**
+                     * notified by UserSetupWorker when user setup has completed.
+                     */
                     synchronized (chatUserLock) {
-                        chatUserLock.wait(); // notified by UserSetupWorker.
+                        chatUserLock.wait();
                     }
                 } catch (InterruptedException e) {
                     System.out.println("ChatterApp error! --> " + e.getMessage());
                 }
 
                 System.out.println("ChatUser alias --> " + chatUser.getAlias());
+
+                /**
+                 * small, programmatic pause to simulate a "login procedure" delay
+                 */
                 try {
                     Thread.sleep(1500);
                 } catch (InterruptedException e) {
@@ -94,7 +110,8 @@ public class ChatterApp {
                 mainWindow.showChoicePanel();
                 try {
                     /**
-                     * notified by 1 of 2 action listeners in ChoicePanel.
+                     * notified by either action listener in ChoicePanel, depending on which button
+                     * gets pressed ("Join.." or "Create..")
                      */
                     synchronized (chatUserLock) {
                         chatUserLock.wait();
@@ -139,9 +156,16 @@ public class ChatterApp {
                 // NOTE state change has been handled by UserInputHandler.
             }
 
+            /**
+             * entered when user is selecting a room to join.
+             */
             else if (appState.getAppState() == AppStateValue.ROOM_SELECT) {
                 mainWindow.showRoomSelectPanel(roomSelectPanel);
                 try {
+                    /*
+                     * notified by JoinRoomWorker if we are joining a room, or the "Back" button
+                     * action listener in RoomSelectPanel.
+                     */
                     synchronized (mainAppNotifier) {
                         mainAppNotifier.wait();
                     }
@@ -150,13 +174,15 @@ public class ChatterApp {
                 }
             }
 
+            /**
+             * entered when creating a room, as all rooms must be named.
+             */
             else if (appState.getAppState() == AppStateValue.ROOM_NAMING) {
                 mainWindow.showRoomNamingPanel();
                 try {
                     synchronized (chatUserLock) {
                         chatUserLock.wait();
                     }
-                    System.out.println("notified from waiting.");
                 } catch (Exception e) {
                     System.out.println("CU Error during ROOM_NAMING --> " + e.getMessage());
                 }

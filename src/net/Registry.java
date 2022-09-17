@@ -23,15 +23,15 @@ import java.io.ObjectOutputStream;
 /**
  * This class acts as one of the central units of processing within the Chatter
  * app. All requests are internally handled by the RequestHandler.
- * 
- * 
  */
 public class Registry {
-    private static volatile int userCount = 0;
-    private static Object userCountLock = new Object();
-    private static boolean running = false;
-    private static volatile int sessionCount = 0;
-    private static Object sessionCountLock = new Object();
+    private static volatile int userCount = 0; // number of currently active ChatUsers.
+    private static Object userCountLock = new Object(); // for safe R/W ops on user count.
+
+    private static boolean running = false; // whether or not the Registry is running.
+
+    private static volatile int sessionCount = 0; // number of currently active chat sessions.
+    private static Object sessionCountLock = new Object(); // for safe R/W ops on session count.
 
     /**
      * Map of data array objects representing all the current chat rooms that are
@@ -39,28 +39,30 @@ public class Registry {
      * unique.
      */
     private static HashMap<String, String[]> roomListArrayMap;
-    // Same as above, but in single-string CSV format. (for ease of sending across
-    // the net)
+
+    // Same as above, but in single-string CSV format.
     private static HashMap<String, String> roomListCsvMap;
+
     // map for tracking users in each of the rooms.
     private static HashMap<String, HashSet<String>> roomUsers;
-    // for race conditions in accessing hashmaps above.
+
+    // for race conditions in accessing aforementioned hashmaps.
     private static Object roomListDataLock = new Object();
 
-    private static HashMap<String, SessionCoordinator> coordinators; // threadpool of coordinators (key -> room name)
+    private static HashMap<String, SessionCoordinator> coordinators; // pool of coordinators (key -> room name)
 
     public static void main(String[] args) {
-        // initialize room data list
+
+        // initializing data structures
         roomListArrayMap = new HashMap<String, String[]>();
         roomListCsvMap = new HashMap<String, String>();
         roomUsers = new HashMap<String, HashSet<String>>();
         coordinators = new HashMap<String, SessionCoordinator>();
 
         try {
-            // System.out.println("UCL --> " + userCountLock.toString());
-            Socket socket; // socket variable for accepted connections.
-            ServerSocket serverSocket = new ServerSocket(Constants.REGISTRY_PORT); // the server socket; accepts
-                                                                                   // connections.
+
+            Socket socket; // socket for accepted connections.
+            ServerSocket serverSocket = new ServerSocket(Constants.REGISTRY_PORT); // accepts connections.
 
             System.out.println("Server Registry listening on port" + Constants.REGISTRY_PORT);
             running = true;
@@ -85,17 +87,14 @@ public class Registry {
      * Registry receives a new incoming connection. the resulting Socket for that
      * connection is passed off to this RequestHandler.
      * 
-     * The nature of the desired request (determined by the first message received
-     * via the Socket) will determine the RequestHandler's course of action.
+     * The nature of the desired request will determine the RequestHandler's course
+     * of action.
      * 
-     * I) For NewUserRequests, the current course of action is to send back a UID
-     * for said user. Down the line, the Registry will keep static storage of all
-     * users logged in to Chatter.
      */
     private static class RequestHandler extends Thread {
-        private Socket socket;
-        private ObjectInputStream in;
-        private ObjectOutputStream out;
+        private Socket socket; // connected socket
+        private ObjectInputStream in; // for reading messages
+        private ObjectOutputStream out; // for writing messages
 
         /**
          * constructor.
@@ -109,16 +108,18 @@ public class Registry {
         /**
          * message handler for NewUserMessages.
          * 
-         * @param msg NewUserMessage
+         * @param msg contains info for setting up a new user.
          */
         public void handleMessage(NewUserMessage msg) {
             String alias = msg.getAssociatedSenderAlias();
             int uidNum = -1;
 
+            // safely incrementing and accessing usercount for UID number.
             synchronized (userCountLock) {
                 userCount++;
                 uidNum = userCount;
             }
+
             String uid = Constants.UID_PREFIX + String.valueOf(uidNum);
             String content = "OK; UID is " + uid;
             SimpleMessage response = new SimpleMessage(alias, content);
@@ -128,27 +129,37 @@ public class Registry {
             } catch (Exception e) {
                 System.out.println("RRH handleMessage(NUM) error --> " + e.getMessage());
             }
+
+            /**
+             * NOTE I never added any data structure for tracking all users across all
+             * rooms. This is something I could add if/when I come back to working on this.
+             */
         }
 
         /**
          * message handler for NewRoomMessages.
          * 
-         * @param msg NewRoomMessage
+         * @param msg contains info for setting up a new room
          */
         public void handleMessage(NewRoomMessage msg) {
+
             String hostAlias = msg.getHost();
             String roomName = msg.getRoomName();
-            String participantCountStr = "1";
+            String participantCountStr = "1"; // new rooms initially only contain the host.
 
             // determining the session port.
-            // we lock, as other rooms could be being created simultaneously (race
-            // condition)
+            /*
+             * we lock, as other rooms could be being created simultaneously, creating a
+             * race condition.
+             */
             int sessionPort = -1;
             synchronized (sessionCountLock) {
                 sessionPort = Constants.SESSION_PORT_PREFIX + sessionCount;
             }
 
-            // booting up the SeshCoordinator thread.
+            /**
+             * SessionCoordinator setup.
+             */
             ServerSocket serverSocket = null;
             try {
                 serverSocket = new ServerSocket(sessionPort);
@@ -159,12 +170,16 @@ public class Registry {
             coordinators.put(roomName, seshCoord);
             seshCoord.start();
 
-            // more info determination
+            /**
+             * information derivation.
+             */
             String ipString = serverSocket.getInetAddress().getHostAddress();
             String portStr = Integer.toString(sessionPort);
             String sessionInfoContent = ipString + ":" + portStr;
 
-            // putting together some book keeping data values
+            /**
+             * tracking room listing data.
+             */
             String[] roomListValues = { roomName, hostAlias, participantCountStr, sessionInfoContent };
             String roomListCsv = "";
             for (String s : roomListValues)
@@ -182,8 +197,7 @@ public class Registry {
 
             // send back a SimpleMessage containing the session connect information (ip and
             // port number).
-            String content = "OK; ConnectInfo is " + sessionInfoContent; // NOTE this message format will be used
-                                                                         // User-side.
+            String content = "OK; ConnectInfo is " + sessionInfoContent; // NOTE format will be used User-side.
             SimpleMessage response = new SimpleMessage(hostAlias, content);
 
             try {
@@ -202,7 +216,6 @@ public class Registry {
          * @param msg the ListRoomsMessage to handle
          */
         public void handleMessage(ListRoomsMessage msg) {
-            HashMap<String, String> roomListTemp = roomListCsvMap;
             ArrayList<String> listings = null;
             synchronized (roomListDataLock) {
                 listings = new ArrayList<String>(roomListCsvMap.values());
@@ -277,15 +290,26 @@ public class Registry {
             String roomName = msg.getAssociatedRoom();
             int participantCount = -1;
 
+            /**
+             * decrementing participant count.
+             * 
+             * If it is decremented to 0, we can remove some HashMap entries, as that would
+             * indicate a room has closed.
+             */
             synchronized (roomListDataLock) {
                 String[] roomListingArray = roomListArrayMap.get(roomName);
                 participantCount = Integer.parseInt(roomListingArray[Constants.GUEST_COUNT_TABLE_COLUMN]);
                 participantCount--;
+
                 if (participantCount == 0) {
                     roomListArrayMap.remove(roomName);
                     roomListCsvMap.remove(roomName);
                     roomUsers.remove(roomName);
-                } else {
+                }
+                /**
+                 * if the room is still open, we should adjust the participant count listing.
+                 */
+                else {
                     roomListingArray[Constants.GUEST_COUNT_TABLE_COLUMN] = Integer.toString(participantCount);
                     String csvString = "";
                     for (String arg : roomListingArray) {
@@ -310,10 +334,9 @@ public class Registry {
         }
 
         public void run() {
-            // handle the request!
+            // handle the request.
             try {
-                // NOTE order of constructor calls is crucial here! Reference ChatUser.java for
-                // more details.
+                // NOTE order of constructor calls is crucial here. See ChatUser.java for deets.
                 out = new ObjectOutputStream(socket.getOutputStream());
                 in = new ObjectInputStream(socket.getInputStream());
 
@@ -321,11 +344,10 @@ public class Registry {
                 Message msg = ValidateInput.validateMessage(obj);
 
                 /**
-                 * NOTE this style of programming is obviously far from ideal and violates DRY.
+                 * NOTE this style of programming obviously violates DRY.
                  * 
-                 * That said, I made a point of wanting to finish this project in 2 months, and
-                 * so I am sacrificing some code quality here so I can push to get things done
-                 * on time.
+                 * That said, I made a point of wanting to finish this project in 8-10 weeks,
+                 * and so I am sacrificing a bit of code quality to get things done on time.
                  */
                 if (msg instanceof NewUserMessage) {
                     handleMessage((NewUserMessage) msg);
@@ -339,6 +361,11 @@ public class Registry {
                     handleMessage((ExitRoomMessage) msg);
                 } else {
                     System.out.println("Unexpected Object Type Received by RequestHandler.. That's not good.");
+                }
+
+                // closes associated streams automatically.
+                if (!socket.isClosed()) {
+                    socket.close();
                 }
 
             } catch (Exception e) {

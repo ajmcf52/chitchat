@@ -1,12 +1,9 @@
 package misc;
 
 /**
- * the intent of this class is to serve as a simple superclass for all the
- * different types of worker bee thread-based classes that we have within the
- * app, eliminating code redundancy with a few of the common things that all of
- * them should have:
+ * this class represents a thread-based worker entity, all subclasses having
  * 
- * i) a worker ID of some sort ii) shut-off signalling capability
+ * i) a worker ID of some sort, and ii) shut-off signalling capability
  * 
  * more desired functionality may arise with time, but for now, i) and ii) is
  * all that can be thought of.
@@ -57,6 +54,9 @@ public abstract class Worker extends Thread {
         return workerID;
     }
 
+    /**
+     * useful for communicating when workers shut down with console printing.
+     */
     public void proclaimShutdown() {
         System.out.println(workerID + " received signal to turn off. Shutting down now.");
     }

@@ -1,7 +1,8 @@
 package misc;
 
 /**
- * class containing all the panel names of the Chatter application.
+ * class containing all the panel names of the Chatter application. This class
+ * facilitates the function of CardLayout.
  */
 public class PanelNames {
     public static final String LOGIN_PANEL = "LoginPanel";

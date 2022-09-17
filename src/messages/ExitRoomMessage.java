@@ -1,8 +1,8 @@
 package messages;
 
 /**
- * initially sent from ExitRoomWorkers (on behalf of a ChatUser requesting leave
- * from a chat room) to receiving SessionCoordinators.
+ * initially sent from an ExitRoomWorker (on behalf of a ChatUser requesting
+ * leave from a chat room) & received by the SessionCoordinator.
  * 
  * When a ChatUser receives one back from a SessionCoordinator, this acts as
  * acknowledgement for the exit request.
@@ -13,7 +13,7 @@ public class ExitRoomMessage extends Message {
     private String roomName; // name of the room being exited
 
     /**
-     * ERM constructor
+     * ERM constructor.
      * 
      * @param user name of the user exiting the room
      * @param room name of the room being exited
@@ -22,7 +22,12 @@ public class ExitRoomMessage extends Message {
         super();
         userExiting = user;
         roomName = room;
-        markSingleShot(); // NOTE this message type will never be broadcast.
+
+        /**
+         * this means that the transmission of this message is 1-to-1 and not broadcast
+         * (1-to-N).
+         */
+        markSingleShot();
     }
 
     /**

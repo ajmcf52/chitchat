@@ -3,6 +3,9 @@ package misc;
 /**
  * this class is used specifically as a mechanism for the RoomSelectPanel and
  * the RoomsListFetcher to communicate with one another during room validation.
+ * (i.e., determining whether or not a room requested for joining actually still
+ * exists)
+ * 
  * Specifically, the object consists of two flags. The first one indicates
  * whether or not a room validation has been requested, the second indicating
  * whether the validation was successful or not.
@@ -12,9 +15,12 @@ package misc;
  * 
  */
 public class SharedValidateNotifier {
-    private boolean validationRequested;
-    private boolean validationSuccessful;
+    private boolean validationRequested; // true if requested, false otherwise.
+    private boolean validationSuccessful; // true if successful, false otherwise.
 
+    /**
+     * SVN constructor.
+     */
     public SharedValidateNotifier() {
         validationRequested = false;
         validationSuccessful = false;

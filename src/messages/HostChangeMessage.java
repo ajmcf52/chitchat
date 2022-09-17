@@ -3,6 +3,9 @@ package messages;
 /**
  * used by the SessionCoordinator to communicate a host change to others in the
  * room, typically right after another user has just left said room.
+ * 
+ * NOTE I never got around to adding this in to implementation. After 10 weeks
+ * of working on Chatter, I cut my losses, as other projects merit my attention.
  */
 public class HostChangeMessage extends Message {
 

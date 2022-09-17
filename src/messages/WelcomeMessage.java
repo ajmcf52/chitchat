@@ -3,8 +3,7 @@ package messages;
 import java.util.ArrayList;
 
 /**
- * the first message that is received by a ChatUser
- * upon entering a chat room. 
+ * the first message that is received by a ChatUser upon entering a chat room.
  * Typically sent by a SessionCoordinator & received by a ChatUser.
  */
 public class WelcomeMessage extends Message {
@@ -15,9 +14,10 @@ public class WelcomeMessage extends Message {
 
     /**
      * WM constructor.
-     * @param user alias of the user joining
+     * 
+     * @param user     alias of the user joining
      * @param roomName name of the room being joined
-     * @param hosting indicates whether or not this user will be host of the room
+     * @param hosting  indicates whether or not this user will be host of the room
      */
     public WelcomeMessage(String user, String roomName, boolean hosting) {
         super();
@@ -29,38 +29,71 @@ public class WelcomeMessage extends Message {
     }
 
     /**
-     * additional WM constructor. Offers the option to include a list of participants.
-     * @param user alias of the user joining
+     * additional WM constructor. Offers the option to include a list of
+     * participants.
+     * 
+     * @param user     alias of the user joining
      * @param roomName name of room being joined
-     * @param hosting boolean indicating whether or not the user joining will be room host
-     * @param p list of participants
+     * @param hosting  boolean indicating whether or not the user joining will be
+     *                     room host
+     * @param p        list of participants
      */
     public WelcomeMessage(String user, String roomName, boolean hosting, ArrayList<String> p) {
         this(user, roomName, hosting);
         participants = p;
     }
 
-    // getters
-    public String getAssociatedReceivingAlias() { return userJoining; }
-    public String getAssociatedRoomName() { return roomJoined; }
-    public boolean isHosting() { return isHost; }
-    public ArrayList<String> getParticipants() { return participants; }
+    /**
+     * getter for the associated receiving user.
+     * 
+     * @return alias of receiving user
+     */
+    public String getAssociatedReceivingAlias() {
+        return userJoining;
+    }
 
     /**
-     * a simple print function. Contents printed depend on whether or not the
-     * user being greeted is the host of the room or not.
+     * getter for room the user is being welcomed to.
+     * 
+     * @return the joined room
+     */
+    public String getAssociatedRoomName() {
+        return roomJoined;
+    }
+
+    /**
+     * returns whether or not the user being welcomed is a host.
+     * 
+     * @return true if hosting, false otherwise
+     */
+    public boolean isHosting() {
+        return isHost;
+    }
+
+    /**
+     * getter for the list of participants.
+     * 
+     * @return list of participants
+     */
+    public ArrayList<String> getParticipants() {
+        return participants;
+    }
+
+    /**
+     * a simple print function. Content printed depends on whether or not the user
+     * being greeted is the host of the room or not.
      * 
      * @return String-based message to be printed.
      */
     public String getContent() {
-        return isHost ? getFormattedStamp() + " Welcome, " + userJoining + ". You are the host of this room." : 
-        getFormattedStamp() + " Welcome, " + userJoining + ". You have joined " + roomJoined + ".";
+        return isHost ? getFormattedStamp() + " Welcome, " + userJoining + ". You are the host of this room."
+                        : getFormattedStamp() + " Welcome, " + userJoining + ". You have joined " + roomJoined + ".";
     }
 
     /**
-     * NOTE sender alias here should not be userJoining, as technically,
-     * the sender of this WelcomeMessage is SeshCoordinator; the RECEIVER is
-     * userJoining. Hence, returning an empty string works just fine here.
+     * NOTE sender alias here should not be userJoining, as technically, the sender
+     * of this WelcomeMessage is SeshCoordinator; the RECEIVER is userJoining.
+     * Hence, returning an empty string works just fine here.
      */
     @Override
     public String getAssociatedSenderAlias() {

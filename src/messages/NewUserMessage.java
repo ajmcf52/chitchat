@@ -1,5 +1,9 @@
 package messages;
 
+/**
+ * sent by UserSetupWorkers and received by the Registry to facilitate the
+ * instantiation and setup of a new ChatUser.
+ */
 public class NewUserMessage extends Message {
 
     private String alias; // name of the new user.
@@ -14,7 +18,11 @@ public class NewUserMessage extends Message {
         alias = a;
     }
 
-    // getter for alias
+    /**
+     * getter for alias.
+     * 
+     * @return user alias
+     */
     public String getAlias() {
         return alias;
     }
@@ -30,7 +38,9 @@ public class NewUserMessage extends Message {
     }
 
     /**
-     * getter for alias.
+     * getter for sender alias.
+     * 
+     * @return sender alias
      */
     @Override
     public String getAssociatedSenderAlias() {

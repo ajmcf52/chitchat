@@ -1,11 +1,10 @@
 package messages;
 
 /**
- * sent to users of a chat room to notify them
- * when another user has joined the room.
+ * sent to users of a chat room to notify them when another user has joined the
+ * room.
  * 
- * Typically sent by SessionCoordinator (via MessageRouter),
- * and received directly by ChatUsers.
+ * Typically sent by the SessionCoordinator to be received by ChatUsers.
  */
 public class JoinNotifyMessage extends Message {
 
@@ -14,6 +13,7 @@ public class JoinNotifyMessage extends Message {
 
     /**
      * JNM constructor.
+     * 
      * @param user alias of the user that just joined
      * @param room name of the room being joined
      */
@@ -23,9 +23,23 @@ public class JoinNotifyMessage extends Message {
         roomJoined = room;
     }
 
-    // getters
-    public String getUserJoined() { return userThatJoined; }
-    public String getRoomJoined() { return roomJoined; }
+    /**
+     * getter for the alias of the joined user.
+     * 
+     * @return alias of the user that just joined.
+     */
+    public String getUserJoined() {
+        return userThatJoined;
+    }
+
+    /**
+     * getter for the name of the room being joined.
+     * 
+     * @return name of the room being joined.
+     */
+    public String getRoomJoined() {
+        return roomJoined;
+    }
 
     /**
      * used to print the content of the message.
@@ -36,9 +50,8 @@ public class JoinNotifyMessage extends Message {
     }
 
     /**
-     * given that this class is a tad special, as the sending of Message types
-     * are typically triggered by a SeshCoordinator, there is no associated
-     * sender alias.
+     * there is no associated sender alias, as these are sent by Coordinators, so
+     * the purpose of this method is moot.
      */
     @Override
     public String getAssociatedSenderAlias() {
