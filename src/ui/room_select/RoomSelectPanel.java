@@ -35,8 +35,7 @@ import worker.JoinRoomWorker;
 import misc.Constants;
 
 /**
- * this class represents the panel that shows all available chat rooms that have
- * been created and are open to join.
+ * Panel that shows chat rooms available for joining.
  */
 public class RoomSelectPanel extends JPanel {
 
@@ -47,18 +46,34 @@ public class RoomSelectPanel extends JPanel {
     private JPanel refreshJoinPanel; // panel containing the refresh & join buttons
 
     private static RoomSelectTable table; // displays all the room selection data
-    private static Object workerNotifier; // this object is notified for "Refresh" requests
-    private ApplicationState appState; // to be interacted with on particular button presses.
+    private static Object workerNotifier; // notifies RoomsListFetcher for a "refresh"
+    private ApplicationState appState; // interacted with on particular button presses.
 
-    private RoomsListFetcher roomsListFetcher; // thread-based worker used to fetch the list of rooms
+    private RoomsListFetcher roomsListFetcher; // thread-based worker used to fetch lists of rooms
     private ChatUser userRef; // reference to the chat user object
     private Object mainAppNotifier; // used to notify main() in ChatterApp.java
 
-    private static String selectedRoomName; // for confirming that a room being joined still exists
-    private static String selectedConnectInfo; // used to establish connection (JoinRoomWorker)
-    private static Object preJoinNotifier; // for notifying that a pre-join refresh is complete
+    /**
+     * name of the room currently selected (may or may not still exist) before
+     * joining a room, we perform one last refresh and cross-reference the selected
+     * room name with the results returned to ensure the selected room hasn't been
+     * closed, which could happen in cases where the rooms list wasn't refreshed
+     * before attempting to join.
+     */
+    private static String selectedRoomName;
 
-    private static SharedValidateNotifier svn; // used for room validation
+    private static String selectedConnectInfo; // used to establish connection (JoinRoomWorker)
+
+    /**
+     * synchronicity object shared with RoomsListFetcher consisting of two flags.
+     * not all refreshes require validation of the selected room, and so this object
+     * provides two flags:
+     * 
+     * i) flag 1 allows the panel to communicate the need for a room validation.
+     * 
+     * ii) flag 2 allows RoomsListFetcher to commmunicate validation results.
+     */
+    private static SharedValidateNotifier svn;
 
     /**
      * constructor for RSP
@@ -68,16 +83,15 @@ public class RoomSelectPanel extends JPanel {
      * @param appLock AKA main app notifier
      */
     public RoomSelectPanel(ApplicationState state, ChatUser user, Object appLock) {
-        this.setName(PanelNames.ROOM_SELECT_PANEL);
+
+        this.setName(PanelNames.ROOM_SELECT_PANEL); // for CardLayout
         appState = state;
-        // fire up the RoomsListFetcher as quickly as possible to get our table
-        // populated.
+
         table = new RoomSelectTable();
         workerNotifier = new Object();
-        preJoinNotifier = new Object();
         svn = new SharedValidateNotifier();
 
-        roomsListFetcher = new RoomsListFetcher(workerNotifier, preJoinNotifier, svn);
+        roomsListFetcher = new RoomsListFetcher(workerNotifier, svn);
         userRef = user;
         mainAppNotifier = appLock;
         selectedRoomName = "";
@@ -224,19 +238,9 @@ public class RoomSelectPanel extends JPanel {
      */
     public void populateRoomsList() {
         if (!roomsListFetcher.isAlive()) {
-            roomsListFetcher = new RoomsListFetcher(workerNotifier, preJoinNotifier, svn);
+            roomsListFetcher = new RoomsListFetcher(workerNotifier, svn);
             roomsListFetcher.start();
         } else {
-            // clearing the table model + cache for fresh population of lists.
-            // SwingUtilities.invokeLater(new Runnable() {
-            // public void run() {
-            // DefaultTableModel model = (DefaultTableModel) table.getModel();
-            // while (table.getModel().getRowCount() > 0) {
-            // (model).removeRow(model.getRowCount() - 1);
-            // }
-            // }
-            // });
-            // roomsListFetcher.clearListingCache();
             synchronized (workerNotifier) {
                 workerNotifier.notify();
             }
@@ -269,7 +273,6 @@ public class RoomSelectPanel extends JPanel {
         // if we haven't found the room, alert the user and abort room joining.
         synchronized (svn) {
             if (!svn.readSuccessful()) {
-                // TODO spawn a popup window with the room alert.
                 String dialogMessage = "The room selected is no longer in existence.";
                 JOptionPane.showMessageDialog(null, dialogMessage, "Room Disbanded", JOptionPane.WARNING_MESSAGE);
                 svn.reset();
@@ -301,13 +304,11 @@ public class RoomSelectPanel extends JPanel {
          * constructor for RLF.
          * 
          * @param rn    the object by which we will wait for refresh requests
-         * @param pjn   pre join notifier (notify on this post-refresh)
          * @param svn__ shared validation notifier
          */
-        public RoomsListFetcher(Object rn, Object pjn, SharedValidateNotifier svn__) {
+        public RoomsListFetcher(Object rn, SharedValidateNotifier svn__) {
             isRunning = false;
             workerNotify = rn;
-            preJoinNotifier = pjn;
             csvRoomDataObjs = new ArrayList<String>();
             socket = null;
             in = null;
@@ -333,7 +334,6 @@ public class RoomSelectPanel extends JPanel {
         public void serviceRefreshRequest() {
 
             Object obj = null;
-            // NOTE this method is called from within a try/catch.
             try {
                 socket = new Socket(Constants.REGISTRY_IP, Constants.REGISTRY_PORT);
                 out = new ObjectOutputStream(socket.getOutputStream());
@@ -406,11 +406,19 @@ public class RoomSelectPanel extends JPanel {
             // room listings refresh complete.
 
             synchronized (svn) {
-
+                // enter here if a room validation has been requested.
                 if (svn.readRequested()) {
+                    /**
+                     * we start from the selected row and search backwards, because if it isn't at
+                     * its current index, it either A) no longer exists, or B) 1 or more rooms that
+                     * were created before it were removed, bumping the room of concern to an index
+                     * position closer to 0 in the list of rooms.
+                     */
                     i = table.getSelectedRow();
                     while (i >= 0) {
                         String roomName = (String) table.getModel().getValueAt(i, Constants.ROOM_NAME_TABLE_COLUMN);
+
+                        // if we find a match, mark successful and break. Flag stays false otherwise.
                         if (selectedRoomName.equals(roomName)) {
                             svn.markAsSuccessful();
                             break;
@@ -422,7 +430,6 @@ public class RoomSelectPanel extends JPanel {
                     }
                 }
             }
-
         }
 
         /**

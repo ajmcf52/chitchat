@@ -5,13 +5,16 @@ import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 
 /**
- * this class will be used to house and display information for 
- * each joinable chat room in a table-wise format.
+ * this class will be used to house and display information for each joinable
+ * chat room in a table-wise format.
  */
 public class RoomSelectTable extends JTable {
 
-    private static final String[] COLUMNS = {"Room Name",  "Host Name", "# of Guests", "<IP>:<Port>"}; // names of each of the columns 
+    // column names
+    private static final String[] COLUMNS = { "Room Name", "Host Name", "# of Guests", "<IP>:<Port>" };
+
     private DefaultTableModel model; // table model
+
     /**
      * constructor for RST.
      */
@@ -29,8 +32,9 @@ public class RoomSelectTable extends JTable {
     }
 
     /**
-     * method for adding a new line of data to the room select table.
-     * (called when a new room is created)
+     * method for adding a new line of data to the room select table. (called when a
+     * new room is created)
+     * 
      * @param args ordered room details in a String array.
      */
     public void addEntry(String[] args) {
@@ -42,7 +46,9 @@ public class RoomSelectTable extends JTable {
     }
 
     /**
-     * this method is used to remove the entry at a particular index in the list of entries.
+     * this method is used to remove the entry at a particular index in the list of
+     * entries.
+     * 
      * @param i index of entry to be removed
      * @throw IndexOutOfBoundsException
      */

@@ -19,14 +19,13 @@ public class JoinRoomWorker extends Worker {
     private ApplicationState appState; // state of the application
 
     /**
-     * constructor for JRW
+     * constructor for JRW.
      * 
      * @param connectInfo connection info for SessionCoordinator of the room being
      *                        joined
      * @param userJoin    ChatUser requesting to join (i.e., Bob)
      * @param nameOfRoom  name of the chat room that is being requested for joining
-     * @param userLock    used to notify the chat user when crucial actions are
-     *                        finished
+     * @param mainLock    used to notify main() when crucial actions are finished
      * @param state       application state
      * 
      *                        NOTE we operate on the precondition that connectInfo
@@ -56,6 +55,11 @@ public class JoinRoomWorker extends Worker {
      */
     public void run() {
 
+        /**
+         * all we do here is pass along crucial connection information to ChatUser,
+         * change application state, and notify main(). The rest takes care of itself.
+         * ChatUser joins the room mostly by themselves.
+         */
         userJoining.initSessionInfo(sessionIP, sessionPort, roomName);
         appState.setAppState(AppStateValue.CHATTING);
 

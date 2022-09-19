@@ -15,22 +15,19 @@ import main.ApplicationState;
 import misc.ValidateInput;
 
 /*
- * First panel that is seen upon executing the Chatter app via ChatterApp.java
+ * First panel that is seen upon starting Chatter.
  */
 public class LoginPanel extends JPanel {
-    private final static int ALIAS_FIELD_WIDTH = 20;
+    private final static int ALIAS_FIELD_WIDTH = 20; // width of alias text field in columns (?)
 
     private JLabel welcomeLabel;
     private JLabel aliasPrompt;
     private JLabel aliasInstructions;
+
     private JTextField aliasField;
     private JLabel hitReturnNotice;
     private JLabel badAliasWarning;
 
-    /**
-     * to be instantiated by another Thread-based worker (from within the key event
-     * handler) that will communicate with the Registry.
-     */
     private ChatUser userRef;
     private Object chatUserLock;
     private ApplicationState appState;
@@ -95,19 +92,17 @@ public class LoginPanel extends JPanel {
 
         // setting up event listener for when users press "Return".
 
+        /**
+         * main function here is keyReleased(e), which is responsible for creating new
+         * users (given that the entered alias is valid)
+         */
         aliasField.addKeyListener(new KeyListener() {
-            // keyPressed + keyTyped are both included simply to satisfy the compiler.
             public void keyPressed(KeyEvent e) {
             }
 
             public void keyTyped(KeyEvent e) {
             }
 
-            /*
-             * event handler for keyReleased. this will be the handler that will be used to
-             * process the passing of the typed user alias to a Thread in setting up the
-             * ChatUser.
-             */
             public void keyReleased(KeyEvent e) {
 
                 /**
@@ -118,12 +113,10 @@ public class LoginPanel extends JPanel {
                 }
 
                 // 1. retrieve text String from inside the text field.
-                JTextField src = (JTextField) e.getSource(); // should be aliasField, but we attain this way to satisfy
-                                                             // OCD.
+                JTextField src = (JTextField) e.getSource();
                 String chatUserAlias = src.getText();
 
-                // verify alias input with two separate checks: one for length and one for
-                // alphanumerics.
+                // verify input with two checks: one for length, one for alphanumeric.
 
                 if (!ValidateInput.validateLength(chatUserAlias, Constants.MIN_USER_INPUT_LENGTH,
                                 Constants.MAX_USER_INPUT_LENGTH)
@@ -132,21 +125,12 @@ public class LoginPanel extends JPanel {
                     return;
                 }
 
-                // TODO add an alias Hashmap lookup with the registry
-                // to make sure it's not taken.
-
-                // 3a. if input doesn't pass, trigger a Timer and/or Runnable that sets the
-                // visibility of 'badAliasWarning' to true,
-                // waits 4 seconds, then sets visibility to false again.
-
-                // 3b. if input is good, pass the input to a Runnable that does the following:
                 /**
-                 * I) messages the Registry socket, requesting a UID. II) receive said UID from
-                 * the registry, and use that along with the alias to instantiate a ChatUser. It
-                 * is likely that this Runnable will be instantiated as a custom class
-                 * implementing the Runnable interface; an instance of this class will be
-                 * created within the scope of ChatterApp.java, though it will not be started
-                 * until it is required to perform the critical task.
+                 * this worker sets up the ChatUser.
+                 * 
+                 * Alias uniqueness is maintained by the structure of usernames, combining
+                 * aliases and user ID numbers provided by the Registry. See ChatUser.java for
+                 * more details.
                  */
                 UserSetupWorker usWorker = new UserSetupWorker(0, chatUserAlias, userRef, chatUserLock, appState);
                 usWorker.start();
@@ -162,7 +146,6 @@ public class LoginPanel extends JPanel {
      * @param badAliasWarning JLabel containing the warning text.
      */
     public void triggerErrorMessage(JLabel badAliasWarning) {
-        // System.out.println("farts");
         badAliasWarning.setVisible(true);
         Timer timer = new Timer(5000, event -> {
             badAliasWarning.setVisible(false);

@@ -27,9 +27,13 @@ public class ExitRoomWorker extends Thread {
     }
 
     public void run() {
+        // info gathering.
         String roomName = userRef.getCurrentRoomName();
         String alias = userRef.getAlias();
+
+        // building the ERM from info gathered.
         ExitRoomMessage erm = new ExitRoomMessage(alias, roomName);
+
         Socket socket = null;
         ObjectInputStream in = null;
         ObjectOutputStream out = null;
@@ -43,7 +47,13 @@ public class ExitRoomWorker extends Thread {
             out.writeObject(erm);
             out.flush();
             obj = in.readObject();
+
+            /**
+             * nothing to do with this message; we read for the simple matter of ensuring
+             * our message was read and replied to.
+             */
             SimpleMessage response = ValidateInput.validateSimpleMessage(obj);
+
             socket.close();
         } catch (Exception e) {
             System.out.println("ERW error leaving room! --> " + e.getMessage());

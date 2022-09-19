@@ -24,8 +24,8 @@ import misc.PanelNames;
 import misc.ValidateInput;
 
 /**
- * this class represents a panel that allows a user to enter their desired room
- * name
+ * this class represents a panel that allows a user to enter the desired name of
+ * their chat room.
  */
 public class RoomNamePanel extends JPanel {
 
@@ -44,7 +44,7 @@ public class RoomNamePanel extends JPanel {
     private ApplicationState appState; // state of the application
 
     /**
-     * constructor for RNP
+     * constructor for RNP.
      * 
      * @param ref      reference to the user object
      * @param userLock lock that will be used to notify the user
@@ -54,8 +54,6 @@ public class RoomNamePanel extends JPanel {
         userRef = ref;
         chatUserLock = userLock;
         appState = state;
-
-        // fieldPanel = new JPanel();
 
         roomNameField = new JTextField(ROOM_NAMING_FIELD_WIDTH); // makes a field with 20 "columns" (i.e., horizontal
                                                                  // spaces roughly)
@@ -71,11 +69,6 @@ public class RoomNamePanel extends JPanel {
         badNameWarning.setVisible(true);
         badNameWarning.setAlignmentX(Component.CENTER_ALIGNMENT);
         badNameWarning.setSize(badNameWarning.getPreferredSize());
-
-        // warningPanel = new JPanel();
-        // warningPanel.setLayout(new BorderLayout());
-        // warningPanel.setSize(warningPanel.getPreferredSize());
-        // warningPanel.add(badNameWarning, BorderLayout.CENTER);
 
         prompt = new JLabel("Please enter a room name:");
         prompt.setFont(new Font("Serif", Font.BOLD, 22));
@@ -93,9 +86,6 @@ public class RoomNamePanel extends JPanel {
         backButton = new JButton();
         backButton.setText("Back");
         backButton.setFont(new Font("Serif", Font.BOLD, 24));
-        // backButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        // layout programming
 
         this.setLayout(new GridBagLayout());
         GridBagConstraints constraints = new GridBagConstraints();
@@ -144,8 +134,8 @@ public class RoomNamePanel extends JPanel {
         this.setName(PanelNames.ROOM_NAME_PANEL);
 
         okButton.addActionListener(e -> {
-            // validate input
 
+            // validate input
             String roomName = roomNameField.getText();
 
             if (!ValidateInput.validateLength(roomName, Constants.MIN_USER_INPUT_LENGTH,
@@ -166,6 +156,9 @@ public class RoomNamePanel extends JPanel {
             }
         });
 
+        /**
+         * ensures that "Enter" performs the same function as pressing the "OK" button.
+         */
         roomNameField.addKeyListener(new KeyListener() {
 
             @Override
@@ -196,7 +189,6 @@ public class RoomNamePanel extends JPanel {
      * @param badNameWarning JLabel containing the warning text.
      */
     public void triggerErrorMessage(JLabel badNameWarning) {
-        // System.out.println("farts");
         badNameWarning.setText(WARNING_TEXT);
         Timer timer = new Timer(3500, event -> {
             badNameWarning.setText(" ");

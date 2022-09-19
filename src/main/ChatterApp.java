@@ -49,7 +49,7 @@ public class ChatterApp {
         LoginPanel loginPanel = new LoginPanel(chatUser, chatUserLock, appState);
 
         // screen B: where users choose to create or join a room.
-        ChoicePanel choicePanel = new ChoicePanel(chatUser, chatUserLock, appState);
+        ChoicePanel choicePanel = new ChoicePanel(chatUserLock, appState);
 
         // screen C1: where users look at and join existing rooms.
         RoomSelectPanel roomSelectPanel = new RoomSelectPanel(appState, chatUser, mainAppNotifier);

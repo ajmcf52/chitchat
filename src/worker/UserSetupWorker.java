@@ -52,11 +52,11 @@ public class UserSetupWorker extends Worker {
 
         try {
             socket = new Socket(Constants.REGISTRY_IP, Constants.REGISTRY_PORT);
-            // NOTE order of constructor calls is crucial here! Reference ChatUser.java for
-            // more details.
+
+            // NOTE order of calls is crucial here; see ChatUser.java for more details.
             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
-            // send the protocol message on one line, then the alias on following line.
+
             NewUserMessage msg = new NewUserMessage(alias);
             out.writeObject(msg);
             out.flush();
@@ -66,13 +66,17 @@ public class UserSetupWorker extends Worker {
 
             // initialize the ChatUser's fields.
             userRef.initializeID(response, alias);
-            // work is done! Prepare for exit, and modify app state accordingly.
 
             socket.close(); // NOTE this will close both associated streams.
             appState.setAppState(AppStateValue.CHOICE_PANEL);
 
+            /**
+             * NOTE we should be using mainLock here, as really, we are communicating with
+             * main(), but the code base can't be perfect. At this point I am done making
+             * changes (for now), and so it is what it is.
+             */
             synchronized (chatUserLock) {
-                chatUserLock.notify(); // allows ChatUser to go to the top of its state machine & enter ChoicePanel.
+                chatUserLock.notify();
             }
         } catch (Exception e) {
             System.out.println("UserSetupThread error! --> " + e.getMessage());

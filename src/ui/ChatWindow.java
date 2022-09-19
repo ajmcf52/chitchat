@@ -31,13 +31,10 @@ import worker.ExitRoomWorker;
 public class ChatWindow extends JFrame {
 
     private static final int CHAT_CELL_HEIGHT = 15; // number of rows
-    // private static final int PARTICIPANT_LIST_WIDTH = 20; // ibid, your honor!
-    // private static final int PARTCIPANT_LIST_HEIGHT = 200; // number of rows
     private static final Font CHAT_PLACEHOLDER_FONT = new Font("Serif", Font.ITALIC, 14);
     private static final Font CHAT_TYPING_FONT = new Font("Serif", Font.PLAIN, 14);
     private static final Font PARTICIPANT_LIST_LABEL_FONT = new Font("MONOSPACED", Font.BOLD | Font.ITALIC, 14);
     private static final int CHAT_TEXTBOX_WIDTH = 100; // width of chat textbox
-    // private static final int CHAT_TEXTBOX_HEIGHT = 14;
     private static final String CHAT_PLACEHOLDER_STR = "Enter message here...";
     private static final int CHAT_WINDOW_WIDTH = 600;
     private static final int CHAT_WINDOW_HEIGHT = 400;
@@ -46,22 +43,13 @@ public class ChatWindow extends JFrame {
     private JPanel chatPanel; // panel of the chat window.
 
     // Variables with dynamic data below...
-    private JList<String> chatFeed; // current state of the chat.
+    private JList<String> chatFeed; // chat message history.
     private JTextField chatTextField; // where outgoing messages can be entered.
     private JButton sendMsgButton; // button used to send a message.
     private JButton exitButton; // button used to exit the chat.
     private JList<String> participantList; // where participants are shown.
     private JLabel participantListLabel; // simple participant list label.
-    // private String chatFeedString; // text displayed in the chat feed. (messages
-    // separated by '\n')
-    // private String participantListString; //participant list string.
-    // (participants separated by '\n')
 
-    /**
-     * JList models for displaying lines of read-only text
-     */
-    // private MyListModel participanListModel;
-    // private MyListModel chatFeedModel;
     private DefaultListModel<String> participantListModel;
     private DefaultListModel<String> chatFeedModel;
 
@@ -105,22 +93,11 @@ public class ChatWindow extends JFrame {
         GridBagConstraints participantLabelConstraints = new GridBagConstraints();
 
         /**
-         * shield your eyes from the magic constants!!! Ahhhhhh!!!!!
-         *
-         * Kidding... I'll do my best to explain things here. Operating on the basis of
-         * a 20x20 grid spread in a default frame size of 400x400 pixels.
          *
          * these constraint object parameters essentially dictate the sizing and
          * positioning of our objects within our GridBagLayout. The meaning behind all
          * of these constraint properties can be found at this link here:
          * https://docs.oracle.com/javase/tutorial/uiswing/layout/gridbag.html
-         *
-         * One thing to note is the weight chosen.. I went with 0.5 across the border,
-         * as 0.0 and 1.0 are considered to be the extremes. Considering I am fairly new
-         * to GridBagLayout, I went with the most moderate option possible.
-         *
-         * All the other fields are pretty self-explanatory, but if you seek further
-         * clarification, feel free to check out the aforementioned link! :)
          */
         chatFeedConstraints.gridx = 0;
         chatFeedConstraints.gridy = 0;
@@ -238,6 +215,10 @@ public class ChatWindow extends JFrame {
             }
         });
 
+        /**
+         * this KeyListener ensures that pressing "Enter" performs the same thing as
+         * pressing the "Send" button (i.e., send a message)
+         */
         chatTextField.addKeyListener(new KeyListener() {
             // extraneous methods
             public void keyTyped(KeyEvent e) {
@@ -257,11 +238,13 @@ public class ChatWindow extends JFrame {
             }
         });
 
+        // work done for leaving a room.
         exitButton.addActionListener(e -> {
             ExitRoomWorker erw = new ExitRoomWorker(chatUser);
             erw.start();
         });
 
+        // work done for sending a message.
         sendMsgButton.addActionListener(e -> {
             String msgText = chatTextField.getText();
             if (msgText.isEmpty()) {

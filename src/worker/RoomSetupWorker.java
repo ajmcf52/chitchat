@@ -17,10 +17,9 @@ import messages.NewRoomMessage;
 import messages.SimpleMessage;
 
 /**
- * This thread-based class is responsible for communicating with the Registry to
- * get a new chat room set up for a given ChatUser, as denoted by the user
+ * This thread-based worker is responsible for communicating with the Registry
+ * to get a new chat room set up for a given ChatUser, as denoted by the user
  * alias.
- * 
  */
 public class RoomSetupWorker extends Worker {
 
@@ -33,7 +32,7 @@ public class RoomSetupWorker extends Worker {
      * constructor.
      * 
      * @param nameOfRoom number unique to the worker within its class of workers
-     * @param ali        user alias
+     * @param chUser     chat user reference object
      * @param chatLock   notified to alert ChatUser in main() of progress.
      * @param state      for main() loop control.
      */
@@ -52,8 +51,8 @@ public class RoomSetupWorker extends Worker {
         Socket socket = null;
         try {
             socket = new Socket(Constants.REGISTRY_IP, Constants.REGISTRY_PORT);
-            // NOTE order of constructor calls is crucial here! Reference ChatUser.java for
-            // more details.
+
+            // NOTE order of calls is crucial here; see ChatUser.java for more details.
             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
             ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
@@ -76,9 +75,9 @@ public class RoomSetupWorker extends Worker {
             String[] ipAndPort = msgArgs[2].split(":"); // msgArgs[2] --> "IP:port"
             String seshIp = ipAndPort[0];
             int seshPortNum = Integer.valueOf(ipAndPort[1]);
-            chatUser.initSessionInfo(seshIp, seshPortNum, roomName); // perform ChatUser initialization with the
-                                                                     // Session.
-            chatUser.setHost(true); // NOTE this is crucial for ensuring the chat thread is started in "CHATTING"
+
+            chatUser.initSessionInfo(seshIp, seshPortNum, roomName); // perform ChatUser init with the Session.
+            chatUser.setHost(true);
             appState.setAppState(AppStateValue.CHATTING);
 
             synchronized (chatUserLock) {
