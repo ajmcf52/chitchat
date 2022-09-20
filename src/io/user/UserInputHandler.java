@@ -116,6 +116,10 @@ public class UserInputHandler extends Worker {
                     for (String p : wm.getParticipants()) {
                         chatWindowRef.addParticipantName(p);
                     }
+                    // int participantCount = wm.getParticipants().size();
+                    // String lastGuestJoined = participantCount > 0 ?
+                    // wm.getParticipants().get(participantCount - 1) : "";
+                    // if (lastGuestJoined.equals(anObject))
                     chatWindowRef.addParticipantName(wm.getAssociatedReceivingAlias());
                 }
             });

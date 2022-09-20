@@ -74,8 +74,8 @@ public class ChatWindow extends JFrame {
         this.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // NOTE important to not exit on close.
 
         // instantiating objects
-        participantListModel = new MyListModel();
-        chatFeedModel = new MyListModel();
+        participantListModel = new DefaultListModel<>();
+        chatFeedModel = new DefaultListModel<>();
         chatPanel = new JPanel();
         chatFeed = new JList<String>(chatFeedModel);
         chatTextField = new JTextField("", CHAT_TEXTBOX_WIDTH);

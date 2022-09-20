@@ -60,6 +60,9 @@ public class OutputWorker extends Worker {
 
         while (true) {
             try {
+                if (workerID.endsWith("S1")) {
+                    System.out.println("here");
+                }
                 ArrayList<Message> toSend = new ArrayList<Message>();
                 /**
                  * this loop ensures we don't accidentally call wait() when there are already

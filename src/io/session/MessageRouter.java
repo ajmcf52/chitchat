@@ -7,6 +7,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import messages.ExitRoomMessage;
 import messages.Message;
+import messages.SimpleMessage;
 import misc.Worker;
 
 /**
@@ -63,17 +64,19 @@ public class MessageRouter extends Worker {
      * @param in           incoming message queue
      * @param out          outgoing message queue
      * @param notifiers    objects to notify when there are messages to be sent
+     * @param workerIds    active worker IDs (i.e., routing numbers)
      */
     public MessageRouter(int workerNumber, ArrayBlockingQueue<Integer> tasks,
                     HashMap<Integer, ArrayBlockingQueue<Message>> in, HashMap<Integer, ArrayBlockingQueue<Message>> out,
-                    HashMap<Integer, Object> notifiers) {
+                    HashMap<Integer, Object> notifiers, HashSet<Integer> workerIds) {
         super("MR-" + Integer.toString(workerNumber));
         taskQueue = tasks;
         incomingMsgQueueMap = in;
         outgoingMsgQueueMap = out;
         newMessageNotifierMap = notifiers;
-        activeWorkerIDs = new HashSet<>();
-        activeWorkerIDs.add(0); // operating on the assumption that the host is active.
+        activeWorkerIDs = workerIds;
+        // activeWorkerIDs.add(0); // operating on the assumption that the host is
+        // active.
     }
 
     /**
@@ -118,6 +121,9 @@ public class MessageRouter extends Worker {
                                 newMessageNotifierMap.get(task).notify();
                             }
                         } else {
+                            if (msg instanceof SimpleMessage) {
+                                System.out.println("here");
+                            }
                             /**
                              * in this case we put the Message into everyone's queue EXCEPT for the one
                              * queue associated by task number.

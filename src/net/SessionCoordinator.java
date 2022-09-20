@@ -427,7 +427,7 @@ public class SessionCoordinator extends Worker {
         OutputWorker outputWorker = new OutputWorker(workerCode, out, outgoing,
                         newMessageNotifiers.get(routingIdNumber));
         MessageRouter messageRouter = new MessageRouter(routingIdNumber, taskQueue, incomingMsgQueueMap,
-                        outgoingMsgQueueMap, newMessageNotifiers);
+                        outgoingMsgQueueMap, newMessageNotifiers, activeRoutingIDs);
 
         // perform book-keeping
         incomingMsgQueueMap.put(routingIdNumber, incoming);
@@ -470,7 +470,11 @@ public class SessionCoordinator extends Worker {
              * the user that just joined (not host-centric), as well as a JoinNotifyMessage
              * to all others in the chat.
              */
-            welcoming = new WelcomeMessage(alias, roomName, isHosting, participantList);
+            ArrayList<String> pListCopy = new ArrayList<>();
+            for (String p : participantList)
+                pListCopy.add(p);
+
+            welcoming = new WelcomeMessage(alias, roomName, isHosting, pListCopy);
             JoinNotifyMessage joinNotify = new JoinNotifyMessage(alias, roomName);
             ArrayBlockingQueue<Message> q = incomingMsgQueueMap.get(routingIdNumber);
             q.add(joinNotify);
